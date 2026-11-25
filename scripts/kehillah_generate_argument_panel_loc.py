@@ -8,12 +8,13 @@ OUTPUT = ROOT / "common/customizable_localization/kehillah_din_argument_panel_cu
 
 def choice_loc(name, variable):
     lines = [f"{name} = {{", "\ttype = character"]
-    for n in range(15, 115):
-        for position, letter in enumerate("abc", 1):
+    for n in range(1, 115):
+        eid = f"{n-1:03d}" if n <= 9 else f"0{n}"
+        for position, letter in enumerate("ab" if n <= 3 else "abc", 1):
             lines += [
                 "\ttext = {",
                 f"\t\ttrigger = {{ involved_activity ?= {{ var:kehillah_din_case = {n} var:{variable} = {position} }} }}",
-                f"\t\tlocalization_key = kehillah_bet_din.0{n}1.{letter}",
+                f"\t\tlocalization_key = kehillah_bet_din.{eid}1.{letter}",
                 "\t}",
             ]
     lines += ["\ttext = { trigger = { always = yes } localization_key = kehillah_din_argument_unrecorded }", "}"]

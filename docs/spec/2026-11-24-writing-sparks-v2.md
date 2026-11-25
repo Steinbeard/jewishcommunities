@@ -197,3 +197,54 @@ Debug events:
   - Older saves mark once on the first yearly tick (`kehillah_sefer_dated_marked`, `common/on_action/kehillah_writing_spark_on_actions.txt`), since those works were already circulating there.
   - Landmark eligibility, open triggers and spark paths no longer carry `current_date < YEAR`, and the path titles drop "open until".
   - Consequence: after the start, only a scholar can write these books, whether the player, an AI, or the historical author. A historical author's AI pass makes that likely when he lives.
+
+## Addendum 2026-11-25: fourteen more historical Great Works, and a harder road to each
+
+**Status: BUILT; generators, tests and xTiger checked (9 new tips, all the catalog's usual "single-item AND"; no errors); not yet seen in game.** Daniel: "add some additional historical Great Work sparks … audit the upgrade requirements and assess if they're fun (a challenge), flavorful, and unique. Improve on them if they're too easy or bland."
+
+**Audit findings**
+- Every unnamed niche asked for **Learning 15 and one book**. That made a historical landmark *easier* than an original Great Work (Learning 16, aptitude 40, two more works), and the paths felt alike.
+- Midrash, Yerushalmi, responsa, dialogue and translation sparks had **no historical Great Work** at all: a Chiddush there could only become an original.
+- The ambitions for the Kuzari, the Bahir and Sefer Hasidim were the easiest ones (no Learning floor, or 14).
+- Rashi on the Torah's card showed "Parshanut experience 65", "Master 6 Parshanut works" and "Read the Tanakh twice", but its trigger checked experience 60 and neither of the other two. Players saw requirements that did not apply.
+
+**New historical niches** (catalog rows in `scripts/kehillah_library_catalog.json`, appended to `order` so IDs stay stable; each is open until written, and once written it circulates and sparks its own kind):
+
+| Work | Year | Form | Path (besides rite) |
+|---|---|---|---|
+| Midrash Lekach Tov | 1097 | midrash | Learning 16 · Genesis Rabbah · Pesikta · Greek or the Balkans · 5 sermons |
+| Machzor Vitry | 1105 | siddur | Learning 16 · Seder Rav Amram · Rashi on the Talmud |
+| Eshkol ha-Kofer (Karaite) | 1148 | scriptural law | Learning 16 · Levi ben Yefet · the Agron · Greek or the Balkans |
+| Isaac of Siponto on Zeraim | 1160 | Yerushalmi | Learning 16 · Yerushalmi Zeraim · Tosefta · Greek or Italy |
+| Sefer ha-Qabbalah | 1161 | chain of the sages | Learning 16 · Iggeret Rav Sherira · Arabic or Iberia · 3 machlokot |
+| Sefer ha-Berit | 1170 | dialogue | Learning 16 · Nevi'im · Emunot ve-Deot · 6 machlokot |
+| Ibn Tibbon's Guide | 1204 | translation | Learning 17 · Arabic · the Guide · Machshavah aptitude 50 · *Hokhmah* |
+| Sefer ha-Manhig | 1204 | customs | Learning 16 · Seder Rav Amram · 3 languages · 3 rulings |
+| Radak's Sefer ha-Shorashim | 1205 | grammar | Learning 16 · Onkelos · Tanakh twice · Parshanut aptitude 45 |
+| Responsa of the Maharam | 1286 | responsa | Learning 17 · Tosafot · 4 Bavli orders · 12 she'elot |
+| Ma'alot ha-Middot | 1287 | ethics | Learning 15 · Chovot ha-Levavot · humble, patient or temperate · 8 sermons · *Asceticism* |
+| Responsa of the Rashba | 1300 | responsa | Learning 17 · Ramban on the Torah · 20 she'elot · 5 rulings |
+| Milhamot ha-Shem | 1329 | faith and reason | Learning 18 · Ibn Tibbon's Guide · Machshavah aptitude 60 · *Hokhmah* |
+| Etz Hayyim (Karaite) | 1346 | faith and reason | Learning 17 · Kitab al-Anwar · the Guide in either language · Machshavah aptitude 50 |
+
+**Existing niches, made harder and more their own** (`EXTRA` in `scripts/kehillah_writing_landmarks.py`). Each now asks for four or five things:
+- a Learning floor of 15–18;
+- the books its author stood on, often a chain of other landmarks (Ramban needs Rashi *and* Ibn Ezra; the Tur needs the whole Bavli; the Rashba needs Ramban);
+- one thing that was his: a deed, a place, a language or a temperament. Examples: Seder Rav Amram and Iggeret Rav Sherira were answers to letters, so they need answered she'elot. Samuel ha-Nagid was a vizier and general, so he needs Diplomacy or Martial 14. Ibn Ezra wandered, so he needs three languages. The Copper Plates need Tamil or India.
+- Karaite and Haymanot niches ask for aptitude rather than deeds, because their scholars rarely reach the Bet Din, she'elah or machloket.
+
+**Ambitions** (`common/scripted_triggers/kehillah_sefer_ambition_triggers.txt`, mirrored in `NAMED`):
+- Kuzari: Learning 16, Arabic and 3 machlokot.
+- Bahir: Learning 16.
+- Sefer Hasidim: Learning 15 and 5 sermons.
+- Rashi on the Torah: the trigger now checks what the card shows (experience 65, six Parshanut works, Tanakh twice); Rashi's own shortcut still passes.
+
+**Lifetime deeds.** `kehillah_spark_from_deed_<sermon|ruling|letter|debate>_effect` now keeps a lifetime tally, `kehillah_deed_<deed>_count`. In a running save it counts from this change on; earlier deeds are not counted. Paths compare `kehillah_deed_<deed>_ok_value`, which treats **AI scholars as having done enough**: they rarely preach or answer she'elot, and without this, historical authors such as Halevi could never write their own works.
+
+**Not done:** the card shows a deed line as ✓/✗ with its target ("Answer 12 she'elot"), not the current count. The new works have no historical author characters, so only players and generic AI scholars write them.
+
+**Live checklist**
+- In a 1066 Rabbanite save, hold a responsa Chiddush (`kehillah_writing_debug.3`/`.4`): the Upgrade tooltip lists the Maharam and the Rashba with their lines.
+- Answer a she'elah, then check `kehillah_deed_letter_count` with `kehillah_writing_debug.2` or the console.
+- Write a midrash Great Work that meets Lekach Tov: it enters the Ledger under that title, and the Beit Midrash then lists it.
+- After every tooltip hover, check error.log.

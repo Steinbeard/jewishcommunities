@@ -63,26 +63,83 @@ def top_blocks(event: str, name: str):
     return blocks
 
 
-def choice_event(event: str, n: int, seat: int) -> str:
-    eid = f"0{n}"
+def strip_quality_desc(event: str) -> str:
+    """The shared panel heading now gives the grade; avoid repeating it in prose."""
+    header_end = event.find("\timmediate = {")
+    assert header_end >= 0
+    for match in list(re.finditer(r"first_valid\s*=\s*\{", event[:header_end])):
+        end = match_brace(event, event.index("{", match.start(), match.end()))
+        if ".quality_great" in event[match.start():end]:
+            return event[:match.start()] + event[end:]
+    return event
+
+
+def arrange_panel_summary(event: str) -> str:
+    """Lead with the actual case outcome, then list the three arguments."""
+    old = "\t\tdesc = kehillah_din_argument_panel_desc"
+    assert old in event
+    event = event.replace(old, "\t\tdesc = kehillah_din_argument_panel_lead", 1)
+    start = event.index("\tdesc = {")
+    end = match_brace(event, event.index("{", start))
+    event = event[:end - 1] + "\t\tdesc = kehillah_din_argument_panel_votes\n\t" + event[end - 1:]
+    return event
+
+
+def polish_case97_panel(event: str) -> str:
+    """Join the hidden fact to the ruling, instead of repeating the choice."""
+    first = event.find("\t\tfirst_valid = {")
+    assert first >= 0
+    first_end = match_brace(event, event.index("{", first))
+    second = event.find("\t\tfirst_valid = {", first_end)
+    assert second >= 0
+    second_end = match_brace(event, event.index("{", second))
+    fact = """\t\tfirst_valid = {
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 1 involved_activity.var:kehillah_din_case97_private_advice_given = 1 } desc = kehillah_bet_din.0974.ruling_1_advice }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 1 } desc = kehillah_bet_din.0974.ruling_1_schedule }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 2 involved_activity.var:kehillah_din_case97_private_advice_given = 1 } desc = kehillah_bet_din.0974.ruling_2_advice }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_bet_din_case97_direction = 2 } desc = kehillah_bet_din.0974.ruling_2_schedule }
+\t\t\ttriggered_desc = { trigger = { involved_activity.var:kehillah_din_case97_private_advice_given = 1 } desc = kehillah_bet_din.0974.ruling_3_advice }
+\t\t\tdesc = kehillah_bet_din.0974.ruling_3_schedule
+\t\t}"""
+    return event[:first] + fact + event[second_end:]
+
+
+def choice_event(event: str, n: int, seat: int, eid: str | None = None) -> str:
+    eid = eid or f"0{n}"
     options = top_blocks(event, "option")
     assert len(options) >= 2, (n, seat, len(options))
     afters = top_blocks(event, "after")
     assert len(afters) == 1, (n, seat)
     opts = []
-    for letter, position, skill in (("a", 1, "Diplomacy"), ("b", 2, "Learning"), ("c", 3, "Stewardship")):
+    choices = (("a", 1, "Diplomacy"), ("b", 2, "Learning")) if n <= 3 else (("a", 1, "Diplomacy"), ("b", 2, "Learning"), ("c", 3, "Stewardship"))
+    for letter, position, skill in choices:
         check_letter = {"a": "c", "c": "b"}.get(letter, letter) if n == 15 else letter
-        stress = "if = { limit = { has_trait = just } add_stress = 5 }" if position in (1, 3) else "if = { limit = { has_trait = impatient } add_stress = 8 }\n\t\tif = { limit = { has_trait = diligent } add_stress = -4 }"
+        stress = "if = { limit = { has_trait = just } add_stress = 5 custom_tooltip = kehillah_din_stress_just_tt }" if position in (1, 3) else "if = { limit = { has_trait = impatient } add_stress = 8 custom_tooltip = kehillah_din_stress_impatient_tt }\n\t\tif = { limit = { has_trait = diligent } add_stress = -4 custom_tooltip = kehillah_din_stress_diligent_tt }"
+        factors = {
+            "a": (("gregarious", "gregarious"), ("shy", "shy"), ("just", "just")),
+            "b": (("diligent", "diligent"), ("lazy", "lazy"), ("has_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value >= 30 }", "talmudics")),
+            "c": (("patient", "patient"), ("impatient", "impatient"), ("just", "just")),
+        }
+        factor_lines = "\n\t\t".join(
+            f"if = {{ limit = {{ {condition if condition.startswith('has_trait_xp') else 'has_trait = ' + condition} }} custom_tooltip = kehillah_din_factor_{key}_tt }}"
+            for condition, key in factors[check_letter]
+        )
         opts.append(f"""\toption = {{
 \t\tname = kehillah_bet_din.{eid}1.{letter}
 \t\tkehillah_din_choose_argument_effect = {{ SEAT = {seat} POSITION = {position} LETTER = {check_letter} }}
 \t\t{stress}
-\t\tcustom_tooltip = kehillah_din_argument_{check_letter}_chance_tt
-\t\tcustom_tooltip = kehillah_bet_din.{eid}1.{letter}.tt
+\t\tcustom_tooltip = kehillah_din_argument_{check_letter}_factors_tt
+\t\t{factor_lines}
+\t\tshow_as_tooltip = {{
+\t\t\trandom_list = {{
+\t\t\t\t0 = {{ modifier = {{ add = kehillah_din_argument_{check_letter}_chance_value }} custom_tooltip = kehillah_din_argument_preview_success }}
+\t\t\t\t0 = {{ modifier = {{ add = {{ value = 100 subtract = kehillah_din_argument_{check_letter}_chance_value }} }} custom_tooltip = kehillah_din_argument_preview_failure }}
+\t\t\t}}
+\t\t}}
 \t\tai_chance = {{ base = {35 if position == 2 else 30} }}
 \t}}""")
     option_text = "\n".join(opts)
-    after_text = f"\tafter = {{ trigger_event = {{ id = kehillah_bet_din.{eid}5 days = 1 }} }}"
+    after_text = f"\tafter = {{ trigger_event = {{ id = kehillah_bet_din.{eid}5 }} }}"
     # Replace from the last span backwards to retain original offsets.
     spans = [(options[0][0], options[-1][1], option_text), (afters[0][0], afters[0][1], after_text)]
     for start, end, value in sorted(spans, reverse=True):
@@ -90,59 +147,61 @@ def choice_event(event: str, n: int, seat: int) -> str:
     return event
 
 
-def citation_and_feedback(n: int) -> str:
-    eid = f"0{n}"
+def citation_and_feedback(n: int, eid: str | None = None) -> str:
+    eid = eid or f"0{n}"
     return f"""
 kehillah_bet_din.{eid}5 = {{
 \ttype = character_event
 \ttitle = kehillah_din_argument_citation_title
-\tdesc = kehillah_din_argument_citation_desc
+\tdesc = {{
+\t\tfirst_valid = {{
+\t\t\ttriggered_desc = {{ trigger = {{ NOT = {{ exists = involved_activity.var:kehillah_din_cite_grounded exists = involved_activity.var:kehillah_din_cite_innovative }} }} desc = kehillah_din_argument_citation_no_books_desc }}
+\t\t\tdesc = kehillah_din_argument_citation_desc
+\t\t}}
+\t}}
 \ttheme = learning
 \tleft_portrait = {{ character = root animation = thinking }}
 \ttrigger = {{ exists = involved_activity involved_activity.var:kehillah_din_case = {n} }}
 \timmediate = {{ kehillah_din_prepare_argument_citations_effect = {{ CASE = {n} }} }}
 \toption = {{
 \t\tname = kehillah_din_argument_no_citation
-\t\tcustom_tooltip = kehillah_din_argument_no_citation_tt
+\t\tshow_as_tooltip = {{ involved_activity = {{
+\t\t\trandom_list = {{
+\t\t\t\t0 = {{ modifier = {{ add = var:kehillah_din_argument_chance }} custom_tooltip = kehillah_din_argument_preview_success }}
+\t\t\t\t0 = {{ modifier = {{ add = {{ value = 100 subtract = var:kehillah_din_argument_chance }} }} custom_tooltip = kehillah_din_argument_preview_failure }}
+\t\t\t}}
+\t\t}} }}
 \t\tai_chance = {{ base = 25 }}
 \t}}
 \toption = {{
 \t\tname = kehillah_din_argument_grounded_citation
 \t\ttrigger = {{ custom_description = {{ text = kehillah_din_no_source_tt exists = involved_activity.var:kehillah_din_cite_grounded }} }}
-\t\tshow_as_unavailable = {{ always = yes }}
 \t\tkehillah_din_choose_argument_citation_effect = {{ SLOT = grounded }}
-\t\tcustom_tooltip = kehillah_din_argument_grounded_tt
+\t\tshow_as_tooltip = {{ involved_activity = {{
+\t\t\trandom_list = {{
+\t\t\t\t0 = {{ modifier = {{ add = var:kehillah_din_argument_grounded_chance }} custom_tooltip = kehillah_din_argument_preview_success }}
+\t\t\t\t0 = {{ modifier = {{ add = {{ value = 100 subtract = var:kehillah_din_argument_grounded_chance }} }} custom_tooltip = kehillah_din_argument_preview_failure }}
+\t\t\t}}
+\t\t}} }}
 \t\tai_chance = {{ base = 50 }}
 \t}}
 \toption = {{
 \t\tname = kehillah_din_argument_innovative_citation
 \t\ttrigger = {{ custom_description = {{ text = kehillah_din_no_source_tt exists = involved_activity.var:kehillah_din_cite_innovative NOT = {{ involved_activity.var:kehillah_din_cite_innovative = involved_activity.var:kehillah_din_cite_grounded }} }} }}
-\t\tshow_as_unavailable = {{ always = yes }}
 \t\tkehillah_din_choose_argument_citation_effect = {{ SLOT = innovative }}
-\t\tcustom_tooltip = kehillah_din_argument_innovative_tt
+\t\tshow_as_tooltip = {{ involved_activity = {{
+\t\t\trandom_list = {{
+\t\t\t\t0 = {{ modifier = {{ add = var:kehillah_din_argument_innovative_chance }} custom_tooltip = kehillah_din_argument_preview_success }}
+\t\t\t\t0 = {{ modifier = {{ add = {{ value = 100 subtract = var:kehillah_din_argument_innovative_chance }} }} custom_tooltip = kehillah_din_argument_preview_failure }}
+\t\t\t}}
+\t\t}} }}
 \t\tai_chance = {{ base = 25 }}
 \t}}
-\tafter = {{ trigger_event = {{ id = kehillah_bet_din.{eid}6 days = 1 }} }}
-}}
-
-kehillah_bet_din.{eid}6 = {{
-\ttype = character_event
-\ttitle = kehillah_din_argument_feedback_title
-\tdesc = {{
-\t\tfirst_valid = {{
-\t\t\ttriggered_desc = {{ trigger = {{ involved_activity.var:kehillah_din_argument_success = 1 }} desc = kehillah_din_argument_feedback_success }}
-\t\t\tdesc = kehillah_din_argument_feedback_failure
-\t\t}}
-\t}}
-\ttheme = faith
-\tleft_portrait = {{ character = root animation = thinking }}
-\ttrigger = {{ exists = involved_activity involved_activity.var:kehillah_din_case = {n} }}
-\timmediate = {{ kehillah_din_roll_argument_effect = yes }}
-\toption = {{ name = kehillah_din_argument_feedback_continue ai_chance = {{ base = 100 }} }}
 \tafter = {{
-\t\tif = {{ limit = {{ involved_activity.var:kehillah_din_argument_seat = 1 }} involved_activity.var:kehillah_bet_din_judge2 ?= {{ trigger_event = {{ id = kehillah_bet_din.{eid}2 days = 1 }} }} }}
-\t\telse_if = {{ limit = {{ involved_activity.var:kehillah_din_argument_seat = 2 }} involved_activity.var:kehillah_bet_din_judge3 ?= {{ trigger_event = {{ id = kehillah_bet_din.{eid}3 days = 1 }} }} }}
-\t\telse = {{ involved_activity.var:kehillah_bet_din_convening_title.holder ?= {{ trigger_event = {{ id = kehillah_bet_din.{eid}4 days = 1 }} }} }}
+\t\tkehillah_din_roll_argument_effect = yes
+\t\tif = {{ limit = {{ involved_activity.var:kehillah_din_argument_seat = 1 }} involved_activity.var:kehillah_bet_din_judge2 ?= {{ trigger_event = {{ id = kehillah_bet_din.{eid}2 }} }} }}
+\t\telse_if = {{ limit = {{ involved_activity.var:kehillah_din_argument_seat = 2 }} involved_activity.var:kehillah_bet_din_judge3 ?= {{ trigger_event = {{ id = kehillah_bet_din.{eid}3 }} }} }}
+\t\telse = {{ involved_activity.var:kehillah_bet_din_convening_title.holder ?= {{ trigger_event = {{ id = kehillah_bet_din.{eid}4 }} }} }}
 \t}}
 }}
 """
@@ -172,6 +231,11 @@ def rewrite_file(path: Path, n: int) -> bool:
     desc = "\tdesc = {"
     assert desc in panel, (path, "panel desc")
     panel = panel.replace(desc, "\tdesc = {\n\t\tdesc = kehillah_din_argument_panel_desc", 1)
+    panel = re.sub(rf"(?m)^\s*desc = kehillah_bet_din\.{eid}4\.desc\s*\n", "\n", panel, count=1)
+    panel = strip_quality_desc(panel)
+    if n == 97:
+        panel = polish_case97_panel(panel)
+    panel = arrange_panel_summary(panel)
     panel = panel.replace("kehillah_bet_din_advance_docket_effect = yes", "kehillah_din_clear_argument_case_effect = yes kehillah_bet_din_advance_docket_effect = yes")
     replacements.append((start, end, panel))
     for start, end, value in sorted(replacements, reverse=True):

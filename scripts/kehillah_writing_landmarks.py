@@ -50,6 +50,23 @@ FORMS = {
     "work_sefer_hachinukh": "law",
     "work_arbaah_turim": "law",
     "work_maggid_mishneh": "law",
+    # 2026-11-25 (Daniel: "add some additional historical Great Work sparks"):
+    # these also give midrash, Yerushalmi, responsa, dialogue and translation
+    # sparks their first historical Great Works.
+    "work_lekach_tov": "midrash",
+    "work_machzor_vitry": "siddur",
+    "work_eshkol_hakofer": "scriptural_law",
+    "work_siponto_zeraim": "yerushalmi",
+    "work_sefer_haqabbalah": "tradition_history",
+    "work_sefer_haberit": "dialogue",
+    "work_ibn_tibbon_moreh": "translation",
+    "work_sefer_hamanhig": "minhag",
+    "work_radak_shorashim": "grammar",
+    "work_responsa_maharam": "responsa",
+    "work_maalot_hamiddot": "ethics",
+    "work_responsa_rashba": "responsa",
+    "work_milhamot_hashem": "systematic_dialogue",
+    "work_etz_hayyim_karaite": "systematic_dialogue",
 }
 
 
@@ -61,33 +78,117 @@ RABBANITE = "rite ?= { kehillah_rite_rabbanite_trigger = yes }"
 KARAITE = "rite ?= { kehillah_rite_toric_trigger = yes }"
 HAYMANOT = "rite ?= { kehillah_rite_haymanot_trigger = yes }"
 
+# Conditions that are not a learning floor, a language, a Bavli count or a
+# mastered book carry their own card label here (read by
+# kehillah_writing_sparks.py's condition_label).
+LABELS: dict[str, str] = {}
+
+
+def labelled(cond: str, label: str) -> str:
+    LABELS[cond] = label
+    return cond
+
+
+DEED_LABEL = {"sermon": "Preach {n} sermons", "ruling": "Preside over {n} Bet Din rulings",
+              "letter": "Answer {n} she'elot", "debate": "Take a side in {n} machlokot"}
+
+
+def deeds(kind: str, n: int) -> str:
+    """Lifetime deeds, counted by kehillah_spark_from_deed_<kind>_effect.
+    AI scholars rarely reach these deeds, so they are spared them: otherwise
+    historical authors (HIST_AUTHOR in the sparks generator) could never
+    write their own works."""
+    return labelled(f"kehillah_deed_{kind}_ok_value >= {n}", DEED_LABEL[kind].format(n=n))
+
+
+APT = {"parshanut": ("parshanut", "Parshanut"), "talmudics": ("talmudics", "Talmudics"),
+       "hashkafa": ("machshava", "Machshavah")}
+
+
+def aptitude(disc: str, n: int) -> str:
+    key, label = APT[disc]
+    return labelled(f"kehillah_writing_{key}_aptitude_value >= {n}", f"{label} aptitude {n}")
+
+
+def lang_or_region(lang: str, region: str, label: str) -> str:
+    return labelled(f"OR = {{ knows_language = language_{lang} location ?= {{ geographical_region = {region} }} }}", label)
+
+
+def either(a: str, b: str) -> str:
+    return labelled(f"OR = {{ {mastered(a)} {mastered(b)} }}", f"Master $kehillah_lib_name_{a}$ or $kehillah_lib_name_{b}$")
+
+
+ARABIC = "knows_language = language_arabic"
+GREEK_OR_BALKANS = lang_or_region("greek", "world_europe_south_east", "Know Greek or live in the Balkans")
+GREEK_OR_ITALY = lang_or_region("greek", "world_europe_south_italy", "Know Greek or live in Italy")
+ARABIC_OR_IBERIA = lang_or_region("arabic", "world_europe_west_iberia", "Know Arabic or live in Iberia")
+ARABIC_OR_MAGHREB = lang_or_region("arabic", "world_africa_north", "Know Arabic or live in North Africa")
+TAMIL_OR_INDIA = lang_or_region("tamil", "world_india", "Know Tamil or live in India")
+POLYGLOT = labelled("num_of_known_languages >= 3", "Know 3 languages")
+SHAS = labelled("kehillah_has_mastered_shas_trigger = yes", "Master the whole Bavli")
+TANAKH_TWICE = labelled("kehillah_lib_tanakh_rounds_value >= 2", "Read the Tanakh twice through")
+YERUSHALMI_1 = labelled("kehillah_lib_yerushalmi_mastered_count_value >= 1", "Master a Yerushalmi order")
+GENTLE = labelled("OR = { has_trait = humble has_trait = patient has_trait = temperate }",
+                  "Be humble, patient or temperate")
+STATESMAN = labelled("OR = { diplomacy >= 14 martial >= 14 }", "Diplomacy or Martial 14")
+
+
+def bavli(n: int) -> str:
+    return f"kehillah_lib_bavli_mastered_count_value >= {n}"
+
+
+# 2026-11-25 audit (Daniel: "assess if they're fun (a challenge), flavorful,
+# and unique. Improve on them if they're too easy or bland"): every niche was
+# "Learning 15 and one book", easier than an original Great Work (Learning
+# 16, aptitude 40, two more works). Each now asks for four or five things:
+# a Learning floor of 15-18, the books its author stood on, and one deed,
+# place, language or temperament that was his. Karaite and Haymanot niches
+# avoid deeds, which their communities rarely reach, and use aptitude instead.
 EXTRA = {
-    "work_emunot_vedeot": [RABBANITE, "learning >= 15"],
-    "work_chovot_halevavot": [RABBANITE, "learning >= 15"],
-    "work_seder_rav_amram": ["learning >= 15"],
-    "work_iggeret_rav_sherira": ["learning >= 15", "kehillah_lib_bavli_mastered_count_value >= 2"],
-    "work_rabbenu_hananel": ["learning >= 15", "kehillah_lib_bavli_mastered_count_value >= 2"],
-    "work_mekor_hayyim": [RABBANITE, "learning >= 16", "knows_language = language_arabic"],
-    "work_kitab_alanwar": [KARAITE, "learning >= 15"],
-    "work_yefet_commentary": [KARAITE, "learning >= 15"],
-    "work_sefer_yosippon": ["learning >= 15", mastered("work_josephus_jewish_war")],
-    "work_toldot_yeshu": ["learning >= 15", mastered("work_mishnah")],  # 2026-11-24 floor: two requirements
-    "work_diwan_dunash": [RABBANITE, "learning >= 15", "knows_language = language_arabic"],
-    "work_diwan_samuel_hanagid": [RABBANITE, "learning >= 15", mastered("work_diwan_dunash")],
-    "work_diwan_ibn_gabirol": [RABBANITE, "learning >= 15", mastered("work_diwan_dunash")],
-    "work_agron_david_al_fasi": [KARAITE, "learning >= 15", "knows_language = language_arabic"],  # 2026-11-24 floor
-    "work_salmon_ben_jeroham_commentary": [KARAITE, "learning >= 15", mastered("work_tanakh_neviim")],
-    "work_levi_ben_yefet_mitzvot": [KARAITE, "learning >= 15"],
-    "work_teezaza_sanbat": [HAYMANOT, "learning >= 15", mastered("work_orit")],
-    "work_cochin_copper_plates": ["learning >= 15", mastered("work_tanakh_neviim")],  # 2026-11-24 floor
-    "work_ibn_ezra_torah": [RABBANITE, "learning >= 15", mastered("work_targum_onkelos")],
-    "work_sefer_mitzvot_gadol": [RABBANITE, "learning >= 16", mastered("work_mishneh_torah")],
-    "work_or_zarua": [RABBANITE, "learning >= 16", "kehillah_lib_bavli_mastered_count_value >= 3"],
-    "work_ramban_torah": [RABBANITE, "learning >= 16", mastered("work_rashi_torah")],
-    "work_sefer_hamivhar": [KARAITE, "learning >= 15", mastered("work_yefet_commentary")],
-    "work_sefer_hachinukh": [RABBANITE, "learning >= 15", mastered("work_tanakh_torah")],
-    "work_arbaah_turim": [RABBANITE, "learning >= 17", mastered("work_mishneh_torah")],
-    "work_maggid_mishneh": [RABBANITE, "learning >= 16", mastered("work_mishneh_torah")],
+    "work_emunot_vedeot": [RABBANITE, "learning >= 16", ARABIC, aptitude("hashkafa", 40), deeds("debate", 3)],
+    "work_chovot_halevavot": [RABBANITE, "learning >= 16", ARABIC, mastered("work_avot_derabbi_natan"), GENTLE],
+    "work_seder_rav_amram": ["learning >= 16", mastered("work_mishnah"), deeds("letter", 3)],
+    "work_iggeret_rav_sherira": ["learning >= 16", bavli(3), mastered("work_seder_olam_rabbah"), deeds("letter", 5)],
+    "work_rabbenu_hananel": ["learning >= 16", bavli(4), YERUSHALMI_1, ARABIC_OR_MAGHREB],
+    "work_mekor_hayyim": [RABBANITE, "learning >= 17", ARABIC, mastered("work_theology_of_aristotle"), aptitude("hashkafa", 45)],
+    "work_kitab_alanwar": [KARAITE, "learning >= 16", ARABIC, mastered("work_anan_sefer_hamitzvot"), aptitude("talmudics", 40)],
+    "work_yefet_commentary": [KARAITE, "learning >= 16", ARABIC, TANAKH_TWICE],
+    "work_sefer_yosippon": ["learning >= 16", mastered("work_josephus_jewish_war"), GREEK_OR_ITALY],
+    "work_toldot_yeshu": ["learning >= 15", mastered("work_mishnah"), deeds("debate", 3)],
+    "work_diwan_dunash": [RABBANITE, "learning >= 15", ARABIC, mastered("work_tanakh_ketuvim")],
+    "work_diwan_samuel_hanagid": [RABBANITE, "learning >= 15", mastered("work_diwan_dunash"), STATESMAN],
+    "work_diwan_ibn_gabirol": [RABBANITE, "learning >= 16", ARABIC, mastered("work_diwan_dunash"), mastered("work_sefer_yetzirah")],
+    "work_agron_david_al_fasi": [KARAITE, "learning >= 15", ARABIC, TANAKH_TWICE],
+    "work_salmon_ben_jeroham_commentary": [KARAITE, "learning >= 15", mastered("work_tanakh_neviim"), aptitude("parshanut", 35)],
+    "work_levi_ben_yefet_mitzvot": [KARAITE, "learning >= 16", mastered("work_anan_sefer_hamitzvot"), mastered("work_kitab_alanwar")],
+    "work_teezaza_sanbat": [HAYMANOT, "learning >= 15", mastered("work_orit"), aptitude("talmudics", 30)],
+    "work_cochin_copper_plates": ["learning >= 15", mastered("work_tanakh_neviim"), TAMIL_OR_INDIA],
+    "work_ibn_ezra_torah": [RABBANITE, "learning >= 17", mastered("work_targum_onkelos"), POLYGLOT, aptitude("parshanut", 45)],
+    "work_sefer_mitzvot_gadol": [RABBANITE, "learning >= 16", mastered("work_mishneh_torah"), deeds("sermon", 5)],
+    "work_or_zarua": [RABBANITE, "learning >= 16", bavli(3), mastered("work_tosafot"), deeds("ruling", 5)],
+    "work_ramban_torah": [RABBANITE, "learning >= 17", mastered("work_rashi_torah"), mastered("work_ibn_ezra_torah"), aptitude("parshanut", 50)],
+    "work_sefer_hamivhar": [KARAITE, "learning >= 16", mastered("work_yefet_commentary"), TANAKH_TWICE],
+    "work_sefer_hachinukh": [RABBANITE, "learning >= 15", mastered("work_tanakh_torah"), mastered("work_mishneh_torah")],
+    "work_arbaah_turim": [RABBANITE, "learning >= 17", mastered("work_mishneh_torah"), SHAS, aptitude("talmudics", 60)],
+    "work_maggid_mishneh": [RABBANITE, "learning >= 16", mastered("work_mishneh_torah"), bavli(4), deeds("ruling", 8)],
+    # 2026-11-25 new niches.
+    "work_lekach_tov": [RABBANITE, "learning >= 16", mastered("work_genesis_rabbah"), mastered("work_pesikta_derav_kahana"),
+                        GREEK_OR_BALKANS, deeds("sermon", 5)],
+    "work_machzor_vitry": [RABBANITE, "learning >= 16", mastered("work_seder_rav_amram"), mastered("work_rashi_talmud")],
+    "work_eshkol_hakofer": [KARAITE, "learning >= 16", mastered("work_levi_ben_yefet_mitzvot"), mastered("work_agron_david_al_fasi"),
+                            GREEK_OR_BALKANS],
+    "work_siponto_zeraim": [RABBANITE, "learning >= 16", mastered("work_yerushalmi_zeraim"), mastered("work_tosefta"), GREEK_OR_ITALY],
+    "work_sefer_haqabbalah": [RABBANITE, "learning >= 16", mastered("work_iggeret_rav_sherira"), ARABIC_OR_IBERIA, deeds("debate", 3)],
+    "work_sefer_haberit": [RABBANITE, "learning >= 16", mastered("work_tanakh_neviim"), mastered("work_emunot_vedeot"), deeds("debate", 6)],
+    "work_ibn_tibbon_moreh": [RABBANITE, "learning >= 17", ARABIC, mastered("work_moreh_nevukhim"), aptitude("hashkafa", 50)],
+    "work_sefer_hamanhig": [RABBANITE, "learning >= 16", mastered("work_seder_rav_amram"), POLYGLOT, deeds("ruling", 3)],
+    "work_radak_shorashim": [RABBANITE, "learning >= 16", mastered("work_targum_onkelos"), TANAKH_TWICE, aptitude("parshanut", 45)],
+    "work_responsa_maharam": [RABBANITE, "learning >= 17", mastered("work_tosafot"), bavli(4), deeds("letter", 12)],
+    "work_maalot_hamiddot": [RABBANITE, "learning >= 15", mastered("work_chovot_halevavot"), GENTLE, deeds("sermon", 8)],
+    "work_responsa_rashba": [RABBANITE, "learning >= 17", mastered("work_ramban_torah"), deeds("letter", 20), deeds("ruling", 5)],
+    "work_milhamot_hashem": [RABBANITE, "learning >= 18", mastered("work_ibn_tibbon_moreh"), aptitude("hashkafa", 60)],
+    "work_etz_hayyim_karaite": [KARAITE, "learning >= 17", mastered("work_kitab_alanwar"),
+                                either("work_moreh_nevukhim", "work_ibn_tibbon_moreh"), aptitude("hashkafa", 50)],
 }
 
 LEGACY_TITLES = {
@@ -136,6 +237,9 @@ def main() -> None:
                 if not key.startswith("work_authored_") and work.get("year", 0) > 867}
     assert set(FORMS) == expected, f"unmapped future works: {sorted(expected ^ set(FORMS))}"
     assert set(EXTRA) == {key for key in expected if not WORKS[key].get("named")}
+    for key, conds in EXTRA.items():
+        for ref in re.findall(r"flag:(\w+)", " ".join(conds)):
+            assert ref in WORKS, f"{key} needs unknown work {ref}"
     for key in expected:
         thesis = WORKS[key].get("writing_thesis_tenet")
         assert bool(thesis) == bool(WORKS[key].get("argues_for")), key

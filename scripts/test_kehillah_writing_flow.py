@@ -87,8 +87,8 @@ class WritingFlowTest(unittest.TestCase):
         future = {key for key, work in catalog.items()
                   if not key.startswith("work_authored_") and work.get("year", 0) > 867}
         self.assertEqual(named, future)
-        self.assertEqual(len(named), 36)
-        for year, expected in ((867, 36), (1066, 20), (1178, 12)):
+        self.assertEqual(len(named), 50)  # 2026-11-25: +14 historical Great Works
+        for year, expected in ((867, 50), (1066, 34), (1178, 20)):
             self.assertEqual(sum(catalog[key]["year"] > year for key in named), expected)
         self.assertNotIn("kehillah_book_named_work value", events)
         self.assertIn("kehillah_writing_select_landmark_effect = yes", effects)
@@ -140,7 +140,7 @@ class WritingFlowTest(unittest.TestCase):
         artifact = read("common/customizable_localization/kehillah_writing_artifact_custom_loc.txt")
         ledger = read("localization/english/kehillah_library_ledger_catalog_l_english.yml")
         catalog_loc = read("localization/english/kehillah_library_catalog_l_english.yml")
-        self.assertEqual(len(future_fixed), 26)
+        self.assertEqual(len(future_fixed), 40)
         for key in future_fixed:
             self.assertIn(f"has_global_variable = kehillah_wk_{key}_written", available)
             self.assertIn(f"kehillah_sefer_write_named_work_effect = {{ KEY = {key} }}", dispatch)

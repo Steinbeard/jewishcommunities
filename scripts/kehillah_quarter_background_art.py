@@ -44,8 +44,8 @@ INFILL_EDGES = (0, 1086, 2172)
 # occupies the rear court behind the Synagogue, where its roof remains visible
 # and the foreground Synagogue covers its lower edge.
 INFILL_SITES = (
-    (0, 585, 470, 145),
-    (1, 815, 385, 145),
+    (0, 555, 460, 145),
+    (1, 1035, 340, 145),
 )
 
 

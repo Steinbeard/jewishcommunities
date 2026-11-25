@@ -130,6 +130,14 @@ PREFERRED = {
     "work_or_zarua": ["law"], "work_arbaah_turim": ["law"], "work_sefer_mitzvot_gadol": ["law"],
     "work_sefer_hachinukh": ["law", "ethics"], "work_teezaza_sanbat": ["minhag"], "work_defter": ["minhag"],
     "work_agron_david_al_fasi": ["grammar"], "work_cochin_copper_plates": ["chronicle"],
+    # 2026-11-25: the new historical Great Works, once written, spark their kind.
+    "work_lekach_tov": ["midrash"], "work_machzor_vitry": ["siddur", "minhag"],
+    "work_eshkol_hakofer": ["scriptural_law", "disputation"], "work_siponto_zeraim": ["yerushalmi"],
+    "work_sefer_haqabbalah": ["tradition_history", "chronicle"], "work_sefer_haberit": ["dialogue", "disputation"],
+    "work_ibn_tibbon_moreh": ["translation", "systematic_dialogue"], "work_sefer_hamanhig": ["minhag"],
+    "work_radak_shorashim": ["grammar"], "work_responsa_maharam": ["responsa", "law"],
+    "work_maalot_hamiddot": ["ethics"], "work_responsa_rashba": ["responsa", "law"],
+    "work_milhamot_hashem": ["systematic_dialogue"], "work_etz_hayyim_karaite": ["systematic_dialogue", "disputation"],
 }
 PREFERRED = {k: v for k, v in PREFERRED.items() if k in WORKS and k not in COMMENTARIES}
 
@@ -219,6 +227,21 @@ NICHE_HINT = {
     "work_sefer_hachinukh": "The commandments for the young",
     "work_arbaah_turim": "The law arranged in four rows",
     "work_maggid_mishneh": "A defence of the great code",
+    # 2026-11-25 niches.
+    "work_lekach_tov": "Midrash for the Greek-speaking communities",
+    "work_machzor_vitry": "The prayers of the year with a master's rulings",
+    "work_eshkol_hakofer": "All of the law and all of knowledge, in rhyme",
+    "work_siponto_zeraim": "The order of Seeds through the western Talmud",
+    "work_sefer_haqabbalah": "The unbroken chain, told against the sectarians",
+    "work_sefer_haberit": "A believer answers a heretic",
+    "work_ibn_tibbon_moreh": "A philosophy carried into the holy tongue",
+    "work_sefer_hamanhig": "The customs of many lands, compared",
+    "work_radak_shorashim": "Every root of Scripture's Hebrew, in Hebrew",
+    "work_responsa_maharam": "Answers that become the law of a land",
+    "work_maalot_hamiddot": "A ladder of the virtues",
+    "work_responsa_rashba": "Answers for a whole sea of communities",
+    "work_milhamot_hashem": "Reason followed past the master",
+    "work_etz_hayyim_karaite": "Scripture's answer to the philosophers",
 }
 def _author_slugs() -> dict[str, str]:
     import re
@@ -302,13 +325,16 @@ NAMED = {
         (landmarks.mastered("work_targum_onkelos"), f"Master {name('work_targum_onkelos')}", True),
         (mastered_any("work_genesis_rabbah", "work_mekhilta"),
          f"Master {name('work_genesis_rabbah')} or {name('work_mekhilta')}", True),
-        ("kehillah_writing_parshanut_mastered_value >= 6", "Master 6 Parshanut works", False),
-        ("kehillah_lib_tanakh_rounds_value >= 2", "Read the Tanakh twice through", False),
+        # 2026-11-25: these two lines were shown but never checked; the
+        # ambition trigger now requires them too (Rashi himself excepted).
+        ("kehillah_writing_parshanut_mastered_value >= 6", "Master 6 Parshanut works", True),
+        ("kehillah_lib_tanakh_rounds_value >= 2", "Read the Tanakh twice through", True),
+        (landmarks.mastered("work_tanakh_torah"), f"Master {name('work_tanakh_torah')}", False),
     ],
     "work_rashi_talmud": [
         ("learning >= 15", "Learning 15", True),
         (xp("talmudics", 60), "Talmudics experience 60", True),
-        ("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders", False),
+        ("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders", True),
     ],
     "work_hilkhot_harif": [
         ("learning >= 16", "Learning 16", True),
@@ -322,11 +348,15 @@ NAMED = {
         (xp("talmudics", 70), "Talmudics experience 70", True),
         ("kehillah_lib_bavli_mastered_count_value >= 4", "Master 4 Bavli orders", True),
     ],
+    # 2026-11-25 audit: Kuzari, Bahir and Sefer Hasidim were the easiest
+    # ambitions; each gained a Learning floor and a line of its own.
     "work_kuzari": [
-        ("learning >= 14", "Learning 14", False),
+        ("learning >= 16", "Learning 16", False),
         (landmarks.mastered("work_emunot_vedeot"), f"Master {name('work_emunot_vedeot')}", False),
         (f"{xp('hashkafa', 50)} OR = {{ has_trait = lifestyle_poet {xp('hashkafa', 75)} }}",
          "Machshavah experience 50 as a poet, or 75", False),
+        ("knows_language = language_arabic", "Knows Arabic", False),
+        ("kehillah_deed_debate_ok_value >= 3", "Take a side in 3 machlokot", False),
     ],
     "work_mishneh_torah": [
         ("kehillah_has_mastered_shas_trigger = yes", "Master the whole Bavli", False),
@@ -341,12 +371,15 @@ NAMED = {
         (xp("hashkafa", 80), "Machshavah experience 80", True),
     ],
     "work_sefer_habahir": [
+        ("learning >= 16", "Learning 16", False),
         (xp("hashkafa", 50), "Machshavah experience 50", False),
         (landmarks.mastered("work_sefer_yetzirah"), f"Master {name('work_sefer_yetzirah')}", False),
         (landmarks.mastered("work_hekhalot_rabbati"), f"Master {name('work_hekhalot_rabbati')}", False),
     ],
     "work_sefer_hasidim": [
+        ("learning >= 15", "Learning 15", False),
         (xp("hashkafa", 50), "Machshavah experience 50", False),
+        ("kehillah_deed_sermon_ok_value >= 5", "Preach 5 sermons", False),
         (landmarks.mastered("work_chovot_halevavot"), f"Master {name('work_chovot_halevavot')}", False),
         ("OR = { culture = culture:ashkenazi rite ?= { rite_has_doctrine = doctrine_monogamy } }",
          "Be Ashkenazi, or of a monogamous rite", False),
@@ -364,6 +397,8 @@ KNOWS = {"work_moreh_nevukhim": "tenet_kehillah_hokhmah", "work_sefer_habahir": 
 
 
 def condition_label(cond: str) -> str:
+    if cond in landmarks.LABELS:
+        return landmarks.LABELS[cond]
     if cond in RITE_LABEL:
         return RITE_LABEL[cond]
     if cond.startswith("learning >= "):
@@ -519,6 +554,14 @@ def triggers() -> str:
 def values() -> str:
     out = [HEADER, "# Checklists, counts and craft for the Learning window and the schemes.",
            "# Evaluated on the character shown."]
+    out.append("# Lifetime deeds (kehillah_spark_from_deed_<deed>_effect), for Great Work paths.")
+    for deed in DEEDS:
+        out.append(f"kehillah_deed_{deed}_count_value = {{ value = 0 if = {{ limit = {{ has_variable = kehillah_deed_{deed}_count }} "
+                   f"value = var:kehillah_deed_{deed}_count }} }}")
+        # What a Great Work path compares: AI scholars count as having done
+        # enough (landmarks.deeds).
+        out.append(f"kehillah_deed_{deed}_ok_value = {{ value = kehillah_deed_{deed}_count_value "
+                   f"if = {{ limit = {{ is_ai = yes }} value = 1000 }} }}")
     for disc in DISCS:
         out.append(f"kehillah_spark_{disc}_apt_target_value = {{ value = 0 if = {{ limit = {{ has_variable = kehillah_spark_{disc}_apt }} "
                    f"value = var:kehillah_spark_{disc}_apt add = {APT_STEP} }} }}")
@@ -717,7 +760,10 @@ def effects() -> str:
     for deed, (chance, forms) in DEEDS.items():
         open_ = [f"NOT = {{ has_variable = kehillah_spark_{disc_of(f)}_form }} kehillah_spark_can_hold_{f}_trigger = yes" for f in forms]
         cond = "OR = { " + " ".join(f"AND = {{ {c} }}" for c in open_) + " }" if len(open_) > 1 else open_[0]
+        # 2026-11-25: a lifetime tally, which some historical Great Work
+        # paths ask for (landmarks.deeds).
         out += [f"kehillah_spark_from_deed_{deed}_effect = {{",
+                f"\tchange_variable = {{ name = kehillah_deed_{deed}_count add = 1 }}",
                 "\tif = {",
                 f"\t\tlimit = {{ kehillah_sefer_can_write_trigger = yes {cond} }}",
                 f"\t\trandom = {{ chance = {chance}",

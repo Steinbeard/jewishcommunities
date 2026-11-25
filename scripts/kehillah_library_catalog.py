@@ -2595,6 +2595,29 @@ def mastery_chance_lines(f, w):
         f"\t\tlimit = {{ kehillah_lib_tenet_fit_{f} = -1 }}",
         f"\t\tsubtract = {{ value = kehillah_study_chance_tenet_fit desc = KEHILLAH_LIB_CHANCE_TENET_AGAINST format = {T} }}",
         "\t}",
+        # 2026-11-24 (Daniel): the book's standing in the reader's rite eases or
+        # hardens the reading -- a well-established text has its commentaries and
+        # teachers, an obscure or contested one does not. Scale: 0 Anathema ..
+        # 4 Obscure, 5 Popular .. 8 Authoritative, 9+ Foundational and canon.
+        "\tif = {",
+        f"\t\tlimit = {{ kehillah_lib_standing_{f} >= 8 }}",
+        f"\t\tadd = {{ value = kehillah_study_chance_standing_high desc = KEHILLAH_LIB_CHANCE_STANDING_HIGH format = {T} }}",
+        "\t}",
+        "\telse_if = {",
+        f"\t\tlimit = {{ kehillah_lib_standing_{f} >= 6 }}",
+        f"\t\tadd = {{ value = kehillah_study_chance_standing_mid desc = KEHILLAH_LIB_CHANCE_STANDING_MID format = {T} }}",
+        "\t}",
+        "\telse_if = {",
+        f"\t\tlimit = {{ kehillah_lib_standing_{f} >= 5 }}",
+        f"\t\tadd = {{ value = kehillah_study_chance_standing_low desc = KEHILLAH_LIB_CHANCE_STANDING_LOW format = {T} }}",
+        "\t}",
+        "\telse_if = {",
+        f"\t\tlimit = {{ kehillah_lib_standing_{f} >= 3 }}",
+        f"\t\tsubtract = {{ value = kehillah_study_chance_standing_obscure desc = KEHILLAH_LIB_CHANCE_STANDING_OBSCURE format = {T} }}",
+        "\t}",
+        "\telse = {",
+        f"\t\tsubtract = {{ value = kehillah_study_chance_standing_rejected desc = KEHILLAH_LIB_CHANCE_STANDING_REJECTED format = {T} }}",
+        "\t}",
         f"\tif = {{ limit = {{ has_trait = diligent }} add = {{ value = kehillah_study_chance_trait desc = trait_diligent format = {T} }} }}",
         f"\tif = {{ limit = {{ has_trait = lazy }} subtract = {{ value = kehillah_study_chance_trait desc = trait_lazy format = {T} }} }}",
         f"\tif = {{ limit = {{ has_trait = lifestyle_scholar }} add = {{ value = kehillah_study_chance_trait desc = trait_lifestyle_scholar format = {T} }} }}",
@@ -3106,7 +3129,7 @@ def write_citation_files(order, works):
                 yr = f"kehillah_lib_year_{f}"
                 eff += [
                     "\tif = {",
-                    f"\t\tlimit = {{ {c} {st} <= 6 {yr} > local_var:kehillah_din_newest }}",
+                    f"\t\tlimit = {{ {c} {st} <= 4 {yr} > local_var:kehillah_din_newest }}",
                     f"\t\tset_local_variable = {{ name = kehillah_din_newest value = {yr} }}",
                     f"\t\tscope:kehillah_din_cite_activity = {{ set_variable = {{ name = kehillah_din_cite_innovative value = flag:{f} }} "
                     f"}}",
@@ -3635,6 +3658,8 @@ if __name__ == "__main__":
     write_ledger_loc(order, works)
     write_language_files(order, works)
     write_citation_files(order, works)
+    from kehillah_generate_argument_panel_loc import generate as generate_argument_panel_loc
+    generate_argument_panel_loc()
     write_sermon_files(order, works)
     write_minds_files(order, works)
     write_review_files(order, works)

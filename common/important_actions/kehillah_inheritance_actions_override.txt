@@ -5,11 +5,98 @@
 # suppressed these warnings through mechanic_type = theocracy; that mechanic
 # was removed because it made lay Kehillah leaders clergy. Keep vanilla's
 # checks for every other government and add the Kehillah government flag to
-# each warning's existing exemption list.
+# each warning's existing exemption list. The no-heir alerts still appear if
+# no living AI primary heir is available to the continuation mechanism.
 #
 # These action definitions are copied from CK3 1.20.0.4:
 # common/important_actions/00_inheritance_actions.txt
 # Re-diff against vanilla if that file changes in a game patch.
+
+action_no_heir = {
+	type = alert
+
+	check_create_action = {
+		if = {
+			limit = {
+				# A living communal successor can take over through death continuation.
+				NOR = { AND = { government_has_flag = government_is_kehillah exists = primary_heir primary_heir = { is_alive = yes is_ai = yes } } }
+				NOT = {
+					any_held_title = {
+						title_tier > barony
+						any_title_heir = {
+							dynasty = root.dynasty
+						}
+					}
+				}
+				NOR = {
+					has_government = ecclesiastical_government
+					has_government = theocracy_government
+				}
+			}
+			if = {
+				limit = { exists = primary_heir }
+				try_create_important_action = {
+					important_action_type = action_no_heir
+					actor = root
+					recipient = primary_heir
+				}
+			}
+			else = {
+				try_create_important_action = {
+					important_action_type = action_no_heir
+					actor = root
+				}
+			}
+		}
+	}
+
+	effect = {
+		scope:actor = {
+			open_view_data = {
+				view = character
+			}
+		}
+		start_tutorial_lesson = reactive_advice_looming_game_over
+	}
+}
+
+action_no_player_heir_but_replacement_exists_gameover_risk = {
+	type = alert
+	icon = action_no_heir
+
+	check_create_action = {
+		if = {
+			limit = {
+				# A living communal successor can take over through death continuation.
+				NOR = { AND = { government_has_flag = government_is_kehillah exists = primary_heir primary_heir = { is_alive = yes is_ai = yes } } }
+				NOT = { exists = player_heir }
+				any_held_title = {
+					title_tier > barony
+					any_title_heir = {
+						dynasty = root.dynasty
+					}
+				}
+				NOR = {
+					has_government = ecclesiastical_government
+					has_government = theocracy_government
+				}
+			}
+			try_create_important_action = {
+				important_action_type = action_no_player_heir_but_replacement_exists_gameover_risk
+				landed_title = root.primary_title
+				actor = root
+			}
+		}
+	}
+
+	effect = {
+		scope:landed_title = {
+			open_view_data = {
+				view = title_view_window
+			}
+		}
+	}
+}
 
 action_primary_heir_wrong_dynasty_no_replacement_exists = {
 	type = alert
