@@ -4020,164 +4020,221 @@ types MyRealmWindow
 
 		# The leadership-style picker moved to the Laws tab (2026-11-17).
 
-		### YOUR KEHILLAH: standing and danger, then the three pillars.
+		### YOUR KEHILLAH as a dashboard (2026-11-25, docs/implementation/
+		### 2026-11-25-domain-dashboard.md; the card types are in
+		### gui/kehillah_domain_dashboard.gui). A hero card for Standing, with
+		### the world rank and a danger chip that opens Community Safety; then
+		### the three pillars as cards side by side. Replaces the fifth-pass
+		### rows (2026-10-29/30). Same 540 px box and fixed-width rules.
 		vbox = {
 			visible = "[Character.GetGovernment.IsType( 'kehillah_government' )]"
 			datacontext = "[Character.GetPrimaryTitle]"
 			layoutpolicy_horizontal = expanding
 			spacing = 8
 
-			# The banner, centred, with the world ledger (gui/kehillah_
-			# ledger.gui) at its right. A fixed widget with anchors, not an
-			# hbox: vanilla's text_label_center carries wide margins, and the
-			# hbox ran past the tab edge (live, 2026-10-30).
+			# THE HERO: the Standing emblem (a hut to a stone hall), the band,
+			# the community's description and history; at the right, the world
+			# rank and the danger chip.
 			widget = {
-				size = { 540 34 }
-
-				text_label_center = {
-					parentanchor = center
-					max_width = 240
-					text = "KEHILLAH_DOMAIN_OVERVIEW_HEADER"
-					default_format = "#low"
-					using = Font_Size_Medium
-				}
-				# The community's world rank as a link, not a button (2026-10-30,
-				# Daniel): "9th in the world" opens the ledger. The host name's
-				# clickable-text form, below.
-				button_normal = {
-					parentanchor = right|vcenter
-					size = { 140 24 }
-					onclick = "[GetScriptedGui( 'kehillah_ledger_open' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
-					onclick = "[GetVariableSystem.Set( 'kehillah_ledger_open', 'yes' )]"
-					tooltip = "KEHILLAH_DOMAIN_LEDGER_TOOLTIP"
-					using = tooltip_se
-
-					text_single = {
-						size = { 100% 100% }
-						autoresize = no
-						text = "KEHILLAH_DOMAIN_LEDGER_BUTTON"
-						align = right|nobaseline
-						alwaystransparent = yes
-					}
-				}
-			}
-
-			vbox = {
-				min_width = 540
-				max_width = 540
-				margin = { 14 10 }
-				spacing = 8
-
+				size = { 540 104 }
 				background = {
 					using = Background_Area_Dark
 					color = { 0.16 0.14 0.12 0.8 }
 					margin = { 2 2 }
 				}
 
-				# What the community is: standing and danger on one line, as the
-				# feudal header's Development and Control; then its
-				# description and history.
-				vbox = {
-					layoutpolicy_horizontal = expanding
-					spacing = 3
+				hbox = {
+					parentanchor = left|vcenter
+					position = { 12 0 }
+					spacing = 12
 
-					hbox = {
-						layoutpolicy_horizontal = expanding
-						spacing = 8
-
-						text_single = {
-							align = left|nobaseline
-							max_width = 250
-							text = "KEHILLAH_DOMAIN_STANDING_LINE"
-							using = Font_Size_Medium
-							tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
-							using = tooltip_se
-						}
-						expand = {}
-						text_single = {
-							align = right|nobaseline
-							max_width = 250
-							text = "KEHILLAH_DOMAIN_DANGER_LINE"
-							using = Font_Size_Medium
-							# 2026-11-09: vanilla's breakdown of kehillah_danger_value (gui/kehillah_danger_breakdown.gui).
-							tooltipwidget = {
-								kehillah_danger_breakdown_tooltip = {}
-							}
-							using = tooltip_se
-						}
-					}
-					text_multi = {
-						min_width = 512
-						max_width = 512
-						autoresize = yes
-						align = left|nobaseline
-						text = "KEHILLAH_DOMAIN_DESCRIPTION"
-						default_format = "#weak;italic"
-						tooltip = "KEHILLAH_INSPECTOR_DESCRIPTION_TOOLTIP"
+					icon = {
+						size = { 80 80 }
+						texture = "gfx/interface/icons/development_levels.dds"
+						framesize = { 64 64 }
+						frame = "[FixedPointToInt( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_standing_frame_value' ) )]"
+						tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
 						using = tooltip_se
 					}
-					text_multi = {
-						visible = "[Title.MakeScope.Var( 'kehillah_history_county' ).IsSet]"
-						min_width = 512
-						max_width = 512
-						autoresize = yes
-						align = left|nobaseline
-						text = "KEHILLAH_DOMAIN_HISTORY_FOOTER"
-						using = Font_Size_Small
-					}
-				}
-
-				kehillah_pillar_section = {
-					blockoverride "section_tooltip" { tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP" }
-					blockoverride "section_name" { text = "KEHILLAH_HUD_PROSPERITY_LABEL" fontcolor = { 0.537255 0.709804 0.584314 1 } }
-					blockoverride "section_stats" { text = "KEHILLAH_DOMAIN_PROSPERITY_STATS" }
-					blockoverride "section_bar" {
-						kehillah_pillar_bar = {
-							blockoverride "bar_frame" { texture = "gfx/interface/progressbars/kehillah_prosperity.dds" }
-							blockoverride "bar_value" { value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]" }
-							blockoverride "bar_red" { visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' )]" }
-							blockoverride "bar_orange" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ) )]" }
-							blockoverride "bar_standard" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ) )]" }
-							blockoverride "bar_green" { visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' )]" }
+					vbox = {
+						spacing = 2
+						tooltip = "KEHILLAH_BD_STANDING_TOOLTIP"
+						using = tooltip_se
+						text_single = {
+							align = left|nobaseline
+							max_width = 270
+							text = "KEHILLAH_DOM_STANDING_LABEL"
+							using = Font_Size_Small
+						}
+						text_single = {
+							align = left|nobaseline
+							max_width = 270
+							text = "KEHILLAH_DOM_STANDING_VALUE"
+							using = Font_Size_Big
+						}
+						text_single = {
+							align = left|nobaseline
+							max_width = 270
+							text = "KEHILLAH_DOMAIN_DESCRIPTION"
+							default_format = "#weak;italic"
+						}
+						text_single = {
+							visible = "[Title.MakeScope.Var( 'kehillah_history_county' ).IsSet]"
+							align = left|nobaseline
+							max_width = 270
+							text = "KEHILLAH_DOM_HISTORY_SHORT"
+							using = Font_Size_Small
 						}
 					}
-					blockoverride "section_note" { text = "KEHILLAH_DOMAIN_PROSPERITY_NOTE" }
 				}
 
-				kehillah_pillar_section = {
-					blockoverride "section_tooltip" { tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP" }
-					blockoverride "section_name" { text = "KEHILLAH_HUD_STABILITY_LABEL" fontcolor = { 0.576471 0.666667 0.756863 1 } }
-					blockoverride "section_stats" { text = "KEHILLAH_DOMAIN_STABILITY_STATS" }
-					blockoverride "section_bar" {
-						kehillah_pillar_bar = {
-							blockoverride "bar_frame" { texture = "gfx/interface/progressbars/kehillah_stability.dds" }
-							blockoverride "bar_value" { value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]" }
-							blockoverride "bar_red" { visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' )]" }
-							blockoverride "bar_orange" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ) )]" }
-							blockoverride "bar_standard" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ) )]" }
-							blockoverride "bar_green" { visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' )]" }
+				vbox = {
+					parentanchor = right|vcenter
+					position = { -10 0 }
+					spacing = 6
+
+					# The community's world rank: a link to the ledger.
+					button_normal = {
+						size = { 150 22 }
+						onclick = "[GetScriptedGui( 'kehillah_ledger_open' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[GetVariableSystem.Set( 'kehillah_ledger_open', 'yes' )]"
+						tooltip = "KEHILLAH_DOMAIN_LEDGER_TOOLTIP"
+						using = tooltip_se
+						text_single = {
+							size = { 100% 100% }
+							autoresize = no
+							text = "KEHILLAH_DOMAIN_LEDGER_BUTTON"
+							align = right|nobaseline
+							alwaystransparent = yes
 						}
 					}
-					blockoverride "section_note" { text = "KEHILLAH_DOMAIN_STABILITY_NOTE" }
-				}
-
-				kehillah_pillar_section = {
-					blockoverride "section_tooltip" { tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP" }
-					blockoverride "section_name" { text = "KEHILLAH_HUD_GREATNESS_LABEL" fontcolor = { 0.843137 0.741176 0.525490 1 } }
-					blockoverride "section_stats" { text = "KEHILLAH_DOMAIN_GREATNESS_STATS" }
-					blockoverride "section_bar" {
-						kehillah_pillar_bar = {
-							blockoverride "bar_frame" { texture = "gfx/interface/progressbars/kehillah_greatness.dds" }
-							blockoverride "bar_value" { value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]" }
-							blockoverride "bar_red" { visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' )]" }
-							blockoverride "bar_orange" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ) )]" }
-							blockoverride "bar_standard" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ) )]" }
-							blockoverride "bar_green" { visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' )]" }
+					# The danger chip: the Community Safety lock and band; opens it.
+					button_standard = {
+						size = { 150 50 }
+						onclick = "[ToggleGameViewData( 'military', GetPlayer.GetID )]"
+						tooltipwidget = {
+							kehillah_danger_breakdown_tooltip = {}
+						}
+						using = tooltip_se
+						hbox = {
+							size = { 100% 100% }
+							margin = { 6 0 }
+							spacing = 6
+							icon = {
+								size = { 38 38 }
+								texture = "gfx/interface/icons/control_level_icons.dds"
+								framesize = { 64 64 }
+								frame = "[FixedPointToInt( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_safety_emblem_frame_value' ) )]"
+								alwaystransparent = yes
+							}
+							vbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = {
+									layoutpolicy_horizontal = expanding
+									align = left|nobaseline
+									max_width = 92
+									text = "KEHILLAH_DOM_DANGER_LABEL"
+									using = Font_Size_Small
+									alwaystransparent = yes
+								}
+								text_single = {
+									layoutpolicy_horizontal = expanding
+									align = left|nobaseline
+									max_width = 92
+									text = "KEHILLAH_DOM_DANGER_VALUE"
+									alwaystransparent = yes
+								}
+							}
 						}
 					}
-					blockoverride "section_note" { text = "KEHILLAH_DOMAIN_GREATNESS_NOTE" }
 				}
+			}
 
+			# THE PILLARS: three 170 px cards, 15 px apart, centred in 540.
+			widget = {
+				size = { 540 166 }
+
+				hbox = {
+					parentanchor = center
+					spacing = 15
+
+					kehillah_dom_pillar_card = {
+						blockoverride "card_tooltip" { tooltip = "KEHILLAH_BD_PROSPERITY_TOOLTIP" }
+						blockoverride "card_color" { color = { 0.537 0.710 0.584 1 } }
+						blockoverride "card_icon" {
+							texture = "gfx/interface/icons/prosperity_level_icons.dds"
+							framesize = { 64 64 }
+							frame = "[FixedPointToInt( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_tier_prosperity_value' ) )]"
+						}
+						blockoverride "card_name" { text = "KEHILLAH_HUD_PROSPERITY_LABEL" fontcolor = { 0.537255 0.709804 0.584314 1 } }
+						blockoverride "card_score" { text = "[Title.Custom('KehillahProsperityScore')]" }
+						blockoverride "card_tier" { text = "KEHILLAH_DOMAIN_PROSPERITY_TIER" }
+						blockoverride "card_bar" {
+							kehillah_dom_bar = {
+								blockoverride "bar_frame" { texture = "gfx/interface/progressbars/kehillah_prosperity.dds" }
+								blockoverride "bar_value" { value = "[Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue]" }
+								blockoverride "bar_red" { visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' )]" }
+								blockoverride "bar_orange" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ) )]" }
+								blockoverride "bar_standard" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' ) )]" }
+								blockoverride "bar_green" { visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_prosperity' ).GetValue, '(CFixedPoint)700' )]" }
+								blockoverride "tick_before" { layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_baseline_pos_prosperity_value' ) ), '(float)1000', '(int32)1000' )]" }
+								blockoverride "tick_after" { layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_baseline_rest_prosperity_value' ) ), '(float)1000', '(int32)1000' )]" }
+							}
+						}
+						blockoverride "card_heading" { text = "KEHILLAH_DOM_PROSPERITY_HEADING" }
+						blockoverride "card_effect" { text = "KEHILLAH_DOM_PROSPERITY_EFFECT" }
+					}
+
+					kehillah_dom_pillar_card = {
+						blockoverride "card_tooltip" { tooltip = "KEHILLAH_BD_STABILITY_TOOLTIP" }
+						blockoverride "card_color" { color = { 0.576 0.667 0.757 1 } }
+						blockoverride "card_icon" {
+							texture = "gfx/interface/icons/legitimacy_level_icon.dds"
+							framesize = { 70 70 }
+							frame = "[FixedPointToInt( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_tier_stability_value' ) )]"
+						}
+						blockoverride "card_name" { text = "KEHILLAH_HUD_STABILITY_LABEL" fontcolor = { 0.576471 0.666667 0.756863 1 } }
+						blockoverride "card_score" { text = "[Title.Custom('KehillahStabilityScore')]" }
+						blockoverride "card_tier" { text = "KEHILLAH_DOMAIN_STABILITY_TIER" }
+						blockoverride "card_bar" {
+							kehillah_dom_bar = {
+								blockoverride "bar_frame" { texture = "gfx/interface/progressbars/kehillah_stability.dds" }
+								blockoverride "bar_value" { value = "[Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue]" }
+								blockoverride "bar_red" { visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' )]" }
+								blockoverride "bar_orange" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ) )]" }
+								blockoverride "bar_standard" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' ) )]" }
+								blockoverride "bar_green" { visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_stability' ).GetValue, '(CFixedPoint)700' )]" }
+								blockoverride "tick_before" { layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_baseline_pos_stability_value' ) ), '(float)1000', '(int32)1000' )]" }
+								blockoverride "tick_after" { layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_baseline_rest_stability_value' ) ), '(float)1000', '(int32)1000' )]" }
+							}
+						}
+						blockoverride "card_heading" { text = "KEHILLAH_DOM_STABILITY_HEADING" }
+						blockoverride "card_effect" { text = "KEHILLAH_DOM_STABILITY_EFFECT" }
+					}
+
+					kehillah_dom_pillar_card = {
+						blockoverride "card_tooltip" { tooltip = "KEHILLAH_BD_GREATNESS_TOOLTIP" }
+						blockoverride "card_color" { color = { 0.843 0.741 0.525 1 } }
+						blockoverride "card_icon" { texture = "gfx/interface/icons/icon_skill_learning.dds" }
+						blockoverride "card_name" { text = "KEHILLAH_HUD_GREATNESS_LABEL" fontcolor = { 0.843137 0.741176 0.525490 1 } }
+						blockoverride "card_score" { text = "[Title.Custom('KehillahGreatnessScore')]" }
+						blockoverride "card_tier" { text = "KEHILLAH_DOMAIN_GREATNESS_TIER" }
+						blockoverride "card_bar" {
+							kehillah_dom_bar = {
+								blockoverride "bar_frame" { texture = "gfx/interface/progressbars/kehillah_greatness.dds" }
+								blockoverride "bar_value" { value = "[Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue]" }
+								blockoverride "bar_red" { visible = "[LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' )]" }
+								blockoverride "bar_orange" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)150' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ) )]" }
+								blockoverride "bar_standard" { visible = "[And( GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)400' ), LessThan_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' ) )]" }
+								blockoverride "bar_green" { visible = "[GreaterThanOrEqualTo_CFixedPoint( Title.MakeScope.Var( 'kehillah_var_greatness' ).GetValue, '(CFixedPoint)700' )]" }
+								blockoverride "tick_before" { layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_baseline_pos_greatness_value' ) ), '(float)1000', '(int32)1000' )]" }
+								blockoverride "tick_after" { layoutstretchfactor_horizontal = "[GetProgressBarValueMaxScaled( FixedPointToFloat( Title.GetHolder.MakeScope.ScriptValue( 'kehillah_dom_baseline_rest_greatness_value' ) ), '(float)1000', '(int32)1000' )]" }
+							}
+						}
+						blockoverride "card_heading" { text = "KEHILLAH_DOM_GREATNESS_HEADING" }
+						blockoverride "card_effect" { text = "KEHILLAH_DOM_GREATNESS_EFFECT" }
+					}
+				}
 			}
 		}
 
