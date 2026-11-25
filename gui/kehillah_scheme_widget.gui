@@ -235,7 +235,7 @@ types IntrigueWindow
 
 				widget = {
 					name = "scheme_target_portrait_and_countermeasure"
-					size = { 110 120 }
+					size = { 100 150 }
 
 					# Target
 					container = {
@@ -339,30 +339,71 @@ types IntrigueWindow
 				widget = {
 					visible = "[And( Scheme.MakeScope.Var( 'kehillah_is_study_scheme' ).IsSet, GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).IsSet )]"
 					name = "kehillah_study_book_slot"
-					size = { 110 120 }
+					size = { 100 150 }
 
-					button = {
-						name = "kehillah_study_book_button"
-						parentanchor = center
-						size = { 96 112 }
-						enabled = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_study_library' ).Title.MakeScope ).End )]"
-						onclick = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_study_library' ).Title.MakeScope ).End )]"
-						onclick = "[GetVariableSystem.Set( 'kehillah_lib_window_open', 'yes' )]"
-						using = tooltip_es
-						state = { name = _mouse_hierarchy_enter on_start = "[GetVariableSystem.Set( 'kehillah_lib_hover_work', GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).GetFlagName )]" }
-						tooltipwidget = { kehillah_library_work_tooltip_hovered = {} }
+					vbox = {
+						parentanchor = top|hcenter
+						margin_top = 20
+						spacing = 2
 
-						background = { using = Background_Area }
-						background = { using = Background_Frame }
+						button = {
+								name = "kehillah_study_book_button"
+								size = { 85 90 }
+								enabled = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_study_library' ).Title.MakeScope ).End )]"
+								onclick = "[GetScriptedGui( 'kehillah_lib_window_open_title' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_study_library' ).Title.MakeScope ).End )]"
+								onclick = "[GetVariableSystem.Set( 'kehillah_lib_window_open', 'yes' )]"
+								using = tooltip_es
+								state = { name = _mouse_hierarchy_enter on_start = "[GetVariableSystem.Set( 'kehillah_lib_hover_work', GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).GetFlagName )]" }
+								tooltipwidget = { kehillah_library_work_tooltip_hovered = {} }
 
-						icon = {
-							parentanchor = center
-							size = { 80 80 }
-							texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
-							alwaystransparent = yes
+								background = { using = Background_Area }
+								background = { using = Background_Frame }
+
+								icon = {
+										parentanchor = center
+										size = { 70 70 }
+									texture = "gfx/interface/icons/artifact/artifact_chronicle.dds"
+									alwaystransparent = yes
+								}
+							}
+
+						text_single = {
+							text = "KEHILLAH_STUDY_SEFER_LABEL"
+							align = nobaseline
+							max_width = 90
 						}
 					}
 				}
+
+					# Jewish Communities 2026-11-24: the chavrusa studying alongside, beside
+					# the book. Hover for the character card; the bonus to the mastery chance
+					# is itemised in the success-chance tooltip.
+					widget = {
+						visible = "[And( And( Scheme.MakeScope.Var( 'kehillah_is_study_scheme' ).IsSet, GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).IsSet ), GetPlayer.MakeScope.Var( 'kehillah_study_chavrusa' ).IsSet )]"
+						name = "kehillah_study_chavrusa_slot"
+						size = { 100 150 }
+
+						vbox = {
+							parentanchor = top|hcenter
+							margin_top = 20
+							spacing = 2
+
+							container = {
+								datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_study_chavrusa' ).Char]"
+								selectable_target_portrait_widget = {
+									blockoverride "empty_slot" {}
+									blockoverride "filled_slot" {}
+								}
+							}
+
+							text_single = {
+								text = "KEHILLAH_STUDY_CHAVRUSA_ROLE"
+								align = nobaseline
+								max_width = 100
+								tooltip = "KEHILLAH_STUDY_CHAVRUSA_ROLE_DESC"
+							}
+						}
+					}
 
 				vbox  = {
 					layoutpolicy_horizontal = expanding
@@ -480,8 +521,43 @@ types IntrigueWindow
 										blockoverride "total" {
 											text_single = {
 												layoutpolicy_horizontal = expanding
-												text = "[Concatenate( IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_mastery_chance_', GetPlayer.MakeScope.Var( 'kehillah_study_current_work' ).GetFlagName ) ) ) ), '%' )]"
+												text = "[Concatenate( IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_study_scheme_total_chance_value' ) ) ), '%' )]"
 												default_format = "#T"
+											}
+										}
+										blockoverride "extra" {
+											hbox = {
+												visible = "[GetPlayer.MakeScope.Var( 'kehillah_study_chavrusa' ).IsSet]"
+												layoutpolicy_horizontal = expanding
+												spacing = 12
+												text_single = { text = "KEHILLAH_STUDY_TORAH_CHAVRUSA_FACTOR" max_width = 330 }
+												expand = {}
+												text_single = {
+													align = right
+													text = "[GetPlayer.MakeScope.ScriptValue( 'kehillah_study_chavrusa_bonus_value' )|=+0]%"
+												}
+											}
+											hbox = {
+												visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_study_yeshiva_applied_value' ), '(CFixedPoint)0' )]"
+												layoutpolicy_horizontal = expanding
+												spacing = 12
+												text_single = { text = "KEHILLAH_STUDY_TORAH_YESHIVA_FACTOR" max_width = 330 }
+												expand = {}
+												text_single = {
+													align = right
+													text = "[GetPlayer.MakeScope.ScriptValue( 'kehillah_study_yeshiva_applied_value' )|=+0]%"
+												}
+											}
+											hbox = {
+												visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_spark_study_craft_chance_value' ), '(CFixedPoint)0' )]"
+												layoutpolicy_horizontal = expanding
+												spacing = 12
+												text_single = { text = "KEHILLAH_SPARK_CRAFT_FACTOR" max_width = 330 }
+												expand = {}
+												text_single = {
+													align = right
+													text = "[GetPlayer.MakeScope.ScriptValue( 'kehillah_spark_study_craft_chance_value' )|=+0]%"
+												}
 											}
 										}
 									}

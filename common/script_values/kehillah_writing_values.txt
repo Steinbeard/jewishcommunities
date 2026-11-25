@@ -85,10 +85,27 @@ kehillah_writing_landmark_quality_value = { value = 60 }
 # much since the spark came (one of its routes; any one is enough).
 kehillah_spark_aptitude_step_value = { value = 5 }
 
+# 2026-11-24: the chavrusa's help scales with their aptitude in the book's
+# discipline (the same aptitude values a sefer's author uses, read in the
+# partner's scope): (aptitude - 10) / 3, between +2 and +12. Scope: the reader.
 kehillah_study_chavrusa_bonus_value = {
-	value = 4
-	if = { limit = { var:kehillah_study_chavrusa = { learning >= 16 } } add = 4 }
-	if = { limit = { var:kehillah_study_chavrusa = { knows_language = language_israelite } } add = 2 }
+	value = 0
+	if = {
+		limit = { has_variable = kehillah_study_chavrusa }
+		if = {
+			limit = { kehillah_spark_studying_parshanut_trigger = yes }
+			add = var:kehillah_study_chavrusa.kehillah_writing_parshanut_aptitude_value
+		}
+		else_if = {
+			limit = { kehillah_spark_studying_talmudics_trigger = yes }
+			add = var:kehillah_study_chavrusa.kehillah_writing_talmudics_aptitude_value
+		}
+		else = { add = var:kehillah_study_chavrusa.kehillah_writing_machshava_aptitude_value }
+		subtract = 10
+		divide = 3
+		min = 2
+		max = 12
+	}
 }
 
 # 2026-11-24 sparks: Talmudic works mastered, for the "master another" route.
@@ -116,3 +133,22 @@ kehillah_spark_study_new_value = {
 kehillah_spark_debug_paths_parshanut_value = { value = 0 every_in_list = { variable = kehillah_spark_parshanut_paths add = 1 } }
 kehillah_spark_debug_paths_talmudics_value = { value = 0 every_in_list = { variable = kehillah_spark_talmudics_paths add = 1 } }
 kehillah_spark_debug_paths_hashkafa_value = { value = 0 every_in_list = { variable = kehillah_spark_hashkafa_paths add = 1 } }
+
+# 2026-11-24: the chance the study scheme really rolls, as its panel shows it:
+# the book's own chance plus the scheme-level bonuses in
+# kehillah_study_torah's base_success_chance (chavrusa, yeshiva benches,
+# commentary craft), capped at the scheme's maximum. Scope: the reader.
+kehillah_study_scheme_total_chance_value = {
+	value = kehillah_lib_study_scheme_chance
+	if = { limit = { has_variable = kehillah_study_chavrusa } add = kehillah_study_chavrusa_bonus_value }
+	if = { limit = { has_character_modifier = kehillah_yeshiva_benches_modifier } add = kehillah_yeshiva_sefer_success_bonus }
+	if = { limit = { kehillah_spark_study_craft_chance_value > 0 } add = kehillah_spark_study_craft_chance_value }
+	min = 0
+	max = 95
+}
+
+# The yeshiva-benches bonus as it applies to this reader (0 if not on its benches).
+kehillah_study_yeshiva_applied_value = {
+	value = 0
+	if = { limit = { has_character_modifier = kehillah_yeshiva_benches_modifier } add = kehillah_yeshiva_sefer_success_bonus }
+}
