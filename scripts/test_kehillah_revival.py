@@ -40,14 +40,19 @@ class Revival(unittest.TestCase):
         self.assertIn('activity_location.barony = title:b_jerusalem', text)
         service = block(text, 'kehillah_temple_service_available_trigger')
         self.assertIn('has_variable = kehillah_temple_service_restored', service)
-        self.assertIn('has_building = dome_of_the_rock_01', service)
+        self.assertIn('has_building_or_higher = dome_of_the_rock_01', service)
         self.assertIn('has_trait = kohen', service)
 
     def test_samaritans_start_with_service_and_others_need_an_institution(self):
         self.assertIn(TENETS[2], ROSTERS['samaritan'])
         self.assertNotIn('tenet_ritual_celebrations', ROSTERS['samaritan'])
-        for key in TENETS:
+        for key in TENETS[:2]:
             self.assertIn(key, KNOWN['rabbinic_faith'])
+        # 2026-11-24: Temple Service starts unknown outside the Samaritans; it is
+        # learned from the books that argue for it.
+        for faith in ('rabbinic_faith', 'karaism', 'haymanot', 'malabarism', 'kabarism'):
+            self.assertNotIn(TENETS[2], KNOWN[faith])
+        self.assertIn(TENETS[2], KNOWN['samaritan'])
         self.assertNotIn(TENETS[1], ROSTERS['rabbinism'])
         temple = block(source('common/religion/tenet_types/kehillah_revival_tenets.txt'), TENETS[2])
         self.assertIn('can_pick_as_personal_tenet = { kehillah_temple_service_available_trigger = yes }', temple)

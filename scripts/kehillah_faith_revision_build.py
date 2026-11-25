@@ -64,8 +64,12 @@ PERMITTED = {
     "kabarism": [COVENANT, HOMELAND, STUDY, LITURGY],
 }
 # Historically familiar teachings need not be active cores or unlocked practices.
+# 2026-11-24 (Daniel): Temple Service is not among them. Outside the Samaritans'
+# Gerizim rite it starts unknown; a reader learns it from the books that argue
+# for it (Seder Kodashim), and restoring the service in Jerusalem makes it
+# permitted (kehillah_restore_temple_service_decision).
 for _faith in KNOWN:
-    for _tenet in ("tenet_kehillah_messianic_hope", "tenet_kehillah_prophetic_revelation", "tenet_kehillah_temple_service"):
+    for _tenet in ("tenet_kehillah_messianic_hope", "tenet_kehillah_prophetic_revelation"):
         if _tenet not in KNOWN[_faith] and _tenet not in PERMITTED[_faith] and _tenet not in PROHIBITED[_faith]:
             KNOWN[_faith].append(_tenet)
 

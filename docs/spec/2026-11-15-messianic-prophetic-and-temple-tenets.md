@@ -115,3 +115,29 @@ describes its sacrifice on Mount Gerizim. It establishes why a Jerusalem-only
 revival gate cannot stand for all Jewish-group practice. Its present-day account
 does not by itself verify every proposed medieval starting condition; those
 remain for the separate historical review above.
+
+## Addendum 2026-11-24: Temple Service starts unknown, learned from books
+
+**Status:** IMPLEMENTED 2026-11-24 (Daniel: "Should we adjust the Temple Service
+tenet so that maybe it's just not known and you can discover it personally
+through studying?" -- "Yes please"). Supersedes the "Known historically" default
+start in the Temple Service section above; Messianic Hope and Prophetic
+Revelation keep it.
+
+- Outside the Samaritans' Gerizim rite, where it is a core tenet, every Jewish
+  faith starts with Temple Service **unknown**
+  (`scripts/kehillah_faith_revision_build.py`, regenerated history and
+  migrations).
+- A reader learns it personally from a book that argues for it, on first
+  mastery (Seder Kodashim, or a book written in play): the existing
+  `kehillah_sefer_teach_tenet_effect`. The completion event's option tooltips
+  now list a newly learned tenet among the reading's rewards.
+- Restoring the service in Jerusalem still makes it permitted for the faith;
+  adopting it still requires the restored service.
+- Existing saves: once, while the service is not restored, a faith holding it
+  exactly Known returns it to unknown
+  (`common/scripted_effects/kehillah_temple_service_tenet_effects.txt`). CK3 has
+  no effect that removes a tenet a character already knows, so readers who knew
+  it keep it.
+- Not yet checked in game: how 1.21's faith window shows an unknown tenet to a
+  character who knows it personally.
