@@ -298,6 +298,73 @@ kehillah_synod_bind_effect = {
 }
 
 # ---------------------------------------------------------------------
+# 2026-11-25 dynamic agenda: a common undertaking. Marks the host's
+# community and every community it binds (the same reach as
+# kehillah_synod_bind_effect) for kehillah_synod_undertaking_cooldown_years,
+# and runs EFFECT on each bound community's leader other than the host.
+# VAR: the cooldown variable. EFFECT: a scripted effect, in the leader's
+# scope; scope:kehillah_synod_binder is the host.
+# ---------------------------------------------------------------------
+kehillah_synod_undertake_effect = {
+	save_scope_as = kehillah_synod_binder
+	primary_title ?= { set_variable = { name = $VAR$ years = kehillah_synod_undertaking_cooldown_years } }
+	if = {
+		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }
+		custom_tooltip = kehillah_sanhedrin_undertaking_all_tt
+		hidden_effect = {
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					holder ?= {
+						NOT = { this = scope:kehillah_synod_binder }
+						government_has_flag = government_is_kehillah
+					}
+				}
+				set_variable = { name = $VAR$ years = kehillah_synod_undertaking_cooldown_years }
+				holder = { $EFFECT$ = yes }
+			}
+		}
+	}
+	else = {
+		custom_tooltip = kehillah_synod_undertaking_rite_tt
+		hidden_effect = {
+			every_in_global_list = {
+				variable = kehillah_registered_communities
+				limit = {
+					holder ?= {
+						NOT = { this = scope:kehillah_synod_binder }
+						government_has_flag = government_is_kehillah
+						kehillah_shares_rite_trigger = { OTHER = scope:kehillah_synod_binder }
+					}
+				}
+				set_variable = { name = $VAR$ years = kehillah_synod_undertaking_cooldown_years }
+				holder = { $EFFECT$ = yes }
+			}
+		}
+	}
+}
+
+# Scope: a bound community's leader. Each gives what he can afford.
+kehillah_synod_captives_give_effect = {
+	if = {
+		limit = { gold >= kehillah_synod_captives_gold }
+		add_gold = { value = kehillah_synod_captives_gold multiply = -1 }
+	}
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_bound_minor_stability }
+}
+kehillah_synod_fast_keep_effect = {
+	add_piety = minor_piety_gain
+	kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_bound_minor_stability }
+}
+kehillah_synod_levy_give_effect = {
+	if = {
+		limit = { gold >= kehillah_synod_levy_gold }
+		add_gold = { value = kehillah_synod_levy_gold multiply = -1 }
+		scope:kehillah_synod_binder = { add_gold = kehillah_synod_levy_gold }
+	}
+}
+
+# ---------------------------------------------------------------------
 # Enact the takkanah a synod passed. Scope: the host.
 # scope:kehillah_synod_takkanah: the motion flag.
 # scope:kehillah_synod_proposed_doctrine: the doctrine scope saved from the
@@ -366,6 +433,47 @@ kehillah_synod_enact_takkanah_effect = {
 		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_letters }
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_letters_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_letters_greatness }
+	}
+	# 2026-11-25 dynamic agenda: the gathering names a head of the rite.
+	# Re-checked: he may have died, or someone else been raised, since the vote.
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:head_of_rite }
+		if = {
+			limit = {
+				exists = scope:kehillah_synod_nominee
+				scope:kehillah_synod_nominee = {
+					kehillah_synod_head_candidate_trigger = { HOST = root }
+					kehillah_synod_rite_headship_open_trigger = yes
+				}
+			}
+			scope:kehillah_synod_nominee = {
+				custom_tooltip = kehillah_synod_head_named_tt
+				hidden_effect = { kehillah_gaonate_grant_effect = yes }
+			}
+			kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+		}
+		else = { custom_tooltip = kehillah_synod_head_lapsed_tt }
+	}
+	# 2026-11-25 dynamic agenda: common undertakings.
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:captives }
+		custom_tooltip = kehillah_synod_captives_tt
+		kehillah_synod_undertake_effect = { VAR = kehillah_undertaking_captives EFFECT = kehillah_synod_captives_give_effect }
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_captives_stability }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_captives_greatness }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:fast }
+		custom_tooltip = kehillah_synod_fast_tt
+		kehillah_synod_undertake_effect = { VAR = kehillah_undertaking_fast EFFECT = kehillah_synod_fast_keep_effect }
+		add_piety = minor_piety_gain
+		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_fast_stability }
+	}
+	else_if = {
+		limit = { scope:kehillah_synod_takkanah = flag:levy }
+		custom_tooltip = kehillah_synod_levy_tt
+		kehillah_synod_undertake_effect = { VAR = kehillah_undertaking_levy EFFECT = kehillah_synod_levy_give_effect }
+		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_levy_greatness }
 	}
 	if = {
 		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }

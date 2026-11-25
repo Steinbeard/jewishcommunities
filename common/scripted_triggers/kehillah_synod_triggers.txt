@@ -166,6 +166,8 @@ kehillah_synod_has_marriage_motion_trigger = {
 	OR = {
 		kehillah_synod_can_propose_herem_polygamy_trigger = yes
 		kehillah_synod_can_propose_herem_all_israel_trigger = yes
+		# 2026-11-25 dynamic agenda: the ketubbah clause is a marriage motion.
+		kehillah_synod_can_propose_ketubbah_clause_trigger = yes
 	}
 }
 kehillah_synod_has_communal_motion_trigger = {
@@ -194,6 +196,74 @@ kehillah_synod_has_open_takkanah_trigger = {
 				rite ?= { has_variable = kehillah_reform_pending_tenet }
 			}
 		}
+		# 2026-11-25 dynamic agenda (docs/spec/2026-11-25-dynamic-synod-agenda.md):
+		# ordinances, the headship of the rite and common undertakings also open
+		# a sitting. Undertakings repeat on a cooldown, so only a player host
+		# convenes for one; an AI host may still choose one once convened.
+		kehillah_synod_has_communal_motion_trigger = yes
+		kehillah_synod_rite_headship_open_trigger = yes
+		AND = {
+			is_ai = no
+			kehillah_synod_has_undertaking_motion_trigger = yes
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# 2026-11-25 dynamic agenda: the headship of the rite.
+# ---------------------------------------------------------------------
+# Scope: a would-be host. His rite may take a head by merit and has none,
+# and nobody holds the faith's head-of-rite title (V47).
+kehillah_synod_rite_headship_open_trigger = {
+	faith = faith:rabbinic_faith
+	exists = rite
+	rite = { rite_has_doctrine = kehillah_recognition_of_sages }
+	kehillah_rite_has_no_head_trigger = yes
+	NOT = { exists = title:d_kehillah_gaonate.holder }
+}
+# Scope: a character the sitting might name head of the rite. A Synod may
+# raise a qualified head of an academy without the full merit the yearly
+# acclamation needs (kehillah_head_of_rite_merit_trigger): the gathering's
+# vote stands in for the fame of his yeshiva. HOST: the host.
+kehillah_synod_head_candidate_trigger = {
+	is_alive = yes
+	kehillah_head_of_rite_leader_trigger = yes
+	kehillah_recognizes_gaonic_authority_trigger = yes
+	kehillah_qualified_rosh_yeshiva_trigger = yes
+	kehillah_shares_rite_trigger = { OTHER = $HOST$ }
+	NOT = { has_character_flag = kehillah_declined_head_of_rite }
+}
+# Scope: the host, in a synod event. Someone at the sitting could be named.
+kehillah_synod_can_propose_head_trigger = {
+	kehillah_synod_rite_headship_open_trigger = yes
+	involved_activity ?= {
+		any_attending_character = {
+			kehillah_synod_head_candidate_trigger = { HOST = root }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# 2026-11-25 dynamic agenda: common undertakings. Each is marked on the
+# host's community for kehillah_synod_undertaking_cooldown_years, and on
+# every community it bound.
+# ---------------------------------------------------------------------
+kehillah_synod_can_propose_captives_trigger = {
+	primary_title ?= { NOT = { has_variable = kehillah_undertaking_captives } }
+}
+kehillah_synod_can_propose_fast_trigger = {
+	primary_title ?= { NOT = { has_variable = kehillah_undertaking_fast } }
+}
+kehillah_synod_can_propose_levy_trigger = {
+	primary_title ?= { NOT = { has_variable = kehillah_undertaking_levy } }
+	# The levy endows the host's own academy.
+	kehillah_qualified_rosh_yeshiva_trigger = yes
+}
+kehillah_synod_has_undertaking_motion_trigger = {
+	OR = {
+		kehillah_synod_can_propose_captives_trigger = yes
+		kehillah_synod_can_propose_fast_trigger = yes
+		kehillah_synod_can_propose_levy_trigger = yes
 	}
 }
 

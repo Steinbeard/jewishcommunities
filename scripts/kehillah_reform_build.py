@@ -65,6 +65,55 @@ PROTECTED = set() # Canon and binding authority are doctrines, not protected cor
 RIVALS = {} # The retired reason/authority binaries no longer restrict cores.
 ACTIONS = ["core", "permit", "ban", "lift"]
 
+# 2026-11-25 tenet picker (docs/spec/2026-11-25-dynamic-synod-agenda.md 9b):
+# the flat list of every tenet was overwhelming. The host now sees at most
+# three pressing questions, and browses the rest by theme (<= 4 per page).
+THEMES = [
+    ("learning", "Learning", [
+        "tenet_kehillah_scholarly_study", "tenet_literalism", "tenet_kehillah_hokhmah"]),
+    ("law", "Law and Community", [
+        "tenet_religious_legal_pronouncements", "tenet_unrelenting_faith",
+        "tenet_communal_identity", "tenet_kehillah_covenant_community"]),
+    ("devotion", "Devotion and the Inner Life", [
+        "tenet_esotericism", "tenet_asceticism",
+        "tenet_kehillah_kiddush_hashem", "tenet_kehillah_sacred_liturgy"]),
+    ("redemption", "Land and Redemption", [
+        "tenet_kehillah_avelei_tziyon", "tenet_kehillah_messianic_hope",
+        "tenet_kehillah_prophetic_revelation", "tenet_kehillah_temple_service"]),
+]
+# A tenet's standing in the host's rite, shown on its button. First match wins.
+STATUSES = [
+    ("core", "rite ?= {{ rite_has_tenet = {key} }}", "core tenet"),
+    ("banned", "rite ?= {{ has_tenet_status = {{ tenet = {key} status = prohibited }} }}", "banned"),
+    ("permitted", "rite ?= {{ has_at_least_tenet_status = {{ tenet = {key} status = permitted }} }}", "permitted"),
+    ("unsettled", None, "not yet permitted"),
+]
+PRESSING_SLOTS = 3
+
+
+def canonical():
+    """(index, key, name) for each distinct tenet, at its first TARGETS index."""
+    seen, out = set(), []
+    for i, (key, name) in enumerate(TARGETS, start=1):
+        if key not in seen:
+            seen.add(key)
+            out.append((i, key, name))
+    return out
+
+
+def indices_of(key):
+    return [i for i, (k, _) in enumerate(TARGETS, start=1) if k == key]
+
+
+def _check_themes():
+    keys = [k for _, k, _ in canonical()]
+    themed = [k for _, _, ks in THEMES for k in ks]
+    assert sorted(themed) == sorted(keys), "every target tenet must sit in exactly one theme"
+    assert all(len(ks) <= 4 for _, _, ks in THEMES), "a theme page holds at most four tenets"
+
+
+_check_themes()
+
 
 def write(rel, lines):
     p = ROOT / rel
@@ -116,6 +165,16 @@ def triggers():
                 f"\t\tkehillah_reform_can_ban_trigger = {{ TENET = {key} }}",
                 f"\t\tkehillah_reform_can_lift_trigger = {{ TENET = {key} }}",
                 "\t}", "}"]
+    out += ["", "# Scope: a host. Some tenet of this theme can be put to the gathering."]
+    for theme, _, keys in THEMES:
+        out += [f"kehillah_reform_theme_{theme}_any_trigger = {{", "\tOR = {"]
+        out += [f"\t\tkehillah_reform_any_action_{k}_trigger = yes" for k in keys]
+        out += ["\t}", "}"]
+    out += ["", "# Scope: the host of kehillah_reform.0001. This tenet is one of the",
+            "# pressing questions kehillah_reform_pick_pressing_effect chose."]
+    for i, key, _ in canonical():
+        picks = " ".join(f"var:kehillah_reform_pick_{s} ?= {i}" for s in range(1, PRESSING_SLOTS + 1))
+        out += [f"kehillah_reform_is_pressing_{key}_trigger = {{ OR = {{ {picks} }} }}"]
     out += ["", "# Scope: the host, with var:kehillah_reform_tenet chosen. The action is possible."]
     for action in ACTIONS:
         out += [f"kehillah_reform_chosen_can_{action}_trigger = {{", "\tOR = {"]
@@ -248,7 +307,31 @@ def effects():
             "\tremove_variable = kehillah_reform_tenet",
             "\tremove_variable = kehillah_reform_action",
             "\tremove_variable = kehillah_reform_replace",
+            "\tremove_variable = kehillah_reform_theme",
+            ] + [f"\tremove_variable = kehillah_reform_pick_{s}" for s in range(1, PRESSING_SLOTS + 1)] + [
             "}",
+            "",
+            "# Scope: the host (kehillah_reform.0001 immediate). Choose up to three",
+            "# pressing questions, best first: the one the rite expects after a",
+            "# Machloket, then tenets the host holds, then ones his books argue",
+            "# (kehillah_reform_pressing_score_* values). A tenet scoring 0 is not",
+            "# pressing; it is still reachable by theme.",
+            "kehillah_reform_pick_pressing_effect = {",
+            ] + [f"\tremove_variable = kehillah_reform_pick_{s}" for s in range(1, PRESSING_SLOTS + 1)]
+    for s in range(1, PRESSING_SLOTS + 1):
+        out += [f"\t# Slot {s}.", "\tset_variable = { name = kehillah_reform_pick_best value = 0 }"]
+        for i, key, _ in canonical():
+            earlier = " ".join(f"NOT = {{ var:kehillah_reform_pick_{e} ?= {i} }}" for e in range(1, s))
+            out += [
+                "\tif = {",
+                f"\t\tlimit = {{ kehillah_reform_any_action_{key}_trigger = yes {earlier} "
+                f"kehillah_reform_pressing_score_{key} > var:kehillah_reform_pick_best }}",
+                f"\t\tset_variable = {{ name = kehillah_reform_pick_{s} value = {i} }}",
+                f"\t\tset_variable = {{ name = kehillah_reform_pick_best value = kehillah_reform_pressing_score_{key} }}",
+                "\t}",
+            ]
+    out += ["\tremove_variable = kehillah_reform_pick_best", "}"]
+    out += [
             "",
             "# Scope: a rite; from a Machloket's resolution ($KEY$ the disputed work).",
             "# The rite's next gathering is expected to rule on the book's first tenet:",
@@ -296,11 +379,72 @@ def custom_loc():
     p.write_bytes((BOM + "\n".join(loc) + "\n").encode("utf-8"))
 
 
+def status_trigger(n, key):
+    """The trigger for STATUSES[n]: it holds and no earlier status does."""
+    earlier = [s[1].format(key=key) for s in STATUSES[:n] if s[1]]
+    parts = [f"NOT = {{ {e} }}" for e in earlier]
+    if STATUSES[n][1]:
+        parts.append(STATUSES[n][1].format(key=key))
+    return " ".join(parts)
+
+
+def tenet_options(gate, _page, only=None):
+    """One option per tenet and standing; only the matching standing shows,
+    so each button names where the tenet stands in the host's rite."""
+    out = []
+    for i, key, _ in canonical():
+        if only is not None and key not in only:
+            continue
+        for n, (status, _, _) in enumerate(STATUSES):
+            out += [
+                "\toption = {",
+                f"\t\tname = kehillah_reform_tenet_{key}_{status}",
+                "\t\ttrigger = {",
+                f"\t\t\t{gate.format(key=key)}",
+                f"\t\t\tkehillah_reform_any_action_{key}_trigger = yes",
+                f"\t\t\t{status_trigger(n, key)}",
+                "\t\t}",
+                f"\t\tset_variable = {{ name = kehillah_reform_tenet value = {i} }}",
+                "\t\ttrigger_event = kehillah_reform.0002",
+                "\t\tai_chance = {",
+                "\t\t\tbase = 2",
+                f"\t\t\tmodifier = {{ add = kehillah_reform_pressing_score_{key} }}",
+                "\t\t}",
+                "\t}",
+            ]
+    return out
+
+
+def values():
+    out = HEADER + [
+        "",
+        "# Scope: a host. How pressing a question of belief on this tenet is:",
+        "# the rite expects a ruling on it after a Machloket (100), the host",
+        "# holds it (40), his books argue it (15). 0: not pressing.",
+    ]
+    for _, key, _ in canonical():
+        pending = " ".join(f"var:kehillah_reform_pending_tenet ?= {i}" for i in indices_of(key))
+        if len(indices_of(key)) > 1:
+            pending = f"OR = {{ {pending} }}"
+        out += [
+            f"kehillah_reform_pressing_score_{key} = {{",
+            "\tvalue = 0",
+            f"\tif = {{ limit = {{ rite ?= {{ {pending} }} }} add = 100 }}",
+            f"\tif = {{ limit = {{ has_personal_tenet = {key} }} add = 40 }}",
+            f"\tif = {{ limit = {{ is_target_in_variable_list = {{ name = kehillah_book_tenets target = flag:{key} }} }} add = 15 }}",
+            "}",
+        ]
+    write("common/script_values/kehillah_reform_values.txt", out)
+
+
 def events():
     out = HEADER + [
-        "# kehillah_reform.0001 choose the tenet; .0002 the action; .0003 the core",
-        "# tenet it replaces. Root: the host of a Synod or Sanhedrin sitting, from",
-        "# kehillah_synod.0100's \"question of belief\" option.",
+        "# kehillah_reform.0001 the pressing questions (at most three); .0004 the",
+        "# themes; .0005 one theme's tenets; .0002 the action; .0003 the core tenet",
+        "# it replaces. Root: the host of a Synod or Sanhedrin sitting, from",
+        "# kehillah_synod.0100's \"question of belief\" option. Nothing is paid",
+        "# until the motion is put (kehillah_reform_put_motion_effect), so every",
+        "# page may be backed out of freely.",
         "",
         "namespace = kehillah_reform",
         "",
@@ -313,32 +457,80 @@ def events():
         "\t\t\ttrigger = { rite ?= { has_variable = kehillah_reform_pending_tenet } }",
         "\t\t\tdesc = kehillah_reform.0001.desc_pending",
         "\t\t}",
+        "\t\ttriggered_desc = {",
+        "\t\t\ttrigger = { NOT = { exists = var:kehillah_reform_pick_1 } }",
+        "\t\t\tdesc = kehillah_reform.0001.desc_none_pressing",
+        "\t\t}",
         "\t}",
         "\ttheme = faith",
         "\tleft_portrait = { character = root animation = thinking }",
         "\ttrigger = { exists = involved_activity }",
+        "\timmediate = { kehillah_reform_pick_pressing_effect = yes }",
     ]
-    for i, (key, _) in enumerate(TARGETS, start=1):
-        if key in [t for t, _ in TARGETS[:i-1]]:
-            continue # An old alias slot remains dispatchable, not a duplicate choice.
+    out += tenet_options("kehillah_reform_is_pressing_{key}_trigger = yes", 0)
+    out += [
+        "\toption = {",
+        "\t\tname = kehillah_reform.0001.browse",
+        "\t\ttrigger_event = kehillah_reform.0004",
+        "\t\tai_chance = { base = 1 }",
+        "\t}",
+        "\toption = {",
+        "\t\tname = kehillah_reform.0001.none",
+        "\t\tkehillah_reform_clear_choice_effect = yes",
+        "\t\ttrigger_event = kehillah_synod.0100",
+        "\t\tai_chance = { base = 0 }",
+        "\t}",
+        "}",
+        "",
+        "kehillah_reform.0004 = {",
+        "\ttype = character_event",
+        "\ttitle = kehillah_reform.0004.t",
+        "\tdesc = kehillah_reform.0004.desc",
+        "\ttheme = faith",
+        "\tleft_portrait = { character = root animation = reading }",
+        "\ttrigger = { exists = involved_activity }",
+    ]
+    for n, (theme, _, _) in enumerate(THEMES, start=1):
         out += [
             "\toption = {",
-            f"\t\tname = kehillah_reform.0001.t{i}",
-            f"\t\ttrigger = {{ kehillah_reform_any_action_{key}_trigger = yes }}",
-            f"\t\tset_variable = {{ name = kehillah_reform_tenet value = {i} }}",
-            "\t\ttrigger_event = kehillah_reform.0002",
-            "\t\tai_chance = {",
-            "\t\t\tbase = 2",
-            f"\t\t\tmodifier = {{ add = 100 rite ?= {{ var:kehillah_reform_pending_tenet ?= {i} }} }}",
-            f"\t\t\tmodifier = {{ add = 40 has_personal_tenet = {key} }}",
-            f"\t\t\tmodifier = {{ add = 15 is_target_in_variable_list = {{ name = kehillah_book_tenets target = flag:{key} }} }}",
-            "\t\t}",
+            f"\t\tname = kehillah_reform.0004.{theme}",
+            f"\t\ttrigger = {{ kehillah_reform_theme_{theme}_any_trigger = yes }}",
+            f"\t\tset_variable = {{ name = kehillah_reform_theme value = {n} }}",
+            "\t\ttrigger_event = kehillah_reform.0005",
+            "\t\tai_chance = { base = 1 }",
             "\t}",
         ]
     out += [
         "\toption = {",
-        "\t\tname = kehillah_reform.0001.none",
-        "\t\ttrigger_event = kehillah_synod.0100",
+        "\t\tname = kehillah_reform.0004.back",
+        "\t\ttrigger_event = kehillah_reform.0001",
+        "\t\tai_chance = { base = 0 }",
+        "\t}",
+        "}",
+        "",
+        "kehillah_reform.0005 = {",
+        "\ttype = character_event",
+        "\ttitle = {",
+        "\t\tfirst_valid = {",
+    ]
+    for n, (theme, _, _) in enumerate(THEMES, start=1):
+        out += [f"\t\t\ttriggered_desc = {{ trigger = {{ var:kehillah_reform_theme ?= {n} }} desc = kehillah_reform.0004.{theme} }}"]
+    out += [
+        "\t\t\tdesc = kehillah_reform.0004.t",
+        "\t\t}",
+        "\t}",
+        "\tdesc = kehillah_reform.0005.desc",
+        "\ttheme = faith",
+        "\tleft_portrait = { character = root animation = thinking }",
+        "\ttrigger = { exists = involved_activity exists = var:kehillah_reform_theme }",
+    ]
+    for n, (theme, _, keys) in enumerate(THEMES, start=1):
+        out += tenet_options(f"var:kehillah_reform_theme ?= {n}", 1, only=keys)
+    out += [
+        "\toption = {",
+        "\t\tname = kehillah_reform.0005.back",
+        "\t\tremove_variable = kehillah_reform_theme",
+        "\t\ttrigger_event = kehillah_reform.0004",
         "\t\tai_chance = { base = 0 }",
         "\t}",
         "}",
@@ -432,8 +624,11 @@ def events():
     write("events/kehillah_reform_events.txt", out)
 
     loc = ["l_english:"]
-    for i, (_, name) in enumerate(TARGETS, start=1):
-        loc.append(f" kehillah_reform.0001.t{i}:0 \"{name}.\"")
+    for _, key, name in canonical():
+        for status, _, label in STATUSES:
+            loc.append(f" kehillah_reform_tenet_{key}_{status}:0 \"{name} #weak ({label})#!\"")
+    for theme, label, _ in THEMES:
+        loc.append(f" kehillah_reform.0004.{theme}:0 \"{label}\"")
     for i, (key, name) in enumerate(REPLACEABLE, start=1):
         if key not in PROTECTED:
             loc.append(f" kehillah_reform.0003.r{i}:0 \"In place of {name}.\"")
@@ -444,6 +639,7 @@ def events():
 if __name__ == "__main__":
     triggers()
     effects()
+    values()
     custom_loc()
     events()
     print("reform motions generated")

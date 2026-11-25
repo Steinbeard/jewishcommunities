@@ -238,13 +238,17 @@ kehillah_synod.0100 = {
 
 	trigger = { exists = involved_activity }
 
+	# 2026-11-25 dynamic agenda (docs/spec/2026-11-25-dynamic-synod-agenda.md):
+	# this page offers the KINDS of matter that are live for this host; each
+	# opens its own page. Nothing is paid until a motion is put.
 	option = {
-		name = kehillah_synod_option_herem_polygamy
-		trigger = { kehillah_synod_can_propose_herem_polygamy_trigger = yes }
-		custom_tooltip = kehillah_synod_option_herem_polygamy_desc
-		involved_activity ?= { set_variable = { name = kehillah_synod_proposed_doctrine value = doctrine:doctrine_monogamy } }
-		kehillah_synod_put_motion_effect = { MOTION = flag:herem_polygamy }
-		ai_chance = { base = 100 }
+		name = kehillah_synod_kind_marriage
+		trigger = { kehillah_synod_has_marriage_motion_trigger = yes }
+		trigger_event = kehillah_synod.0106
+		ai_chance = {
+			base = 50
+			modifier = { add = 50 kehillah_synod_can_propose_herem_polygamy_trigger = yes }
+		}
 	}
 	# 2026-11-08 Sefer redesign: a question of belief -- raise a tenet to a
 	# core tenet of the rite, or permit, ban or free it in the faith. The
@@ -262,15 +266,22 @@ kehillah_synod.0100 = {
 		}
 	}
 	option = {
-		name = kehillah_synod_option_herem_all_israel
-		trigger = {
-			kehillah_synod_is_sanhedrin_trigger = yes
-			kehillah_synod_can_propose_herem_all_israel_trigger = yes
-		}
-		custom_tooltip = kehillah_synod_option_herem_all_israel_desc
-		involved_activity ?= { set_variable = { name = kehillah_synod_proposed_doctrine value = doctrine:doctrine_monogamy } }
-		kehillah_synod_put_motion_effect = { MOTION = flag:herem_all_israel }
-		ai_chance = { base = 5 }
+		name = kehillah_synod_kind_ordinance
+		trigger = { kehillah_synod_has_communal_motion_trigger = yes }
+		trigger_event = kehillah_synod.0105
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_synod_kind_headship
+		trigger = { kehillah_synod_can_propose_head_trigger = yes }
+		trigger_event = kehillah_synod.0108
+		ai_chance = { base = 60 }
+	}
+	option = {
+		name = kehillah_synod_kind_undertaking
+		trigger = { kehillah_synod_has_undertaking_motion_trigger = yes }
+		trigger_event = kehillah_synod.0107
+		ai_chance = { base = 20 }
 	}
 	# 2026-11-11 cherem track (docs/spec/2026-11-11-reviews-and-cherem.md
 	# section 3.3): a herem on a community leader in Niddui. The synod takes
@@ -294,11 +305,184 @@ kehillah_synod.0100 = {
 			modifier = { add = 30 has_trait = zealous }
 		}
 	}
+	# Nothing on the agenda is ready (a candidate stayed home, a motion lapsed
+	# since the intent was chosen). The sitting rises without a ruling; no
+	# prestige is spent, and kehillah_synod.0103 does not fire.
+	option = {
+		name = kehillah_synod_kind_none
+		trigger = {
+			NOT = { kehillah_synod_has_marriage_motion_trigger = yes }
+			NOT = { kehillah_reform_any_motion_trigger = yes }
+			NOT = { kehillah_synod_has_communal_motion_trigger = yes }
+			NOT = { kehillah_synod_can_propose_head_trigger = yes }
+			NOT = { kehillah_synod_has_undertaking_motion_trigger = yes }
+			NOT = { kehillah_synod_can_propose_herem_person_trigger = yes }
+		}
+		custom_tooltip = kehillah_synod_kind_none_tt
+		ai_chance = { base = 1 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0106 -- A QUESTION OF MARRIAGE (2026-11-25 page)
+# The rite-doctrine motions (V45 §10) and the ketubbah clause.
+# ---------------------------------------------------------------------
+kehillah_synod.0106 = {
+	type = character_event
+	title = kehillah_synod.0106.t
+	desc = kehillah_synod.0106.desc
+	theme = faith
+	left_portrait = { character = root animation = thinking }
+	trigger = { exists = involved_activity }
+
+	option = {
+		name = kehillah_synod_option_herem_polygamy
+		trigger = { kehillah_synod_can_propose_herem_polygamy_trigger = yes }
+		custom_tooltip = kehillah_synod_option_herem_polygamy_desc
+		involved_activity ?= { set_variable = { name = kehillah_synod_proposed_doctrine value = doctrine:doctrine_monogamy } }
+		kehillah_synod_put_motion_effect = { MOTION = flag:herem_polygamy }
+		ai_chance = { base = 100 }
+	}
+	option = {
+		name = kehillah_synod_option_herem_all_israel
+		trigger = {
+			kehillah_synod_is_sanhedrin_trigger = yes
+			kehillah_synod_can_propose_herem_all_israel_trigger = yes
+		}
+		custom_tooltip = kehillah_synod_option_herem_all_israel_desc
+		involved_activity ?= { set_variable = { name = kehillah_synod_proposed_doctrine value = doctrine:doctrine_monogamy } }
+		kehillah_synod_put_motion_effect = { MOTION = flag:herem_all_israel }
+		ai_chance = { base = 5 }
+	}
+	option = {
+		name = kehillah_synod_option_ketubbah_clause
+		trigger = { kehillah_synod_can_propose_ketubbah_clause_trigger = yes }
+		custom_tooltip = kehillah_synod_option_ketubbah_clause_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:ketubbah_clause }
+		ai_chance = { base = 30 }
+	}
+	option = {
+		name = kehillah_synod_kind_back
+		trigger_event = kehillah_synod.0100
+		ai_chance = { base = 0 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0107 -- A COMMON UNDERTAKING (2026-11-25 page)
+# ---------------------------------------------------------------------
+kehillah_synod.0107 = {
+	type = character_event
+	title = kehillah_synod.0107.t
+	desc = kehillah_synod.0107.desc
+	theme = faith
+	left_portrait = { character = root animation = thinking }
+	trigger = { exists = involved_activity }
+
+	option = {
+		name = kehillah_synod_option_captives
+		trigger = { kehillah_synod_can_propose_captives_trigger = yes }
+		custom_tooltip = kehillah_synod_option_captives_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:captives }
+		ai_chance = {
+			base = 30
+			modifier = { add = 20 has_trait = generous }
+		}
+	}
+	option = {
+		name = kehillah_synod_option_fast
+		trigger = { kehillah_synod_can_propose_fast_trigger = yes }
+		custom_tooltip = kehillah_synod_option_fast_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:fast }
+		ai_chance = {
+			base = 20
+			modifier = { add = 20 has_trait = zealous }
+		}
+	}
+	option = {
+		name = kehillah_synod_option_levy
+		trigger = { kehillah_synod_can_propose_levy_trigger = yes }
+		custom_tooltip = kehillah_synod_option_levy_desc
+		kehillah_synod_put_motion_effect = { MOTION = flag:levy }
+		ai_chance = {
+			base = 20
+			modifier = { add = 20 learning >= high_skill_rating }
+		}
+	}
+	option = {
+		name = kehillah_synod_kind_back
+		trigger_event = kehillah_synod.0100
+		ai_chance = { base = 0 }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_synod.0108 -- THE HEADSHIP OF THE RITE (2026-11-25 page)
+# The rite has no head (V47). The host nominates himself or the most
+# eminent qualified delegate; the delegates vote on the nominee.
+# ---------------------------------------------------------------------
+kehillah_synod.0108 = {
+	type = character_event
+	title = kehillah_synod.0108.t
+	desc = kehillah_synod.0108.desc
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = {
+		trigger = { exists = scope:kehillah_synod_best_delegate }
+		character = scope:kehillah_synod_best_delegate
+		animation = personality_bold
+	}
+	trigger = { exists = involved_activity }
+
+	immediate = {
+		involved_activity = {
+			ordered_attending_character = {
+				limit = {
+					NOT = { this = root }
+					kehillah_synod_head_candidate_trigger = { HOST = root }
+				}
+				order_by = learning
+				save_scope_as = kehillah_synod_best_delegate
+			}
+		}
+	}
+
+	option = {
+		name = kehillah_synod_option_head_self
+		trigger = { kehillah_synod_head_candidate_trigger = { HOST = root } }
+		custom_tooltip = kehillah_synod_option_head_self_desc
+		involved_activity ?= { set_variable = { name = kehillah_synod_nominee value = root } }
+		kehillah_synod_put_motion_effect = { MOTION = flag:head_of_rite }
+		ai_chance = {
+			base = 50
+			modifier = { add = 30 has_trait = ambitious }
+			modifier = { add = -40 has_trait = humble }
+		}
+	}
+	option = {
+		name = kehillah_synod_option_head_delegate
+		trigger = { exists = scope:kehillah_synod_best_delegate }
+		custom_tooltip = kehillah_synod_option_head_delegate_desc
+		involved_activity ?= { set_variable = { name = kehillah_synod_nominee value = scope:kehillah_synod_best_delegate } }
+		kehillah_synod_put_motion_effect = { MOTION = flag:head_of_rite }
+		ai_chance = {
+			base = 40
+			opinion_modifier = {
+				opinion_target = scope:kehillah_synod_best_delegate
+				multiplier = 0.5
+			}
+		}
+	}
+	option = {
+		name = kehillah_synod_kind_back
+		trigger_event = kehillah_synod.0100
+		ai_chance = { base = 0 }
+	}
 }
 
 kehillah_synod.0105 = {
 	type = character_event
-	title = kehillah_synod.0100.t
+	title = kehillah_synod.0105.t
 	desc = kehillah_synod.0105.desc
 	theme = faith
 
@@ -337,6 +521,11 @@ kehillah_synod.0105 = {
 		kehillah_synod_put_motion_effect = { MOTION = flag:letters }
 		ai_chance = { base = 20 }
 	}
+	option = {
+		name = kehillah_synod_kind_back
+		trigger_event = kehillah_synod.0100
+		ai_chance = { base = 0 }
+	}
 }
 
 # ---------------------------------------------------------------------
@@ -358,6 +547,10 @@ kehillah_synod.0101 = {
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv } desc = kehillah_synod_motion_hayishuv }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person } desc = kehillah_synod_motion_herem_person }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:head_of_rite } desc = kehillah_synod_motion_head_of_rite }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:captives } desc = kehillah_synod_motion_captives }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:fast } desc = kehillah_synod_motion_fast }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:levy } desc = kehillah_synod_motion_levy }
 			desc = kehillah_synod_motion_letters
 		}
 	}
@@ -375,6 +568,7 @@ kehillah_synod.0101 = {
 
 	immediate = {
 		involved_activity.var:kehillah_synod_herem_target ?= { save_scope_as = kehillah_synod_herem_target }
+		involved_activity.var:kehillah_synod_nominee ?= { save_scope_as = kehillah_synod_nominee }
 	}
 
 	# From the sources: the sages before us.
@@ -481,6 +675,10 @@ kehillah_synod.0102 = {
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:informers } desc = kehillah_synod_motion_informers }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:hayishuv } desc = kehillah_synod_motion_hayishuv }
 			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:herem_person } desc = kehillah_synod_motion_herem_person }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:head_of_rite } desc = kehillah_synod_motion_head_of_rite }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:captives } desc = kehillah_synod_motion_captives }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:fast } desc = kehillah_synod_motion_fast }
+			triggered_desc = { trigger = { involved_activity.var:kehillah_synod_takkanah ?= flag:levy } desc = kehillah_synod_motion_levy }
 			desc = kehillah_synod_motion_letters
 		}
 	}
@@ -503,6 +701,7 @@ kehillah_synod.0102 = {
 	immediate = {
 		involved_activity.activity_host = { save_scope_as = kehillah_synod_host }
 		involved_activity.var:kehillah_synod_herem_target ?= { save_scope_as = kehillah_synod_herem_target }
+		involved_activity.var:kehillah_synod_nominee ?= { save_scope_as = kehillah_synod_nominee }
 	}
 
 	# FOR.
@@ -562,6 +761,42 @@ kehillah_synod.0102 = {
 				add = kehillah_sheelah_synod_follow_weight
 				kehillah_sheelah_follows_leader_trigger = { LEADER = scope:kehillah_synod_host }
 			}
+			# 2026-11-25 dynamic agenda: the headship and common undertakings.
+			modifier = {
+				add = 500
+				involved_activity.var:kehillah_synod_takkanah ?= flag:head_of_rite
+				scope:kehillah_synod_nominee ?= root
+			}
+			opinion_modifier = {
+				trigger = {
+					involved_activity.var:kehillah_synod_takkanah ?= flag:head_of_rite
+					exists = scope:kehillah_synod_nominee
+					NOT = { scope:kehillah_synod_nominee = root }
+				}
+				who = root
+				opinion_target = scope:kehillah_synod_nominee
+				multiplier = 0.5
+			}
+			modifier = {
+				add = 40
+				involved_activity.var:kehillah_synod_takkanah ?= flag:head_of_rite
+				scope:kehillah_synod_nominee ?= { has_relation_friend = root }
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:captives
+				OR = { has_trait = generous has_trait = compassionate }
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:fast
+				OR = { has_trait = zealous has_trait = temperate }
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:levy
+				learning >= high_skill_rating
+			}
 			min = 1
 		}
 	}
@@ -614,6 +849,27 @@ kehillah_synod.0102 = {
 				exists = scope:kehillah_synod_herem_target
 				kehillah_sheelah_follows_leader_trigger = { LEADER = scope:kehillah_synod_herem_target }
 			}
+			# 2026-11-25 dynamic agenda.
+			modifier = {
+				add = 40
+				involved_activity.var:kehillah_synod_takkanah ?= flag:head_of_rite
+				scope:kehillah_synod_nominee ?= { has_relation_rival = root }
+			}
+			modifier = {
+				add = 20
+				involved_activity.var:kehillah_synod_takkanah ?= flag:head_of_rite
+				NOT = { scope:kehillah_synod_nominee ?= root }
+				has_trait = ambitious
+				kehillah_synod_head_candidate_trigger = { HOST = scope:kehillah_synod_host }
+			}
+			modifier = {
+				add = 20
+				OR = {
+					involved_activity.var:kehillah_synod_takkanah ?= flag:captives
+					involved_activity.var:kehillah_synod_takkanah ?= flag:levy
+				}
+				has_trait = greedy
+			}
 			min = 1
 		}
 	}
@@ -664,6 +920,7 @@ kehillah_synod.0103 = {
 			save_scope_as = kehillah_synod_proposed_doctrine
 		}
 		involved_activity.var:kehillah_synod_herem_target ?= { save_scope_as = kehillah_synod_herem_target }
+		involved_activity.var:kehillah_synod_nominee ?= { save_scope_as = kehillah_synod_nominee }
 		save_scope_value_as = {
 			name = kehillah_synod_level
 			value = involved_activity.var:kehillah_synod_level

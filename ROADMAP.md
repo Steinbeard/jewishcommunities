@@ -96,6 +96,20 @@ subject to revision after each phase.
 
 ## Near-term TODO
 
+**Dynamic Synod agenda and tenet picker: BUILT 2026-11-25, xTiger-clean, NOT live-tested.**
+See [the spec](docs/spec/2026-11-25-dynamic-synod-agenda.md), section 11. The Synod's third matter
+is now a menu of the kinds of matter that are live:
+- marriage, including the ketubbah clause again;
+- a question of belief;
+- the ordinances, reachable again;
+- naming a head of the rite when there is none;
+- common undertakings: a captives' fund, a public fast, an academy levy;
+- the herem on a leader.
+
+"A Question of Belief" shows at most three pressing tenets, then four themes. Every tenet shows its
+standing. Live checklist for Daniel: spec section 11. Rite doctrines stay marriage only (v45
+Decision 3); the motion-registry generator is deferred.
+
 **Pillars as opportunities and expectations: PROPOSED 2026-11-19, first slice agreed with Daniel.**
 See [the spec](docs/spec/2026-11-19-pillars-as-opportunities-and-expectations.md); read its addenda R1-R10
 first.
