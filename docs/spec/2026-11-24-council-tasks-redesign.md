@@ -1,7 +1,7 @@
 # Council tasks, redesigned
 
-**Status:** **BUILT 2026-11-25** (revision 4, with Daniel's two build-time changes: the Gabbai's fourth task is
-**Manage Tzedakah**, and Defend the Quarter is **merged into the Night Watch** as one task named Defend the Quarter).
+**Status:** **BUILT 2026-11-25**, then revised in round 5 the same day (section 8 supersedes the named parts of sections 3 and 7.1). Revision 4, with Daniel's two build-time changes: the Gabbai's fourth task is
+**Manage Tzedakah**, and Defend the Quarter is **merged into the Night Watch** as one task named Defend the Quarter.
 xTiger shows no new reports; **not live-tested.** Read section 7 (build record and live checklist) for what was built
 and where it departs from the sections above. Revisions 1–3 (2026-11-24/25, never committed) are replaced. Daniel's notes on revision 3:
 - hook mutual aid into a Gabbai task: tzedakah raises pillars more when you are prosperous, and others give
@@ -239,3 +239,72 @@ seats on retired tasks and runs the fix-up.
 8. Trade at the Fairs in a community whose town has another culture: the culture window lists "Jewish merchants at
    the fairs" as an acceptance source after January.
 9. Keep the Pledge Chest: Lend Gold at open interest to an outsider; the loan owes more than vanilla's 25%.
+
+## 8. Round 5 (2026-11-25, after Daniel's first look in game)
+
+**Status:** BUILT 2026-11-25. xTiger: the only new reports are 1.20 false positives on the 1.21 `popular_opinion`
+trigger and `popular_opinion_add` modifier (both in the game's own script docs and in vanilla hunt modifiers).
+**Not live-tested.** This section supersedes the named parts of sections 3 and 7.1; the rest stands.
+
+Daniel's notes: the icons were still awkward; the Greatness text was confusing and over-detailed; Prepare the Bet Din
+was narrow once its cooldown cut went to the realm focus; the Shtadlan's two tasks were confusing, narrow and
+overlapping; Farm the Lord's Revenues looked hard-coded; Manage Tzedakah was narrow; Escort the Travelers should
+carry a trade benefit.
+
+### 8.1 Icons
+
+Vanilla rings each icon in its skill's colour, but meaning won over ring colour where they conflicted:
+
+| Task | Icon (was) |
+|---|---|
+| Cultivate Goodwill | `task_assembly_preparation`, the handshake (religious relations) |
+| Manage Tzedakah | `task_religious_relations`, open hands and a heart (bestow royal favor's thumbs-up) |
+| Escort the Travelers | `task_trade_logistics`, a laden cart (lead troops' banner) |
+| Farm the Lord's Revenues | `task_kurultai_exploit_area`, worked land (increase control) |
+| Keep the Pledge Chest | `task_increase_control`, a padlock (the cart) |
+| Prepare the Bet Din | `task_convince_dejure`, quill and document (justify rule's bust) |
+
+### 8.2 Pillar-task tooltips
+
+The three pillar tasks lead with one line ("Each year: N% chance that Greatness rises for ten years"), list their other
+effects one per line, and close with a one-line skill footer. The flavour sentence and "at most three run at once"
+are gone from the tooltip; the cap itself is unchanged.
+
+### 8.3 Shtadlan: the host, and everyone else
+
+- **Petition the Host** is everything the ruler himself grants: his opinion, the status of the Jews in his realm, his
+  outlook (the yearly audience) and the charter's terms. One line each. Where the audience cannot succeed (rank,
+  teaching and Zeal outweigh the Shtadlan), the line says so instead of showing 0%. The charter line no longer
+  mentions the wall, which belonged to protection.
+- **Seek Protection is renamed Cultivate Goodwill** (key `task_kehillah_seek_protection` kept for saves). "Seek
+  Protection" was also the name of three crisis decisions. It deals with everyone around the community: Stability
+  moments, the religious adviser's restraint, and new, vanilla `different_faith_opinion` up to +10 by Diplomacy. The
+  safety view's button follows the new name.
+
+### 8.4 Other tasks
+
+- **Prepare the Bet Din:** the Dayyan hears small cases between sittings, so the court falls overdue two years
+  later (`kehillah_bet_din_overdue_grace_value`, 5 → 7 years, read by the overdue trigger and penalty).
+- **Manage Tzedakah:** `monthly_piety` up to +1.5 by Stewardship, rich or poor.
+- **Escort the Travelers:** Quarter income (`domicile_monthly_gold_mult`) up to +10% by Martial, and the commenda's
+  profit outcome +10 weight beside the existing −10 on loss.
+- **Farm the Lord's Revenues** is now driven by the town's mood, the host county's vanilla popular opinion of its lord:
+  - content (30 or more), grumbling (0 to 29), angry (−30 to −1), furious (below −30);
+  - the farm lowers that opinion by 10 while it runs (`kehillah_farmed_revenues_county_modifier`, refreshed monthly
+    for three months);
+  - gold ×1.2 / ×1 / ×0.8 / ×0.6 by mood (an angry town hides its goods), cap raised to 5;
+  - its danger term is 4 + 4 per step of mood (+4 to +16), replacing the flat +10;
+  - each January, a **grievance** at 15% + 10 per step of mood, less up to 10 for Martial (at least 5%): a beaten
+    collector, goods seized, or a friar's sermon. Each is +5 danger for five years, its own line in the danger
+    breakdown, and arrives as community news. Grievances outlast the task. They count as popular pressure.
+
+### 8.5 Live checklist additions
+
+`event kehillah_council_debug.13` puts the Rosh ha-Shmirah on the farm, runs one month, forces a grievance, and logs
+the mood, gold, farm danger, grievance total (5 expected) and the Bet Din grace (7 with the Dayyan preparing).
+
+10. Council window: the six new icons; Cultivate Goodwill and Petition the Host read one effect per line; against a
+    great host the audience line reads as closed, not 0%.
+11. Farm the Lord's Revenues: the host county shows "The Revenues Are Farmed"; the danger tooltip shows the farm term
+    and, after `.13`, "A collector beaten"; a community-news message arrives.
+12. Escort the Travelers and Manage Tzedakah: their tooltips list Quarter income and monthly piety.

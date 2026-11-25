@@ -266,5 +266,75 @@ kehillah_farm_revenues_monthly_effect = {
 				modifier = kehillah_farm_revenues_opinion
 			}
 		}
+		# Round 5: the town blames its lord while his revenues are farmed.
+		# Refreshed each month for three, so it fades soon after the task
+		# ends.
+		domicile.domicile_location.county = {
+			if = {
+				limit = { has_county_modifier = kehillah_farmed_revenues_county_modifier }
+				remove_county_modifier = kehillah_farmed_revenues_county_modifier
+			}
+			add_county_modifier = {
+				modifier = kehillah_farmed_revenues_county_modifier
+				months = 3
+			}
+		}
+		if = {
+			limit = { current_month = 1 }
+			kehillah_farm_grievance_roll_effect = yes
+		}
 	}
+}
+
+# Round 5: a grievance against the collectors. Scope: a Kehillah leader
+# whose Rosh ha-Shmirah farms the revenues. Each kind runs five years and
+# is never rolled while it runs.
+kehillah_farm_grievance_roll_effect = {
+	cp:councillor_marshal ?= { save_scope_as = kehillah_farm_collector }
+	if = {
+		limit = {
+			exists = scope:kehillah_farm_collector
+			primary_title = {
+				OR = {
+					NOT = { has_variable = kehillah_farm_grievance_collector }
+					NOT = { has_variable = kehillah_farm_grievance_distraint }
+					NOT = { has_variable = kehillah_farm_grievance_sermon }
+				}
+			}
+		}
+		random = {
+			chance = scope:kehillah_farm_collector.kehillah_farm_grievance_chance_value
+			random_list = {
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_farm_grievance_collector } } }
+					kehillah_farm_grievance_set_effect = { KIND = collector }
+				}
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_farm_grievance_distraint } } }
+					kehillah_farm_grievance_set_effect = { KIND = distraint }
+				}
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_farm_grievance_sermon } } }
+					kehillah_farm_grievance_set_effect = { KIND = sermon }
+				}
+			}
+		}
+	}
+}
+kehillah_farm_grievance_set_effect = {
+	primary_title = {
+		set_variable = {
+			name = kehillah_farm_grievance_$KIND$
+			value = yes
+			years = kehillah_farm_grievance_years
+		}
+	}
+	send_interface_message = {
+		type = msg_kehillah_community_news
+		title = kehillah_farm_grievance_$KIND$_t
+		desc = kehillah_farm_grievance_$KIND$_d
+		left_icon = scope:kehillah_farm_collector
+		custom_tooltip = kehillah_farm_grievance_tt
+	}
+	debug_log = "kehillah_farm_grievance: $KIND$"
 }

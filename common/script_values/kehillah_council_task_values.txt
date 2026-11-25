@@ -286,9 +286,33 @@ kehillah_council_watch_danger_display_value = {
 	round = yes
 }
 
-# Farm the Lord's Revenues. Scope: a Kehillah leader.
+# Farm the Lord's Revenues (round 5, 2026-11-25: dynamic). Scope: a
+# Kehillah leader unless noted.
+#
+# The town's mood: the host county's popular opinion of its lord (vanilla
+# popular_opinion, which the farm itself lowers by 10 through
+# kehillah_farmed_revenues_county_modifier). 0 content (30 or more),
+# 1 grumbling (0 to 29), 2 angry (-30 to -1), 3 furious (below -30).
+kehillah_farm_town_mood_value = {
+	value = 0
+	domicile.domicile_location.county ?= {
+		if = {
+			limit = { popular_opinion < -30 }
+			value = 3
+		}
+		else_if = {
+			limit = { popular_opinion < 0 }
+			value = 2
+		}
+		else_if = {
+			limit = { popular_opinion < 30 }
+			value = 1
+		}
+	}
+}
 # Monthly gold: 12% of the county lord's monthly income x the Martial
-# scale, between 0.2 and 4.
+# scale x the town's mood (x1.2 content, x1 grumbling, x0.8 angry, x0.6
+# furious: an angry town hides its goods), between 0.2 and 5.
 kehillah_farm_revenues_gold_value = {
 	value = 0
 	domicile.domicile_location.county.holder ?= {
@@ -298,31 +322,101 @@ kehillah_farm_revenues_gold_value = {
 	cp:councillor_marshal ?= {
 		multiply = kehillah_council_martial_scale
 	}
+	multiply = {
+		value = kehillah_farm_town_mood_value
+		multiply = -0.2
+		add = 1.2
+	}
 	min = 0.2
-	max = 4
+	max = 5
 }
-# Tooltip display, in the Rosh ha-Shmirah's scope.
+# Tooltip display, in the Rosh ha-Shmirah's scope: the gold this officer
+# would bring in, assigned or not.
 kehillah_farm_revenues_gold_display_value = {
-	value = employer.kehillah_farm_revenues_gold_value
+	value = 0
+	employer.domicile.domicile_location.county.holder ?= {
+		add = monthly_character_income
+		multiply = 0.12
+	}
+	multiply = kehillah_council_martial_scale
+	multiply = {
+		value = employer.kehillah_farm_town_mood_value
+		multiply = -0.2
+		add = 1.2
+	}
+	min = 0.2
+	max = 5
 	multiply = 10
 	round = yes
 	divide = 10
 }
-# The danger term while it runs: collecting the lord's dues makes the
-# community the face of the lord's exactions.
-kehillah_tax_farming_danger = 10
+# The danger term while it runs: the community is the face of the lord's
+# exactions, and the angrier the town, the more it shows. 4 + 4 per step of
+# mood: +4 content, +8 grumbling, +12 angry, +16 furious.
+kehillah_tax_farming_danger_base = 4
+kehillah_tax_farming_danger_per_mood = 4
 kehillah_danger_tax_farming_value = {
 	value = 0
 	cp:councillor_marshal ?= {
 		if = {
 			limit = { is_performing_council_task = task_kehillah_farm_revenues }
-			value = kehillah_tax_farming_danger
+			value = 1
 		}
 	}
+	multiply = {
+		value = kehillah_farm_town_mood_value
+		multiply = kehillah_tax_farming_danger_per_mood
+		add = kehillah_tax_farming_danger_base
+	}
+}
+# Tooltip display, in the Rosh ha-Shmirah's scope.
+kehillah_tax_farming_danger_display_value = {
+	value = employer.kehillah_farm_town_mood_value
+	multiply = kehillah_tax_farming_danger_per_mood
+	add = kehillah_tax_farming_danger_base
 }
 
-# Escort the Travellers: commenda loss weight off (kehillah_commenda.0001).
+# Grievances. Each January the farm rolls: 15% + 10 per step of mood, less
+# up to 10 for a firm collector (Martial). Each grievance is a title
+# variable kehillah_farm_grievance_<kind> for five years, +5 danger; at
+# most one of each kind.
+kehillah_farm_grievance_danger = 5
+kehillah_farm_grievance_years = 5
+# Scope: the Rosh ha-Shmirah.
+kehillah_farm_grievance_chance_value = {
+	value = employer.kehillah_farm_town_mood_value
+	multiply = 10
+	add = 15
+	subtract = {
+		value = kehillah_council_martial_scale
+		multiply = 10
+	}
+	min = 5
+	round = yes
+}
+# The danger terms, one per kind so the breakdown can name it.
+kehillah_danger_farm_grievance_collector_value = {
+	value = 0
+	if = { limit = { primary_title ?= { has_variable = kehillah_farm_grievance_collector } } value = kehillah_farm_grievance_danger }
+}
+kehillah_danger_farm_grievance_distraint_value = {
+	value = 0
+	if = { limit = { primary_title ?= { has_variable = kehillah_farm_grievance_distraint } } value = kehillah_farm_grievance_danger }
+}
+kehillah_danger_farm_grievance_sermon_value = {
+	value = 0
+	if = { limit = { primary_title ?= { has_variable = kehillah_farm_grievance_sermon } } value = kehillah_farm_grievance_danger }
+}
+kehillah_danger_farm_grievances_value = {
+	value = kehillah_danger_farm_grievance_collector_value
+	add = kehillah_danger_farm_grievance_distraint_value
+	add = kehillah_danger_farm_grievance_sermon_value
+}
+
+# Escort the Travellers: commenda weights (kehillah_commenda.0001) -- loss
+# off, and (round 5) profit on.
 kehillah_escort_commenda_loss_reduction = -10
+kehillah_escort_commenda_profit_bonus = 10
 
 # =====================================================================
 # NE'EMAN
