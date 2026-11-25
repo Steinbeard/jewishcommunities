@@ -1,29 +1,22 @@
 ﻿# 2026-11-07, Daniel. Scope: the community title, as Quarter struck begins (called from
 # kehillah_crisis_struck_start_effect, after kehillah_crisis_prior_held_progress is recorded).
 #
-# 1. Progress toward Quarter held lowers the threat grade: one step at each of
-#    kehillah_crisis_struck_step_one/two/three, never below Contained. The grade caps the attack
-#    encounters, so a lowered grade means fewer of them. Each step earned (even one the floor
-#    absorbs) takes kehillah_crisis_struck_relief_per_step off the attack's severity, through the
-#    existing kehillah_crisis_residual_severity_relief read by kehillah_mob_severity_value.
+# 1. 2026-11-25: progress toward Quarter held moves the crisis's severity
+#    (kehillah_crisis_reckon_severity_effect): under 50 it grows worse, from 50 it eases, by tier
+#    at kehillah_crisis_struck_step_one/two/three. The grade follows as a band of the severity
+#    (it caps the attack encounters), and the mob strikes at the severity itself.
 # 2. A ledger (kehillah_crisis_sl_*) records which protections held and which failed, for the
 #    struck opener (kehillah_crisis_chronicle.0001). It is copied here because the attack's own
 #    cleanup (kehillah_mob_clear_title_effect) removes the mob's flags before the event shows.
 kehillah_crisis_struck_reckoning_effect = {
  if = { limit = { NOT = { has_variable = kehillah_crisis_threat_grade } } set_variable = { name = kehillah_crisis_threat_grade value = 2 } }
  set_variable = { name = kehillah_crisis_struck_grade_before value = var:kehillah_crisis_threat_grade }
- set_variable = { name = kehillah_crisis_struck_steps value = 0 }
- if = { limit = { var:kehillah_crisis_prior_held_progress >= kehillah_crisis_struck_step_three } set_variable = { name = kehillah_crisis_struck_steps value = 3 } }
- else_if = { limit = { var:kehillah_crisis_prior_held_progress >= kehillah_crisis_struck_step_two } set_variable = { name = kehillah_crisis_struck_steps value = 2 } }
- else_if = { limit = { var:kehillah_crisis_prior_held_progress >= kehillah_crisis_struck_step_one } set_variable = { name = kehillah_crisis_struck_steps value = 1 } }
- set_variable = { name = kehillah_crisis_residual_severity_relief value = var:kehillah_crisis_struck_steps }
- change_variable = { name = kehillah_crisis_residual_severity_relief multiply = kehillah_crisis_struck_relief_per_step }
- change_variable = { name = kehillah_crisis_threat_grade subtract = var:kehillah_crisis_struck_steps }
- clamp_variable = { name = kehillah_crisis_threat_grade min = 1 max = 4 }
+ if = { limit = { NOT = { has_variable = kehillah_crisis_prior_held_progress } } set_variable = { name = kehillah_crisis_prior_held_progress value = 0 } }
+ kehillah_crisis_reckon_severity_effect = { KIND = struck PROGRESS = kehillah_crisis_prior_held_progress TIERED = yes }
 
  kehillah_crisis_protection_ledger_effect = yes
 
- debug_log = "kehillah_crisis_struck_reckoning: held progress [THIS.Title.MakeScope.Var('kehillah_crisis_prior_held_progress').GetValue] steps [THIS.Title.MakeScope.Var('kehillah_crisis_struck_steps').GetValue] grade [THIS.Title.MakeScope.Var('kehillah_crisis_struck_grade_before').GetValue] -> [THIS.Title.MakeScope.Var('kehillah_crisis_threat_grade').GetValue] relief [THIS.Title.MakeScope.Var('kehillah_crisis_residual_severity_relief').GetValue] ledger [THIS.Title.MakeScope.Var('kehillah_crisis_sl_count').GetValue]"
+ debug_log = "kehillah_crisis_struck_reckoning: held progress [THIS.Title.MakeScope.Var('kehillah_crisis_prior_held_progress').GetValue] steps [THIS.Title.MakeScope.Var('kehillah_crisis_struck_steps').GetValue] grade [THIS.Title.MakeScope.Var('kehillah_crisis_struck_grade_before').GetValue] -> [THIS.Title.MakeScope.Var('kehillah_crisis_threat_grade').GetValue] severity [THIS.Title.MakeScope.Var('kehillah_crisis_severity').GetValue] ledger [THIS.Title.MakeScope.Var('kehillah_crisis_sl_count').GetValue]"
 }
 
 # 2026-11-13: the protection ledger, split out of kehillah_crisis_struck_reckoning_effect so a
@@ -91,6 +84,8 @@ kehillah_crisis_struck_ledger_entry_effect = {
 kehillah_crisis_struck_clear_effect = {
  remove_variable = kehillah_crisis_struck_grade_before
  remove_variable = kehillah_crisis_struck_steps
+ remove_variable = kehillah_crisis_struck_sev_before
+ remove_variable = kehillah_crisis_struck_lord_shift
  remove_variable = kehillah_crisis_sl_host
  remove_variable = kehillah_crisis_sl_men_lord
  remove_variable = kehillah_crisis_sl_refuge_lord

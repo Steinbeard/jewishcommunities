@@ -2,10 +2,12 @@
 # kehillah_crisis_armed_start_effect, once the host is raised). The Agitation-phase counterpart of
 # kehillah_crisis_struck_reckoning_effect.
 #
-# 1. Progress toward Conciliation lowers the threat grade: one step at each of
-#    kehillah_crisis_armed_step_one/two/three, never below Contained. A lower grade makes the
-#    host easier to bargain with, cheaper to pay off, and caps the attack encounters if it breaks
-#    in. The struck reckoning can lower it again from there.
+# 1. 2026-11-25: progress toward Spared moves the crisis's severity
+#    (kehillah_crisis_reckon_severity_effect): under 50 it grows worse, from 50 it eases, by tier
+#    at kehillah_crisis_armed_step_one/two/three; a host raised without warning moves it only by
+#    the host's changed outlook. The grade follows as a band of the severity. A lower grade makes
+#    the host easier to bargain with, cheaper to pay off, and caps the attack encounters if it
+#    breaks in. The struck reckoning moves it again from there.
 # 2. A ledger (kehillah_crisis_al_*) records what each Agitation-phase effort came to, for the Armed
 #    opener (kehillah_crisis_chronicle.0002). It is a snapshot, so Armed-phase measures that share a
 #    flag (the watch, the escort) do not change what the opener says about the Agitation.
@@ -14,16 +16,12 @@ kehillah_crisis_armed_reckoning_effect = {
   limit = { NOT = { has_variable = kehillah_crisis_armed_grade_before } }
   if = { limit = { NOT = { has_variable = kehillah_crisis_threat_grade } } set_variable = { name = kehillah_crisis_threat_grade value = 2 } }
   set_variable = { name = kehillah_crisis_armed_grade_before value = var:kehillah_crisis_threat_grade }
-  set_variable = { name = kehillah_crisis_armed_steps value = 0 }
   if = {
    limit = { has_variable = kehillah_crisis_prior_spared_progress }
    set_variable = { name = kehillah_crisis_al_warned value = yes }
-   if = { limit = { var:kehillah_crisis_prior_spared_progress >= kehillah_crisis_armed_step_three } set_variable = { name = kehillah_crisis_armed_steps value = 3 } }
-   else_if = { limit = { var:kehillah_crisis_prior_spared_progress >= kehillah_crisis_armed_step_two } set_variable = { name = kehillah_crisis_armed_steps value = 2 } }
-   else_if = { limit = { var:kehillah_crisis_prior_spared_progress >= kehillah_crisis_armed_step_one } set_variable = { name = kehillah_crisis_armed_steps value = 1 } }
+   kehillah_crisis_reckon_severity_effect = { KIND = armed PROGRESS = kehillah_crisis_prior_spared_progress TIERED = yes }
   }
-  change_variable = { name = kehillah_crisis_threat_grade subtract = var:kehillah_crisis_armed_steps }
-  clamp_variable = { name = kehillah_crisis_threat_grade min = 1 max = 4 }
+  else = { kehillah_crisis_reckon_severity_effect = { KIND = armed PROGRESS = kehillah_crisis_prior_spared_progress TIERED = no } }
 
   # The people the opener names.
   var:kehillah_mob_threat ?= { save_temporary_scope_as = kehillah_armed_host }
@@ -126,6 +124,8 @@ kehillah_crisis_armed_ledger_entry_effect = {
 kehillah_crisis_armed_clear_effect = {
  remove_variable = kehillah_crisis_armed_grade_before
  remove_variable = kehillah_crisis_armed_steps
+ remove_variable = kehillah_crisis_armed_sev_before
+ remove_variable = kehillah_crisis_armed_lord_shift
  remove_variable = kehillah_crisis_al_warned
  remove_variable = kehillah_crisis_al_name_host
  remove_variable = kehillah_crisis_al_granada

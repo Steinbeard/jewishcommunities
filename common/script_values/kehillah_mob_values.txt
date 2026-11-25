@@ -296,8 +296,17 @@ kehillah_mob_plead_fail_value = {
 # --- The outcome. Scope: the target Kehillah leader; scope:kehillah_mob_
 # leader the host's leader. Severity 10 to 100.
 kehillah_mob_severity_value = {
-	value = scope:kehillah_mob_leader.var:kehillah_mob_base_severity
-	multiply = kehillah_host_protection_mult_value
+	# 2026-11-25: a host in a crisis strikes at the crisis's severity, which already counts the
+	# host's outlook and the charter (kehillah_crisis_severity_values.txt). The mob's own base and
+	# the protection multiplier serve only a host with no crisis severity.
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_crisis_severity } }
+		value = primary_title.var:kehillah_crisis_severity
+	}
+	else = {
+		value = scope:kehillah_mob_leader.var:kehillah_mob_base_severity
+		multiply = kehillah_host_protection_mult_value
+	}
 	# A host worn down on the road does less harm (live 2026-10-14: 488 of
 	# 3820 men still struck at full force): x(0.4 + 0.6 x its share left).
 	if = {
@@ -314,7 +323,6 @@ kehillah_mob_severity_value = {
 		}
 	}
 	primary_title ?= {
-		if = { limit = { has_variable = kehillah_crisis_residual_severity_relief } subtract = var:kehillah_crisis_residual_severity_relief }
 		if = {
 			limit = { has_variable = kehillah_mob_defended }
 			add = -15

@@ -1,0 +1,108 @@
+﻿# 2026-11-25, Daniel: one measure of a crisis's danger (docs/implementation/2026-11-25-crisis-severity-and-grade.md).
+# kehillah_crisis_severity (10 to 100, on the community title) is the crisis's danger; the threat
+# grade (kehillah_crisis_threat_grade, 1 to 4) is only ever a band of it, set by
+# kehillah_crisis_sync_grade_effect. Numbers are in kehillah_crisis_severity_values.txt.
+
+# Scope: the community title. A provisional severity as the crisis begins, before its opening is
+# known: the plain type base, no roll. kehillah_crisis_begin_effect calls it.
+kehillah_crisis_severity_reset_effect = {
+ remove_variable = kehillah_crisis_severity_rolled
+ remove_variable = kehillah_crisis_sev_type
+ remove_variable = kehillah_crisis_sev_lord
+ remove_variable = kehillah_crisis_sev_mood
+ remove_variable = kehillah_crisis_sev_shield
+ remove_variable = kehillah_crisis_sev_luck
+ remove_variable = kehillah_crisis_sev_opening
+ remove_variable = kehillah_crisis_armed_sev_before
+ remove_variable = kehillah_crisis_armed_lord_shift
+ remove_variable = kehillah_crisis_struck_sev_before
+ remove_variable = kehillah_crisis_struck_lord_shift
+ set_variable = { name = kehillah_crisis_severity value = kehillah_crisis_severity_type_base_value }
+ kehillah_crisis_sync_grade_effect = yes
+}
+
+# Scope: the community title, once its opening is recorded. Rolls the crisis's severity once per
+# crisis: the kind of crisis, the host's outlook, the popular mood, standing protections, and luck.
+kehillah_crisis_roll_severity_effect = {
+ if = {
+  limit = { NOT = { has_variable = kehillah_crisis_severity_rolled } }
+  set_variable = { name = kehillah_crisis_severity_rolled value = yes }
+  set_variable = { name = kehillah_crisis_sev_type value = kehillah_crisis_severity_type_base_value }
+  set_variable = { name = kehillah_crisis_sev_lord value = 0 }
+  set_variable = { name = kehillah_crisis_sev_mood value = 0 }
+  set_variable = { name = kehillah_crisis_sev_shield value = 0 }
+  holder ?= {
+   save_temporary_scope_as = kehillah_sev_leader
+   prev = {
+    set_variable = { name = kehillah_crisis_sev_lord value = scope:kehillah_sev_leader.kehillah_crisis_severity_lord_points_value }
+    set_variable = { name = kehillah_crisis_sev_mood value = scope:kehillah_sev_leader.kehillah_crisis_severity_pressure_points_value }
+    set_variable = { name = kehillah_crisis_sev_shield value = scope:kehillah_sev_leader.kehillah_crisis_severity_shield_points_value }
+   }
+  }
+  set_variable = {
+   name = kehillah_crisis_sev_luck
+   value = {
+    integer_range = {
+     min = kehillah_crisis_severity_luck_low
+     max = kehillah_crisis_severity_luck
+    }
+   }
+  }
+  set_variable = { name = kehillah_crisis_severity value = var:kehillah_crisis_sev_type }
+  change_variable = { name = kehillah_crisis_severity add = var:kehillah_crisis_sev_lord }
+  change_variable = { name = kehillah_crisis_severity add = var:kehillah_crisis_sev_mood }
+  change_variable = { name = kehillah_crisis_severity add = var:kehillah_crisis_sev_shield }
+  change_variable = { name = kehillah_crisis_severity add = var:kehillah_crisis_sev_luck }
+  clamp_variable = { name = kehillah_crisis_severity min = kehillah_crisis_severity_min max = kehillah_crisis_severity_max }
+  set_variable = { name = kehillah_crisis_sev_opening value = var:kehillah_crisis_severity }
+  kehillah_crisis_sync_grade_effect = yes
+  debug_log = "kehillah_crisis_severity: rolled [THIS.Title.MakeScope.Var('kehillah_crisis_severity').GetValue] = type [THIS.Title.MakeScope.Var('kehillah_crisis_sev_type').GetValue] lord [THIS.Title.MakeScope.Var('kehillah_crisis_sev_lord').GetValue] mood [THIS.Title.MakeScope.Var('kehillah_crisis_sev_mood').GetValue] shield [THIS.Title.MakeScope.Var('kehillah_crisis_sev_shield').GetValue] luck [THIS.Title.MakeScope.Var('kehillah_crisis_sev_luck').GetValue] grade [THIS.Title.MakeScope.Var('kehillah_crisis_threat_grade').GetValue]"
+ }
+}
+
+# Scope: the community title. The grade is the band the severity falls in.
+kehillah_crisis_sync_grade_effect = {
+ if = {
+  limit = { has_variable = kehillah_crisis_severity }
+  if = { limit = { var:kehillah_crisis_severity >= kehillah_crisis_grade_catastrophic_at } set_variable = { name = kehillah_crisis_threat_grade value = 4 } }
+  else_if = { limit = { var:kehillah_crisis_severity >= kehillah_crisis_grade_grave_at } set_variable = { name = kehillah_crisis_threat_grade value = 3 } }
+  else_if = { limit = { var:kehillah_crisis_severity >= kehillah_crisis_grade_serious_at } set_variable = { name = kehillah_crisis_threat_grade value = 2 } }
+  else = { set_variable = { name = kehillah_crisis_threat_grade value = 1 } }
+ }
+}
+
+# Scope: the community title, as a phase is lost (the Armed and Struck reckonings).
+# KIND: armed or struck. PROGRESS: the title variable holding the progress (0 to 100) toward the
+# phase's good end. TIERED: no when there was no race to judge (a host raised without warning).
+# Sets kehillah_crisis_<KIND>_steps to the tier (0 much worse, 1 worse, 2 eased, 3 eased much),
+# kehillah_crisis_<KIND>_sev_before, and kehillah_crisis_<KIND>_lord_shift (how far the host's
+# changed outlook since the opening moved it). Then the grade follows the severity.
+kehillah_crisis_reckon_severity_effect = {
+ if = { limit = { NOT = { has_variable = kehillah_crisis_severity } } kehillah_crisis_roll_severity_effect = yes }
+ set_variable = { name = kehillah_crisis_$KIND$_sev_before value = var:kehillah_crisis_severity }
+ set_variable = { name = kehillah_crisis_$KIND$_steps value = 0 }
+ if = {
+  limit = { always = $TIERED$ }
+  if = { limit = { var:$PROGRESS$ >= kehillah_crisis_$KIND$_step_three } set_variable = { name = kehillah_crisis_$KIND$_steps value = 3 } }
+  else_if = { limit = { var:$PROGRESS$ >= kehillah_crisis_$KIND$_step_two } set_variable = { name = kehillah_crisis_$KIND$_steps value = 2 } }
+  else_if = { limit = { var:$PROGRESS$ >= kehillah_crisis_$KIND$_step_one } set_variable = { name = kehillah_crisis_$KIND$_steps value = 1 } }
+  if = { limit = { var:kehillah_crisis_$KIND$_steps = 3 } change_variable = { name = kehillah_crisis_severity add = kehillah_crisis_shift_tier_3 } }
+  else_if = { limit = { var:kehillah_crisis_$KIND$_steps = 2 } change_variable = { name = kehillah_crisis_severity add = kehillah_crisis_shift_tier_2 } }
+  else_if = { limit = { var:kehillah_crisis_$KIND$_steps = 1 } change_variable = { name = kehillah_crisis_severity add = kehillah_crisis_shift_tier_1 } }
+  else = { change_variable = { name = kehillah_crisis_severity add = kehillah_crisis_shift_tier_0 } }
+ }
+ # The host's outlook as it is now, against what the roll counted.
+ set_variable = { name = kehillah_crisis_$KIND$_lord_shift value = 0 }
+ holder ?= {
+  save_temporary_scope_as = kehillah_sev_leader
+  prev = {
+   set_variable = { name = kehillah_crisis_$KIND$_lord_shift value = scope:kehillah_sev_leader.kehillah_crisis_severity_lord_points_value }
+   if = { limit = { has_variable = kehillah_crisis_sev_lord } change_variable = { name = kehillah_crisis_$KIND$_lord_shift subtract = var:kehillah_crisis_sev_lord } }
+   change_variable = { name = kehillah_crisis_severity add = var:kehillah_crisis_$KIND$_lord_shift }
+   set_variable = { name = kehillah_crisis_sev_lord value = scope:kehillah_sev_leader.kehillah_crisis_severity_lord_points_value }
+  }
+ }
+ clamp_variable = { name = kehillah_crisis_severity min = kehillah_crisis_severity_min max = kehillah_crisis_severity_max }
+ kehillah_crisis_sync_grade_effect = yes
+ debug_log = "kehillah_crisis_severity: $KIND$ reckoning tier [THIS.Title.MakeScope.Var('kehillah_crisis_$KIND$_steps').GetValue] lord shift [THIS.Title.MakeScope.Var('kehillah_crisis_$KIND$_lord_shift').GetValue] severity [THIS.Title.MakeScope.Var('kehillah_crisis_$KIND$_sev_before').GetValue] -> [THIS.Title.MakeScope.Var('kehillah_crisis_severity').GetValue] grade [THIS.Title.MakeScope.Var('kehillah_crisis_threat_grade').GetValue]"
+}

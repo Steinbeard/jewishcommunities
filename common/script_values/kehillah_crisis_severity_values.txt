@@ -1,0 +1,63 @@
+﻿# 2026-11-25, Daniel: one measure of a crisis's danger (docs/implementation/2026-11-25-crisis-severity-and-grade.md).
+# The crisis rolls a severity (10 to 100) as its opening is recorded; the threat grade is only a
+# band of it; the Armed and Struck reckonings move it up or down by how the phase went; the mob
+# strikes at it. Scope: the community title unless noted.
+
+# --- The opening roll ---
+
+# How dangerous this kind of crisis usually is, by its opening (kehillah_crisis_set_opening_effect).
+kehillah_crisis_severity_type_base_value = {
+ value = 36
+ if = { limit = { var:kehillah_crisis_opening ?= flag:crusade } value = 72 }
+ else_if = { limit = { var:kehillah_crisis_opening ?= flag:vizier } value = 60 }
+ else_if = { limit = { var:kehillah_crisis_opening ?= flag:holy_week } value = 46 }
+ else_if = { limit = { var:kehillah_crisis_opening ?= flag:accusation } value = 40 }
+ else_if = { limit = { var:kehillah_crisis_opening ?= flag:debts } value = 32 }
+}
+
+# Scope: the Kehillah leader. The host's outlook on the Jews, as the danger breakdown counts it:
+# Protective about -15, Hostile about +17.
+kehillah_crisis_severity_lord_points_value = {
+ value = 0
+ add = kehillah_danger_lord_value
+}
+
+# Scope: the Kehillah leader. The popular mood, half the danger's popular pressure (recent
+# incidents, hard times such as war, plague and crusade, the host faith's teaching, local
+# hostility and the like), -10 to +20.
+kehillah_crisis_severity_pressure_points_value = {
+ value = kehillah_danger_popular_pressure_value
+ divide = 2
+ min = -10
+ max = 20
+ round = yes
+}
+
+# Scope: the Kehillah leader. Standing protections: renewed royal protection -10; a charter
+# with strong protections -10, or one that obliges the watch -5.
+kehillah_crisis_severity_shield_points_value = {
+ value = 0
+ add = kehillah_danger_protection_value
+ if = { limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 2 } } add = -10 }
+ else_if = { limit = { primary_title ?= { var:kehillah_charter_cache_security ?= 1 } } add = -5 }
+}
+
+# The roll's luck, either way.
+kehillah_crisis_severity_luck = 10
+kehillah_crisis_severity_luck_low = -10
+kehillah_crisis_severity_min = 10
+kehillah_crisis_severity_max = 100
+
+# --- The grade: a band of the severity ---
+kehillah_crisis_grade_serious_at = 30
+kehillah_crisis_grade_grave_at = 50
+kehillah_crisis_grade_catastrophic_at = 70
+
+# --- The reckonings ---
+# Progress (0 to 100) toward the phase's good end when it was lost: under 25 the crisis grows
+# much worse, under 50 worse, from 50 it eases, from 75 it eases much. The thresholds are the
+# existing kehillah_crisis_armed_step_* and kehillah_crisis_struck_step_*.
+kehillah_crisis_shift_tier_0 = 20
+kehillah_crisis_shift_tier_1 = 10
+kehillah_crisis_shift_tier_2 = -10
+kehillah_crisis_shift_tier_3 = -20

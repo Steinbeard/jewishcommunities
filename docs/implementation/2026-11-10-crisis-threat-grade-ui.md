@@ -1,5 +1,10 @@
 # Crisis threat grade in the UI, and phase tooltips
 
+> **2026-11-25 addendum:** how the grade is *set* has changed. It is now a band of a rolled crisis
+> severity that the reckonings move up or down. See
+> [2026-11-25-crisis-severity-and-grade.md](2026-11-25-crisis-severity-and-grade.md). The UI described
+> here is unchanged.
+
 **Status:** implemented 2026-11-10, xTiger-clean, not yet live-tested. Carries out the display
 part of [2026-11-06-crisis-response-and-recovery.md](../spec/2026-11-06-crisis-response-and-recovery.md)
 ("Display grade, its reasons, and its mechanical implications").
