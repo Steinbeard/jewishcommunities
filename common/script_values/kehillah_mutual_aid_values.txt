@@ -79,27 +79,42 @@ kehillah_aid_exiles_size = {
 	multiply = kehillah_aid_era_value
 	round = yes
 }
-kehillah_aid_rebuild_size_value = {
-	value = 120
+# 2026-11-25: built from named parts, with no inline add = { value = ...
+# multiply = ... } blocks. The inline form returned 1500 in the live game for
+# a Troyes quarter (grade 1, one building, one dead), where the sum is 90; each
+# part on its own read correctly.
+# Scope: the needy leader. 60 per threat grade (grade 2 if none is recorded).
+kehillah_aid_rebuild_grade_part_value = {
+	value = 0
 	if = {
 		limit = { primary_title ?= { has_variable = kehillah_crisis_threat_grade } }
-		value = primary_title.var:kehillah_crisis_threat_grade
-		multiply = 60
+		add = primary_title.var:kehillah_crisis_threat_grade
 	}
+	else = { add = 2 }
+	multiply = 60
+}
+# Scope: the needy leader. 25 per building lost in the attack.
+kehillah_aid_rebuild_buildings_part_value = {
+	value = 0
 	if = {
 		limit = { primary_title ?= { has_variable = kehillah_crisis_loss_buildings } }
-		add = {
-			value = primary_title.var:kehillah_crisis_loss_buildings
-			multiply = 25
-		}
+		add = primary_title.var:kehillah_crisis_loss_buildings
 	}
+	multiply = 25
+}
+# Scope: the needy leader. 5 per death in the attack.
+kehillah_aid_rebuild_dead_part_value = {
+	value = 0
 	if = {
 		limit = { primary_title ?= { has_variable = kehillah_crisis_loss_dead } }
-		add = {
-			value = primary_title.var:kehillah_crisis_loss_dead
-			multiply = 5
-		}
+		add = primary_title.var:kehillah_crisis_loss_dead
 	}
+	multiply = 5
+}
+kehillah_aid_rebuild_size_value = {
+	value = kehillah_aid_rebuild_grade_part_value
+	add = kehillah_aid_rebuild_buildings_part_value
+	add = kehillah_aid_rebuild_dead_part_value
 	multiply = kehillah_aid_era_value
 	round = yes
 }
@@ -162,18 +177,38 @@ kehillah_aid_my_share_value = {
 		limit = { exists = scope:kehillah_aid_need.var:kehillah_aid_size }
 		value = scope:kehillah_aid_need.var:kehillah_aid_size
 		multiply = kehillah_aid_weight_value
-		if = {
-			limit = { exists = scope:kehillah_aid_need.var:kehillah_aid_expected_weight }
-			divide = {
-				value = scope:kehillah_aid_need.var:kehillah_aid_expected_weight
-				min = 2
-			}
-		}
-		else = { divide = 2 }
+		divide = kehillah_aid_share_divisor_value
 		min = kehillah_aid_min_share
 		max = scope:kehillah_aid_need.kehillah_aid_remaining_value
 	}
 	round = yes
+}
+# Scope: a Kehillah leader; scope:kehillah_aid_need saved. "Send what we
+# can" (2026-11-25, Daniel: an option to give less than is asked when the
+# share is beyond the treasury): half of what the community holds, below its
+# share. It counts for half the reputation of a share
+# (kehillah_aid_partial_rep_mult, in kehillah_aid_give_effect).
+kehillah_aid_partial_gift_value = {
+	value = gold
+	multiply = 0.5
+	max = kehillah_aid_my_share_value
+	min = 0
+	floor = yes
+}
+# The smallest "what we can" worth sending.
+kehillah_aid_partial_min = 10
+kehillah_aid_partial_rep_mult = 0.5
+# Scope: a Kehillah leader; scope:kehillah_aid_need saved. The shares the
+# need is divided among: the expected communities' shares, never fewer than
+# two. (2026-11-25: a named value, not an inline divide = { ... min = 2 }
+# block; see kehillah_aid_rebuild_size_value.)
+kehillah_aid_share_divisor_value = {
+	value = 0
+	if = {
+		limit = { exists = scope:kehillah_aid_need.var:kehillah_aid_expected_weight }
+		add = scope:kehillah_aid_need.var:kehillah_aid_expected_weight
+	}
+	min = 2
 }
 # Scope: the needy character. What is still to be raised.
 kehillah_aid_remaining_value = {

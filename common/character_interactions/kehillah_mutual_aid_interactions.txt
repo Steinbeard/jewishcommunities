@@ -40,7 +40,14 @@ kehillah_send_aid_interaction = {
 		scope:recipient = { save_temporary_scope_as = kehillah_aid_need }
 		scope:actor = {
 			is_available_adult = yes
-			gold >= kehillah_aid_my_share_value
+			# 2026-11-25: below our share, we send what we can.
+			custom_tooltip = {
+				text = kehillah_aid_cannot_spare_tt
+				OR = {
+					gold >= kehillah_aid_my_share_value
+					kehillah_aid_partial_gift_value >= kehillah_aid_partial_min
+				}
+			}
 		}
 	}
 
@@ -58,13 +65,19 @@ kehillah_send_aid_interaction = {
 	send_options_exclusive = no
 
 	on_accept = {
+		# kehillah_aid_my_share_value reads it in the limit below.
+		scope:recipient = { save_scope_as = kehillah_aid_need }
 		scope:actor = {
 			if = {
 				limit = { scope:kehillah_aid_give_all = yes }
 				kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = scope:recipient.kehillah_aid_remaining_value }
 			}
-			else = {
+			else_if = {
+				limit = { gold >= kehillah_aid_my_share_value }
 				kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = kehillah_aid_my_share_value }
+			}
+			else = {
+				kehillah_aid_give_effect = { NEED = scope:recipient AMOUNT = kehillah_aid_partial_gift_value }
 			}
 		}
 	}
