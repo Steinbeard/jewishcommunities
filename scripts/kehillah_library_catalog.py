@@ -2956,7 +2956,7 @@ def write_study_custom_loc(order, works):
             continue
         names = [f"#high ${t}_name$#!" for t in ts]
         joined = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
-        loc.append(f' kehillah_study_mastered_tenets_{f}:0 " Its case for {joined} is one you could make yourself now."')
+        loc.append(f' kehillah_study_mastered_tenets_{f}:0 " Its argument for {joined} is clear to you now."')
     write(MASTERED_LOC, loc)
 
 
