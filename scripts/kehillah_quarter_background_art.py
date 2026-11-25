@@ -40,11 +40,12 @@ PROP_SITES = (
     (4, 1485, 655, 60), # washing beside the right-side garden
 )
 INFILL_EDGES = (0, 1086, 2172)
-# Both clusters sit behind upgradeable sprites and off their ground footprints.
-# Their scale matches the smaller houses around the edge, narrowing the court.
+# Both clusters sit behind upgradeable sprites. The second house row now
+# occupies the rear court behind the Synagogue, where its roof remains visible
+# and the foreground Synagogue covers its lower edge.
 INFILL_SITES = (
     (0, 585, 470, 145),
-    (1, 1490, 530, 145),
+    (1, 815, 385, 145),
 )
 
 
