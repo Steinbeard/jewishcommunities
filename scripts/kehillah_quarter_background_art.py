@@ -1,9 +1,9 @@
 """Build the two 2412x1112 CK3 Jewish Quarter background textures.
 
 Run: python scripts/kehillah_quarter_background_art.py
-The base paintings stay untouched. Static figures and ordinary street props
-give the starter Quarter lived-in gathering points without implying that an
-optional institution has already been built. DDS uses vanilla's DXT1 format.
+The base paintings stay untouched. Residential infill, ordinary street props,
+and static figures make a starter Quarter feel inhabited without implying that
+an optional institution has already been built. DDS uses vanilla's DXT1 format.
 """
 
 from pathlib import Path
@@ -39,6 +39,14 @@ PROP_SITES = (
     (2, 1400, 280, 48), # produce near the rear stalls
     (4, 1485, 655, 60), # washing beside the right-side garden
 )
+INFILL_EDGES = (0, 1086, 2172)
+# Both clusters sit behind upgradeable sprites. The second house row now
+# occupies the rear court behind the Synagogue, where its roof remains visible
+# and the foreground Synagogue covers its lower edge.
+INFILL_SITES = (
+    (0, 585, 470, 145),
+    (1, 815, 385, 145),
+)
 
 
 def sheet_cell(region: str, kind: str, edges: tuple[int, ...], index: int) -> Image.Image:
@@ -46,6 +54,12 @@ def sheet_cell(region: str, kind: str, edges: tuple[int, ...], index: int) -> Im
     crop = sheet.crop((edges[index], 0, edges[index + 1], sheet.height))
     pixels = np.asarray(crop).copy()
     pixels[pixels[:, :, 3] < 24] = (0, 0, 0, 0)
+    if kind == "residential_infill":
+        # Image-generation's transparent cutouts have a few stray red edge
+        # pixels; remove them before scaling into the town painting.
+        fringe = ((pixels[:, :, 0] > 180) & (pixels[:, :, 1] < 85)
+                  & (pixels[:, :, 2] < 85))
+        pixels[fringe] = (0, 0, 0, 0)
     crop = Image.fromarray(pixels, "RGBA")
     bounds = crop.getchannel("A").getbbox()
     if not bounds:
@@ -69,12 +83,14 @@ def build(region: str) -> None:
     aspect_error = abs(image.width / image.height - SIZE[0] / SIZE[1])
     if aspect_error > 0.01:
         raise ValueError(f"Unexpected source aspect ratio for {name}: {image.size}")
+    for index, centre_x, ground_y, height in INFILL_SITES:
+        place(image, sheet_cell(region, "residential_infill", INFILL_EDGES, index), centre_x, ground_y, height)
     for index, centre_x, ground_y, height in PROP_SITES:
         place(image, sheet_cell(region, "street_props", PROP_EDGES, index), centre_x, ground_y, height)
     for index, centre_x, ground_y, height in AMBIENT_SITES[region]:
         place(image, sheet_cell(region, "ambient_figures", SHEET_EDGES[region], index), centre_x, ground_y, height)
     image = image.convert("RGB")
-    image.save(SOURCE / f"{name}_lived_v3.png")
+    image.save(SOURCE / f"{name}_lived_v4.png")
     image = image.resize(SIZE, Image.Resampling.LANCZOS)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     image.save(OUTPUT / f"{name}.dds", pixel_format="DXT1")

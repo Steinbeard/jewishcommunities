@@ -126,6 +126,10 @@ def pack(cells: list[Image.Image], family: str, region: str) -> list[Image.Image
             # The generated first stage has a much smaller footprint than
             # its siblings; fill more of the fixed slot without redrawing it.
             stage_scale *= min(1.33, 420 / (cell.width * scale))
+        if family == "workshops" and index == 0:
+            # Give the first craft stall a readable footprint while keeping
+            # it smaller than the second and third stages.
+            stage_scale *= min(1.23, 310 / (cell.width * scale))
         width = cell.width * stage_scale
         if family == "synagogue":
             # CK3's main slot is 28% wide but only 34.5% high; mapping a
