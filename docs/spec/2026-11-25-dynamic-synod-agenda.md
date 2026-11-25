@@ -360,3 +360,23 @@ of major controversy or more. Law and custom opens a sitting only for a player h
    characters can still divorce under it with no head of faith.
 3. In the 0109 option tooltips, the band line and the doctrine names must render, using
    `GetDoctrine(...).GetName( GetPlayer.GetFaith )`.
+
+### 12a. Rows follow the rite's present doctrine (2026-11-25, Daniel, same day)
+
+Daniel: the page must never offer to keep what the rite already holds, and should read from where
+the rite stands now. Changes:
+
+- Every row is offered exactly when the rite does not hold its doctrine. The return-to-custom rows
+  (converts turned away, rabbinate to men, restrained mourning) now appear whenever the rite has
+  left that custom, by a synod or any other way. Before, they appeared only after the synod's own
+  move away.
+- Each row's STEP is a script value (`kehillah_synod_step_<row>_value`) that reads the rite's
+  present doctrine, so a longer move costs more:
+  - Divorce Approval: 10 from Allowed, 5 from Disallowed.
+  - Divorce Allowed: 10 from Approval, 15 from Disallowed.
+  - Clergy Either: 35 from Male only, 15 from Female only.
+  - Clergy Male only: 15 from Either, 25 from Female only.
+  - Funeral Bewailment: 5 from Stoic, 10 from any other funeral doctrine.
+- Each option says what it replaces ("In place of ...", `kehillah_synod_law_now_<group>_tt_effect`).
+  Divorce-approval-from-Disallowed and clergy-either-from-Female-only get their own flavour lines,
+  since Gershom's herem and "no synod went this far" only fit the 1066 starting point.
