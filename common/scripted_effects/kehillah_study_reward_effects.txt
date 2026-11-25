@@ -1,0 +1,91 @@
+﻿# =====================================================================
+# What a reading gave (2026-11-24, Daniel: "list the other rewards your
+# received, maybe as a tooltip on the buttons (e.g. rabbinics xp if you're a
+# rabbi and piety if you got piety)").
+#
+# kehillah_study_specific_work_effect (kehillah_library_effects.txt) records
+# each reward as it gives it; kehillah_study_torah.0001's options show them
+# again as ordinary effect lines (show_as_tooltip), so the player reads
+# them where vanilla puts outcomes, not in the prose.
+# =====================================================================
+
+# Scope: the reader, as a reading resolves.
+kehillah_study_reward_reset_effect = {
+	remove_variable = kehillah_study_reward_xp
+	remove_variable = kehillah_study_reward_lifestyle
+	remove_variable = kehillah_study_reward_fulfillment
+	remove_variable = kehillah_study_reward_piety
+	set_variable = { name = kehillah_study_reward_track value = flag:$TRACK$ }
+	set_variable = { name = kehillah_study_reward_piety_before value = piety }
+}
+
+# Scope: the reader. Adds $XP$ to the experience this reading gave.
+kehillah_study_reward_xp_effect = {
+	if = {
+		limit = { has_variable = kehillah_study_reward_xp }
+		change_variable = { name = kehillah_study_reward_xp add = $XP$ }
+	}
+	else = {
+		set_variable = { name = kehillah_study_reward_xp value = $XP$ }
+	}
+}
+
+# Scope: the player, in an option of kehillah_study_torah.0001. Nothing here
+# is given again: show_as_tooltip only shows it.
+kehillah_study_torah_rewards_tt_effect = {
+	show_as_tooltip = {
+		if = {
+			limit = { has_variable = kehillah_study_reward_xp var:kehillah_study_reward_xp > 0 }
+			if = {
+				limit = { has_trait = kehillah_rabbi_trait }
+				if = {
+					limit = { var:kehillah_study_reward_track ?= flag:parshanut }
+					add_trait_xp = { trait = kehillah_rabbi_trait track = parshanut value = var:kehillah_study_reward_xp }
+				}
+				else_if = {
+					limit = { var:kehillah_study_reward_track ?= flag:talmudics }
+					add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = var:kehillah_study_reward_xp }
+				}
+				else = {
+					add_trait_xp = { trait = kehillah_rabbi_trait track = hashkafa value = var:kehillah_study_reward_xp }
+				}
+			}
+			else_if = {
+				limit = {
+					kehillah_is_karaite_character_trigger = yes
+					has_trait = lifestyle_scholar
+				}
+				add_trait_xp = { trait = lifestyle_scholar value = var:kehillah_study_reward_xp }
+			}
+		}
+		if = {
+			limit = { has_variable = kehillah_study_reward_lifestyle var:kehillah_study_reward_lifestyle > 0 }
+			add_learning_lifestyle_xp = var:kehillah_study_reward_lifestyle
+		}
+		if = {
+			limit = { has_variable = kehillah_study_reward_piety var:kehillah_study_reward_piety > 0 }
+			add_piety = var:kehillah_study_reward_piety
+		}
+		if = {
+			limit = { var:kehillah_study_reward_fulfillment ?= 1 }
+			change_spiritual_fulfillment = minor_spiritual_fulfillment_value
+		}
+		else_if = {
+			limit = { var:kehillah_study_reward_fulfillment ?= 2 }
+			change_spiritual_fulfillment = miniscule_spiritual_fulfillment_value
+		}
+	}
+	# An apprentice's experience is banked toward his ordination.
+	if = {
+		limit = {
+			has_variable = kehillah_study_reward_xp var:kehillah_study_reward_xp > 0
+			NOT = { has_trait = kehillah_rabbi_trait }
+			has_variable = kehillah_yeshiva_enrolled
+		}
+		custom_tooltip = kehillah_study_reward_banked_tt
+	}
+	if = {
+		limit = { has_variable = kehillah_spark_just_gained }
+		custom_tooltip = kehillah_study_reward_spark_tt
+	}
+}

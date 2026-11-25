@@ -1158,6 +1158,27 @@ def write_study_effects(order, works):
         ]
         out += study_call(f, works[f], "\t\t")
         out.append("\t}")
+    # 2026-11-24 (Daniel: "the work convinces you" as "an event that can happen
+    # while you study a machshava work"): a player's first reading of a
+    # Machshavah book may persuade him of a tenet it argues for that he does not
+    # yet hold, in the course (kehillah_minds.0001), not after it.
+    out += ["}", "", "# Scope: a player reading the work the numeric ID names (scheme on_monthly).",
+            "# Sets var:kehillah_minds_tenet / _work when a first reading of a Machshavah",
+            "# book argues for a tenet he does not yet hold.",
+            "kehillah_study_torah_minds_pick_effect = {", "\tremove_variable = kehillah_minds_tenet",
+            "\tremove_variable = kehillah_minds_work"]
+    first = True
+    for i, f in enumerate(order, start=1):
+        w = works[f]
+        if w["genre"] != "hashkafa" and not authored(w):
+            continue
+        out += [f"\t{'if' if first else 'else_if'} = {{",
+                f"\t\tlimit = {{ var:kehillah_study_current_work_id = {i} kehillah_lib_genre_{f} = 3 "
+                f"NOT = {{ is_target_in_variable_list = {{ name = kehillah_mastered_works target = flag:{f} }} }} }}",
+                f"\t\tkehillah_minds_pick_{f}_effect = yes",
+                f"\t\tif = {{ limit = {{ has_variable = kehillah_minds_tenet }} set_variable = {{ name = kehillah_minds_work value = flag:{f} }} }}",
+                "\t}"]
+        first = False
     out += [
         "}",
         "",
