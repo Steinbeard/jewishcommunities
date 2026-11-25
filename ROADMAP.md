@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-**Quarter entrance and Market pins REVISED 2026-11-24; live UI check pending:** the first offsets overshot in Daniel's subsequent Worms screenshot, placing the entrance pin past the gateposts and the Market pin at the stall's right edge. The Entrance/Wall offset is now `{ 75 45 }` and the Market offset `{ 60 40 }`; sprites and site coordinates stay fixed. Check placement after a CK3 restart. See [pin alignment](docs/implementation/2026-11-24-quarter-pin-alignment.md).
+**Quarter entrance site MOVED 2026-11-25; live UI check pending:** Daniel clarified that the gate artwork, rather than just its pin, needs to sit on the painted road. External slot 4 now sits at `{ 63% 14% }` instead of `{ 69% 20% }`, moving the gate sprite and marker together. The Entrance and Market pins both use the same `{ 60 40 }` offset as other Quarter buildings. Check gate alignment after a CK3 restart. See [pin alignment](docs/implementation/2026-11-24-quarter-pin-alignment.md).
 
 **Quarter house overlap CORRECTED 2026-11-24; live visual check pending:** Daniel's Worms screenshot showed the right residential infill cluster colliding with the Market stall. It now sits behind the Synagogue at source-scene ground point (815,385), letting the Synagogue sprite cover its lower edge; the right-side Market site is clear in Western/MENA static previews. Rebuilt backgrounds are ready for a CK3 restart. See [the infill correction](docs/implementation/2026-11-24-quarter-residential-infill.md).
 
