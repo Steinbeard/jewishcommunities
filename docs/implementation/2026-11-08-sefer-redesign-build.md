@@ -268,3 +268,38 @@ Standing row.
    - Adventurers may now also use the Library window's per-book Study
      (`kehillah_lib_can_start_selected_study_trigger`).
    xTiger: nothing new. Not live-tested: test guide section 12a.
+
+## 10. Addendum, 2026-11-25: when a Machloket can start
+
+**Why.** Daniel's 1066 campaign disputed Saadia's *Emunot ve-Deot* in 1066. The 2026-11-11 gate
+(standing 6 or more, at a ceiling below 8, 15% a year) fired on settled books. Rabbanite rites seed
+*Emunot* at Esteemed (7), and its ceiling is 7 while Hokhmah is only permitted, so it rolled every
+year from game start. The same gate kept a new *Moreh Nevukhim* quiet until it reached Esteemed,
+although the letters against it began within a few years of its release.
+
+**Now** (`common/scripted_triggers/kehillah_machloket_triggers.txt`,
+`kehillah_machloket_can_erupt_trigger`). The yearly roll needs all of:
+- **fresh:** written within `kehillah_machloket_novelty_years` (75), or its author is alive;
+- **read now:** reception moved in the last ten years (`kehillah_touched_`);
+- **read widely:** Popular (5) or higher;
+- **held back:** a tenet of the rite caps it below Authoritative, and it stands within
+  `kehillah_machloket_ceiling_gap` (2) tiers of that cap.
+
+The chance is 10%, plus 10 while the author lives, plus 5 when the ceiling is 6 or lower (a tenet
+it argues for is only known or prohibited), plus 5 when the book is at its ceiling. All of these
+are in `kehillah_sefer_values.txt`. Old books are disputed only from a new cause. For now that
+means a head of rite condemning an approved book (`kehillah_sefer_condemn_effect`, unchanged).
+
+**Opening critic.** This was a random AI rabbi with learning 8 or more, possibly the champion
+himself. It is now the most opposed such rabbi by the work's review stance
+(`kehillah_review_stance_<work>_value`, below 0), never the champion. The old random pick remains
+only as the fallback when no one opposes the work.
+
+**Not done:** the situation redesign (named advocates, a window, player actions). Daniel does not
+want it on the Kehillah crisis window, which is built for one community in danger. A renewed
+dispute over an old book (a provocative commentary, a Synod reform touching its tenet) is not
+built either.
+
+**Checks.** xTiger: nothing on these files except a BOM warning, since fixed. Not live-tested. In
+1066 *Emunot* should no longer start a Machloket. A *Moreh* written in play should be able to
+start one once it is Popular, while Maimonides lives or for 75 years after it.
