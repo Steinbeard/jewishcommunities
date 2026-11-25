@@ -188,6 +188,48 @@ performance in a 53-community start.
 7. Pass a year at speed 5 with AI communities. Look at the trade window for AI Kehillot that hold a Funduq,
    and note any slowdown.
 
+## 4c. Addendum (2026-11-25, Daniel): a trade extra per leadership style, trading buildings, the lending table. xTiger checked; not live-tested
+
+Daniel asked for one extra way of playing for each leadership style (Commercial: +1 trade route), for the
+Quarter's buildings to make the community better at trading its own goods, and for the lending table to make
+lending more effective. Built the same day:
+
+- **Leadership style extras** (`common/modifiers/kehillah_leadership_style_modifiers.txt`,
+  `common/script_values/kehillah_sheelah_values.txt`):
+  - **Commercial:** `max_trade_routes = 1`. Without a Factor's House or Market Hall the community has 1
+    route; with both, 3. That raises §4a's "at most 2" for commercial communities only.
+  - **Political:** `max_personal_schemes_add = 1`: Sway or Befriend two patrons at once.
+  - **Scholarly:** one more following community counts toward Greatness through She'elot
+    (`kehillah_sheelah_follower_cap_value`, 5 -> 6). Chosen as the scholarly analogue of a route: a standing
+    tie to another community. Alternatives if this is too quiet: one more counted seated alumnus
+    (`kehillah_yeshiva_seated_alumni_cap`), or a second writing project.
+  - The style tooltips still promised the retired "+60 baseline" (pillars spec R2, 2026-11-20). They now
+    describe the current effects and the extra.
+- **Trading buildings** (`kehillah_domicile_buildings.txt`, character modifiers on the leader, following
+  vanilla's merchant-company pattern, `trade_good_spices_sell_price_mult` on `00_merchant_company_buildings`):
+  - each Craft Row trade, the Kosher Winery, the Sofer's Room (tier 2) and the Copyists: +2% (tier 1) or +4%
+    (tier 2) sell price for **their own good** on the leader's routes. Vanilla's per-building values are
+    0.5-1%, but a merchant stacks many buildings, so a Kehillah's few get more each;
+  - Factor's House / Funduq tiers: `trade_capacity_mult` +5/10/15% and `trade_competitiveness_mult`
+    +2/4/6%; the Market Hall: competitiveness +3%.
+- **The lending table** (the Moneychangers' Tables -> Bankers' Row -> Exchange track;
+  `kehillah_banking_values.txt`, `kehillah_community_loan_effects.txt`, `kehillah_lending_interactions.txt`):
+  - **Better terms:** when the community takes up an open-interest loan, the debt grows by 5% per tier. This
+    is added to the Ne'eman's Pledge Chest rate (`kehillah_loan_better_terms_rate_value`). The extra now also
+    goes into `original_interest`, so a cleric's voiding of the interest voids it too. This changes the
+    Pledge Chest's behavior, which had added only to `amount_owed`.
+  - **A known bank:** Loan Gold's acceptance gets +10 per tier, labelled "Our lending table is well known".
+  - Building tooltips show the effect as sizes (parameters `kehillah_lending_table_tier_1-3`).
+
+**Live checks (Daniel, test save):**
+1. Choose Commercial with no Factor's House, then run `event kehillah_quarter_debug.9`: max routes **1**.
+   The style modifier's tooltip lists +1 trade route.
+2. Choose Political: the character's scheme limits show one more personal scheme.
+3. With a Craft Row trade built, the trade window's price for that good on the leader's route shows the
+   bonus. Vanilla's character-scope `sell_price_mult` on a route-owner is the untested assumption.
+4. Give the Quarter the Bankers' Row, then Loan Gold to an indebted ruler with interest. The acceptance
+   breakdown shows the lending-table line, and the debt is about 10% above vanilla's.
+
 ## 5. Questions for Daniel
 1. Should routes be the real vanilla trade window (§3.1), or scripted sales only? The first is richer;
    the second is safer for the government file.

@@ -70,22 +70,37 @@ kehillah_community_adopt_loans_effect = {
 				set_variable = { name = kehillah_lent_for value = scope:kehillah_adopting_seat }
 				# 2026-11-25 (council redesign): the Ne'eman's Keep the Pledge
 				# Chest writes better terms on an open-interest loan -- once,
-				# as the community takes the loan up.
+				# as the community takes the loan up. 2026-11-25 (Daniel): so
+				# does the lending table, by its tier (kehillah_banking_values.txt).
+				# The extra is interest, so it is added to original_interest
+				# too: a cleric voiding the interest voids it as well.
 				if = {
 					limit = {
 						var:instrument ?= flag:open
 						exists = var:amount_owed
-						scope:kehillah_adopting_leader = { kehillah_pledge_chest_interest_rate_value > 0 }
+						scope:kehillah_adopting_leader = { kehillah_loan_better_terms_rate_value > 0 }
 					}
-					change_variable = {
-						name = amount_owed
-						add = {
+					save_temporary_scope_value_as = {
+						name = kehillah_better_terms_extra
+						value = {
 							value = var:amount_owed
-							multiply = scope:kehillah_adopting_leader.kehillah_pledge_chest_interest_rate_value
+							multiply = scope:kehillah_adopting_leader.kehillah_loan_better_terms_rate_value
 							round = yes
 						}
 					}
-					set_variable = { name = kehillah_pledge_chest_terms value = yes }
+					change_variable = { name = amount_owed add = scope:kehillah_better_terms_extra }
+					if = {
+						limit = { exists = var:original_interest }
+						change_variable = { name = original_interest add = scope:kehillah_better_terms_extra }
+					}
+					if = {
+						limit = { scope:kehillah_adopting_leader = { kehillah_pledge_chest_interest_rate_value > 0 } }
+						set_variable = { name = kehillah_pledge_chest_terms value = yes }
+					}
+					if = {
+						limit = { scope:kehillah_adopting_leader = { kehillah_lending_table_interest_rate_value > 0 } }
+						set_variable = { name = kehillah_lending_table_terms value = yes }
+					}
 				}
 			}
 			if = {
