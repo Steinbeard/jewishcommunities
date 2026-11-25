@@ -1,6 +1,6 @@
 # Bet Din: arguments, citations, votes, and visible progress
 
-**Status: partly source-implemented 2026-11-24 for authored cases 15–114; live test and bespoke cases 1–8, 10–14 pending.** Daniel's direction supersedes the *per-case choice, citation timing, tally, and resolution display* in `v5-bet-din-conference.md` and `2026-11-23-bet-din-citation-strength-and-risk.md`. It does not change the activity's host, bench selection, docket eligibility, or case premises. The older specs and the current implementation remain the record of what the game actually does until this design is built and live-tested.
+**Status: partly source-implemented 2026-11-24 for authored cases 15–114; live test and bespoke cases 1–14 pending.** Daniel's direction supersedes the *per-case choice, citation timing, tally, and resolution display* in `v5-bet-din-conference.md` and `2026-11-23-bet-din-citation-strength-and-risk.md`. It does not change the activity's host, bench selection, docket eligibility, or case premises. The older specs and the current implementation remain the record of what the game actually does until this design is built and live-tested.
 
 ## Player experience
 

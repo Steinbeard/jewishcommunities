@@ -1,6 +1,6 @@
 # Bet Din argument flow implementation
 
-**Status: source implementation for authored cases 15–114, 2026-11-24; xTiger checked, live play pending. The thirteen earlier bespoke cases remain on their previous flow.** This implements the common hearing sequence proposed in [the argument and vote spec](../spec/2026-11-24-bet-din-argument-and-vote-flow.md), with the limits below. It depends on the [100-case docket integration](2026-11-23-bet-din-docket-research-integration.md).
+**Status: source implementation for authored cases 15–114, 2026-11-24; xTiger checked, live play pending. The fourteen earlier bespoke cases remain on their previous flow.** This implements the common hearing sequence proposed in [the argument and vote spec](../spec/2026-11-24-bet-din-argument-and-vote-flow.md), with the limits below. It depends on the [100-case docket integration](2026-11-23-bet-din-docket-research-integration.md).
 
 ## What changed
 
@@ -14,7 +14,7 @@ The shared logic lives in `common/scripted_effects/kehillah_din_argument_effects
 
 ## Limits and follow-up
 
-- The thirteen earlier bespoke cases (1–8 and 10–14) still use their older choice and citation chains. Their rulings include special doctrine and family effects; migrating them needs a separate review of each outcome rather than a mechanical rewrite.
+- The fourteen earlier bespoke cases (1–14) still use their older choice and citation chains. Their rulings include special doctrine and family effects; migrating them needs a separate review of each outcome rather than a mechanical rewrite.
 - The authored choices retain their existing prose. The shared challenge mapping is currently A: Diplomacy, B: Learning, C: Stewardship. This removes gated guaranteed-success buttons but should be tuned per case after seeing live choices. Trait and stress interactions are present but not yet tailored to every premise.
 - The citation categories use standing as the practical distinction. The well-established candidate is highest-standing; the obscure candidate is the newest mastered noncanonical work at standing 4 or below. They are not yet ranked by actual master count. The displayed chance uses the existing standing-based reliability, while success weight uses the current master-count-based strength.
 - The progress bar and event-localized percentages have passed source and xTiger checks, not an in-game visual or arithmetic probe. A user live test or Luna session should confirm that the citation screen follows every argument, displayed chance matches the roll, source names and bans render, the panel votes determine the ruling, cleanup prevents leakage between cases, and the bar updates after a completed ruling. Check `error.log` against a boot baseline.
