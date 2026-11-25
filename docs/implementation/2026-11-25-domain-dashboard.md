@@ -35,6 +35,40 @@ unchanged. Between them:
    - "Heading for N", then the band's current effect.
    - The pillar's breakdown is the card's tooltip, as before.
 
+## Driver chips (added 2026-11-25, second request)
+
+Daniel: show what drives each pillar's status in a quick, visual way, as the danger categories
+do. Each pillar card now has a row of **four chips** under "Heading for N". The cards grew from
+176 to 214 px tall.
+
+- **What a chip is.** Each chip is a group of that pillar's baseline terms
+  (`kehillah_dom_drv_<pillar>_<group>_value`).
+- **What a chip shows.** An icon, with one of vanilla's coloured change arrows in its corner
+  (`change_indicator_icons_colored_up_good.dds`). The arrow runs from red double-down to green
+  double-up, picked from the group's sum:
+
+  | Group sum | Arrow |
+  |---|---|
+  | ≤ −150 | ▼▼ |
+  | < −25 | ▼ |
+  | −25 to 25 | ◆ |
+  | > 25 | ▲ |
+  | ≥ 150 | ▲▲ |
+
+- **The tooltip** names the group and says in words how hard it pushes ("lifting it", "dragging
+  it down hard"), with no numbers, as the pillar-change rule asks. It then lists the group's
+  terms, reusing the exact custom-loc lines of the pillar's full breakdown.
+
+| Pillar | Chips |
+|---|---|
+| Affluence | The Quarter · Its leaders · The town · Host and charter |
+| Stability | Communal life · Neighbours · Host and charter · Threats |
+| Greatness | Scholars · Synagogue and books · Prominence · Host's hostility |
+
+Every baseline term is in exactly one group; only the floor (every community's footing) is left
+out. This was checked mechanically against the three `*_baseline_value` definitions. **When a
+baseline term is added, add it to a group too.**
+
 ## Not done
 
 - The old loc keys of the removed rows are left unused: `KEHILLAH_DOMAIN_OVERVIEW_HEADER`,
