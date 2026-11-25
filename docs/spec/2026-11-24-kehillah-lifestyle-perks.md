@@ -1,5 +1,6 @@
-**Status:** §5 steps 1 and 3 BUILT 2026-11-24 at Daniel's request (see §7); xTiger-clean on the new
-blocks; live test pending. Step 2 (own focuses) and the Diplomacy/Martial trees are not built.
+**Status:** §5 steps 1 and 3 BUILT 2026-11-24 at Daniel's request (see §7); Kehillah-specific perk
+effects BUILT 2026-11-25 (see §8, which also corrects §7's gate flag). xTiger-clean on the new
+blocks; live test pending. Step 2 (own focuses) is not built.
 Originally a research proposal. Checked against the installed CK3 1.21.0.3 files
 (`common/lifestyles`, `common/focuses/00_lifestyle_focuses.txt`, `common/lifestyle_perks/*`,
 `common/governments/00_government_types.txt`). Related: ROADMAP's 2026-11-20 note that the merchant
@@ -129,6 +130,11 @@ own.
 
 ## 7. As built, 2026-11-24
 
+*Correction 2026-11-25: the blocks below were first keyed to `government_is_kehillah`, which
+`kehillah_landed_government` also has, so landed leaders got these bonuses on top of the landed ones.
+They are now keyed to `government_uses_kehillah_lifestyle_perks`, set only by `kehillah_government`
+(§8).*
+
 - `kehillah_government` now has `government_uses_landless_lifestyle_perks` and
   `government_uses_landless_or_trader_lifestyle_perks`. `kehillah_landed_government` does not.
 - Six vanilla perk files are overridden in `common/lifestyle_perks/`: Medicine, Scholarship,
@@ -184,3 +190,53 @@ Kehillah leader. (1) Wealth, Domain and Duty perks show the Kehillah lines above
 levy, fort or vassal lines. (2) Buy Heregeld or Organized Muster Rolls through the console
 (`add_perk`) and confirm the Quarter's monthly gold rises. (3) A feudal character's perks are
 unchanged. (4) `error.log` has no new lines from `lifestyle_perks` after opening the trees.
+
+## 8. Kehillah-specific perk effects, 2026-11-25
+
+Daniel asked for custom effects relevant to Kehillah play where the vanilla perk has nothing to
+offer a community leader. Seven perks whose vanilla effects are vassal, claim or county mechanics
+now hook into the mod's own systems.
+
+**Pillar gains from the leader's own actions.** This follows pillars spec R2 (2026-11-20), which
+retired flat leader bonuses to the pillar baseline in favour of making the leader's own actions
+stronger. `kehillah_change_pillar_effect` already multiplies a positive change by the leadership
+style's mandate boost (1.2). It now also multiplies by the leader's perk boost: +10% per matching
+perk (`kehillah_perk_pillar_boost_step`), so at most +20% per pillar. The change's own tooltip
+already shows the boosted size (minor/moderate/major). Passive convergence is not boosted, the
+same rule R2 sets for styles.
+
+| Perk (tree) | Pillar | Why this perk |
+| --- | --- | --- |
+| Defensive Negotiations (Foreign Affairs) | Stability | intercession at the host's court |
+| Absolute Control (Authority) | Stability | enforcing communal ordinances |
+| At Any Cost (Wealth) | Affluence | |
+| Centralization (Domain) | Affluence | keeps its +0.15 Quarter prestige too |
+| Sanctioned Loopholes (Scholarship) | Greatness | responsa: finding the lenient ruling |
+| Clerical Justifications (Theology) | Greatness | rabbinic authority |
+
+**Sefer care.** Planned Cultivation lowers the library's yearly wear chance by 1 point
+(`kehillah_perk_sefer_care_wear_reduction`, floor 1; 3 → 2, or 2 → 1 with a Sofer's Workshop). It
+lost its §7 prestige modifier.
+
+**Where things are:**
+- Values: `common/script_values/kehillah_lifestyle_perk_values.txt`.
+- Hook: `kehillah_change_pillar_effect` and `kehillah_lib_wear_chance_value`.
+- Tooltip lines: `common/effect_localization/kehillah_lifestyle_perk_effects.txt`, worded as sizes,
+  no numbers.
+- The generator adds those lines to the perks (`KEHILLAH_TEXT`). Two more vanilla files are now
+  overridden for this: Foreign Affairs and Authority (eight in all).
+
+**Gate.** Every Kehillah perk block, line and effect checks `government_uses_kehillah_lifestyle_perks`.
+Only `kehillah_government` sets it, which fixes the landed leak noted in §7.
+
+**Not done:** Bet Din odds and lending income were considered as hooks and left out. The Bet Din
+argument flow is being changed in another session, and the loan path has crash history and is
+awaiting its own live test.
+
+**Live checks (Daniel), in addition to §7:**
+1. Give the Worms leader `absolute_control_perk` with `add_perk`, then take an action that raises
+   Stability. Its tooltip size should be the same or larger than without the perk, and the change
+   10% larger. A `debug_log` of `kehillah_perk_stability_boost_value` should read 1.1.
+2. The six perks show their Kehillah line only for a Kehillah leader, not for a feudal ruler or a
+   landed Kehillah leader.
+3. With `planned_cultivation_perk`, `kehillah_lib_wear_chance_value` on the library title drops by 1.

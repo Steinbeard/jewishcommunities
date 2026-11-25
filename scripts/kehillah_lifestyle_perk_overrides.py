@@ -2,15 +2,19 @@
 
 Spec: docs/spec/2026-11-24-kehillah-lifestyle-perks.md.
 
-Copies six vanilla lifestyle_perks files into common/lifestyle_perks/ under the same
-names (so they replace vanilla's), then inserts one
-`government_character_modifier = { flag = government_is_kehillah ... }` block per perk
-listed in KEHILLAH_BLOCKS and hides vanilla tooltip lines that describe vassal-only
-effects. Everything else stays identical to vanilla.
+Copies vanilla lifestyle_perks files into common/lifestyle_perks/ under the same
+names (so they replace vanilla's), then:
+- inserts one `government_character_modifier = { flag = FLAG ... }` block per perk
+  listed in KEHILLAH_BLOCKS;
+- adds one tooltip line (gated on FLAG) per perk listed in KEHILLAH_TEXT, for
+  Kehillah effects that live in the mod's own scripts (has_perk checks);
+- hides vanilla tooltip lines that describe vassal-only effects (HIDE_TEXT).
+Everything else stays identical to vanilla.
 
 Re-run after every CK3 patch:
     python scripts/kehillah_lifestyle_perk_overrides.py "<CK3 install>/game"
 """
+import json
 import os
 import re
 import sys
@@ -18,14 +22,18 @@ import sys
 MOD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(MOD, "common", "lifestyle_perks")
 
-# perk -> modifier lines (tab-free; indented on insert)
+# Set only by kehillah_government. Not government_is_kehillah: the landed
+# Kehillah government has that flag too, and keeps vanilla's landed perks.
+FLAG = "government_uses_kehillah_lifestyle_perks"
+
+# perk -> modifier lines (indented on insert)
 KEHILLAH_BLOCKS = {
     "00_learning_1_medicine_tree_perks.txt": {
         # The landless flag drops vanilla's epidemic resistance; keep it.
         "healthy_perk": ["epidemic_resistance = 5"],
     },
     "00_learning_2_scholarship_tree_perks.txt": {
-        "planned_cultivation_perk": ["domicile_monthly_prestige_add = 0.15"],
+        # planned_cultivation_perk: no modifier; it slows sefer wear (KEHILLAH_TEXT).
         # The landless flag drops vanilla's fascination bonus; keep it.
         "scientific_perk": ["cultural_head_fascination_mult = 0.2"],
     },
@@ -65,8 +73,35 @@ KEHILLAH_BLOCKS = {
     },
 }
 
-# Vanilla tooltip lines about vassals that a Kehillah leader would otherwise see:
-# (file, exact effect text key) -> wrapped in NOT government_is_kehillah.
+# Kehillah-only effects that are not character modifiers. Each perk gets one
+# tooltip line (an effect_localization key) at the top of its effect block;
+# the effect lives in the mod's scripts, which test has_perk
+# (common/script_values/kehillah_lifestyle_perk_values.txt). These perks do
+# nothing else for a Kehillah leader: their vanilla effects are vassal, claim
+# or county mechanics.
+KEHILLAH_TEXT = {
+    "00_diplomacy_1_foreign_affairs_tree_perks.txt": {
+        "defensive_negotiations_perk": "kehillah_perk_stability_actions_effect",
+    },
+    "00_martial_2_authority_tree_perks.txt": {
+        "absolute_control_perk": "kehillah_perk_stability_actions_effect",
+    },
+    "00_stewardship_1_wealth_tree_perks.txt": {
+        "at_any_cost_perk": "kehillah_perk_prosperity_actions_effect",
+    },
+    "00_stewardship_2_domain_tree_perks.txt": {
+        "centralization_perk": "kehillah_perk_prosperity_actions_effect",
+    },
+    "00_learning_2_scholarship_tree_perks.txt": {
+        "sanctioned_loopholes_perk": "kehillah_perk_greatness_actions_effect",
+        "planned_cultivation_perk": "kehillah_perk_sefer_care_effect",
+    },
+    "00_learning_3_theology_tree_perks.txt": {
+        "clerical_justifications_perk": "kehillah_perk_greatness_actions_effect",
+    },
+}
+
+# Vanilla tooltip lines about vassals that a Kehillah leader would otherwise see.
 HIDE_TEXT = {
     "00_stewardship_3_duty_tree_perks.txt": ["toe_the_line_perk_effect", "removes_directive_refusal_perk_effect"],
 }
@@ -78,65 +113,90 @@ HEADER = (
     "# KEHILLAH differ from vanilla. Spec: docs/spec/2026-11-24-kehillah-lifestyle-perks.md\n"
 )
 
+NL = "\n"
+T = "\t"
 
-def perk_span(text, name):
-    m = re.search(r"^" + re.escape(name) + r"\s*=\s*\{", text, re.M)
+
+def block_span(text, start_pat, pos=0, end=None):
+    """(start, end of opening match, index of closing brace) of the first matching block."""
+    m = re.compile(start_pat, re.M).search(text, pos, len(text) if end is None else end)
     if not m:
-        raise SystemExit(f"perk {name} not found")
+        return None
     depth = 0
     i = m.end() - 1
     while True:
         c = text[i]
         if c == "#":
-            i = text.index("\n", i)
+            i = text.index(NL, i)
             continue
         if c == "{":
             depth += 1
         elif c == "}":
             depth -= 1
             if depth == 0:
-                return m.start(), i
+                return m.start(), m.end(), i
         i += 1
+
+
+def perk_span(text, name):
+    span = block_span(text, r"^" + re.escape(name) + r"\s*=\s*\{")
+    if not span:
+        raise SystemExit(f"perk {name} not found")
+    return span
+
+
+def text_line(key):
+    return (NL + T * 2 + "# KEHILLAH: what this perk does for a community leader." + NL
+            + T * 2 + "if = {" + NL
+            + T * 3 + "limit = { government_has_flag = " + FLAG + " }" + NL
+            + T * 3 + "custom_description_no_bullet = { text = " + key + " }" + NL
+            + T * 2 + "}")
+
+
+def modifier_block(mods):
+    return (NL + T + "# KEHILLAH: replaces the landed bonus the landless flag removes." + NL
+            + T + "government_character_modifier = {" + NL
+            + T * 2 + "flag = " + FLAG + NL
+            + "".join(T * 2 + m + NL for m in mods)
+            + T + "}" + NL)
 
 
 def main(game):
     ver = "unknown"
     try:
-        import json
-        ver = json.load(open(os.path.join(os.path.dirname(game), "launcher", "launcher-settings.json"), encoding="utf-8-sig"))["rawVersion"]
+        settings = os.path.join(os.path.dirname(game), "launcher", "launcher-settings.json")
+        ver = json.load(open(settings, encoding="utf-8-sig"))["rawVersion"]
     except Exception:
         pass
     os.makedirs(OUT, exist_ok=True)
-    for fn, perks in KEHILLAH_BLOCKS.items():
-        src = os.path.join(game, "common", "lifestyle_perks", fn)
-        raw = open(src, "rb").read()
+    files = list(dict.fromkeys(list(KEHILLAH_BLOCKS) + list(KEHILLAH_TEXT)))
+    for fn in files:
+        raw = open(os.path.join(game, "common", "lifestyle_perks", fn), "rb").read()
         bom = raw.startswith(b"\xef\xbb\xbf")
-        text = raw.decode("utf-8-sig").replace("\r\n", "\n")
-        for perk, mods in perks.items():
-            start, close = perk_span(text, perk)
-            block = ("\n\t# KEHILLAH: replaces the landed bonus the landless flag removes.\n"
-                     "\tgovernment_character_modifier = {\n\t\tflag = government_is_kehillah\n"
-                     + "".join(f"\t\t{m}\n" for m in mods) + "\t}\n")
-            text = text[:close] + block + text[close:]
+        text = raw.decode("utf-8-sig").replace("\r\n", NL)
+        for perk, key in KEHILLAH_TEXT.get(fn, {}).items():
+            start, _, close = perk_span(text, perk)
+            eff = block_span(text, r"^\teffect\s*=\s*\{", start, close)
+            if eff:
+                text = text[:eff[1]] + text_line(key) + text[eff[1]:]
+            else:
+                text = text[:close] + NL + T + "effect = {" + text_line(key) + NL + T + "}" + NL + text[close:]
+        for perk, mods in KEHILLAH_BLOCKS.get(fn, {}).items():
+            _, _, close = perk_span(text, perk)
+            text = text[:close] + modifier_block(mods) + text[close:]
         for key in HIDE_TEXT.get(fn, []):
-            pat = re.compile(r"custom_description_no_bullet = \{ text = " + re.escape(key) + r" \}"
-                             r"|custom_description_no_bullet = \{\s*text = " + re.escape(key) + r"\s*\}")
-            n = 0
-
-            def wrap(m):
-                nonlocal n
-                n += 1
-                return ("if = { # KEHILLAH: vassal-only effect\n\t\t\t\tlimit = { NOT = { government_has_flag = government_is_kehillah } }\n\t\t\t\t"
-                        + m.group(0) + "\n\t\t\t}")
-            text = pat.sub(wrap, text)
-            if n == 0:
+            pat = re.compile(r"custom_description_no_bullet = \{\s*text = " + re.escape(key) + r"\s*\}")
+            found = pat.findall(text)
+            if not found:
                 raise SystemExit(f"{key} not found in {fn}")
-        out = HEADER.format(name=fn, ver=ver) + text
-        data = out.replace("\n", "\r\n").encode("utf-8")
+            text = pat.sub(lambda m: ("if = { # KEHILLAH: vassal-only effect" + NL
+                                      + T * 4 + "limit = { NOT = { government_has_flag = " + FLAG + " } }" + NL
+                                      + T * 4 + m.group(0) + NL + T * 3 + "}"), text)
+        data = (HEADER.format(name=fn, ver=ver) + text).replace(NL, "\r\n").encode("utf-8")
         if bom:
             data = b"\xef\xbb\xbf" + data
         open(os.path.join(OUT, fn), "wb").write(data)
-        print("wrote", fn, len(perks), "perks")
+        print("wrote", fn)
 
 
 if __name__ == "__main__":
