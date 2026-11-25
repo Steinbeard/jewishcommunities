@@ -118,7 +118,7 @@ kehillah_aid_open_need_effect = {
 				}
 				if = {
 					limit = { is_ai = no }
-					kehillah_aid_send_letter_effect = { KIND = $KIND$ }
+					kehillah_aid_send_letter_effect = yes
 				}
 			}
 			else_if = {
@@ -150,16 +150,28 @@ kehillah_aid_send_letter_effect = {
 		# kehillah_crisis_network.0002 is this community's letter.
 	}
 	else_if = {
-		limit = { has_variable = kehillah_aid_letter_recent }
-		send_interface_message = {
-			type = msg_kehillah_community_news
-			title = kehillah_aid_open_$KIND$_t
-			desc = kehillah_aid_open_$KIND$_d
-			left_icon = scope:kehillah_aid_need
+		# 2026-11-24: at most 4 letters a year (a notification was too easy to
+		# miss). Over the limit this leader is simply not asked: taken off the
+		# need's expected list so a lapse is not held against the community.
+		limit = { var:kehillah_aid_letters_year ?= 4 }
+		if = {
+			limit = { exists = primary_title }
+			primary_title = { save_temporary_scope_as = kehillah_aid_cap_seat }
+			scope:kehillah_aid_need = {
+				if = {
+					limit = { is_target_in_variable_list = { name = kehillah_aid_expected target = scope:kehillah_aid_cap_seat } }
+					remove_list_variable = { name = kehillah_aid_expected target = scope:kehillah_aid_cap_seat }
+					change_variable = { name = kehillah_aid_expected_count add = -1 }
+				}
+			}
 		}
 	}
 	else = {
-		set_variable = { name = kehillah_aid_letter_recent value = yes days = 60 }
+		if = {
+			limit = { NOT = { has_variable = kehillah_aid_letters_year } }
+			set_variable = { name = kehillah_aid_letters_year value = 0 years = 1 }
+		}
+		change_variable = { name = kehillah_aid_letters_year add = 1 }
 		trigger_event = { id = kehillah_mutual_aid.0002 days = 1 }
 	}
 }
