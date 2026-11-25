@@ -1,0 +1,270 @@
+﻿# =====================================================================
+# Council task redesign (2026-11-25). Design:
+# docs/spec/2026-11-24-council-tasks-redesign.md. Values:
+# common/script_values/kehillah_council_task_values.txt.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# MOMENTS (spec section 2.1)
+# A pillar task rolls once a year. A moment is a title variable
+# kehillah_moment_<pillar>_<kind> holding its size (minor 15 or moderate
+# 25), for kehillah_council_moment_years. A running kind is never rolled
+# again until it ends; at the cap (3 running), one running moment of that
+# pillar gives way to the new one. Each kind is its own line in the pillar
+# breakdown (KehillahBdCouncilMoments*), and arrives as community news.
+# ---------------------------------------------------------------------
+
+# Scope: a Kehillah leader. $PILLAR$ = prosperity, stability or greatness.
+kehillah_council_moment_roll_effect = {
+	if = {
+		limit = { exists = primary_title }
+		kehillah_council_moment_roll_$PILLAR$_effect = yes
+	}
+}
+
+# Scope: a Kehillah leader; scope:kehillah_moment_officer saved. Sets
+# kehillah_moment_size (15 or 25) from the officer's $SKILL$.
+kehillah_council_moment_size_effect = {
+	save_scope_value_as = { name = kehillah_moment_size value = kehillah_council_moment_minor }
+	random = {
+		chance = scope:kehillah_moment_officer.kehillah_council_moment_moderate_chance_$SKILL$_value
+		save_scope_value_as = { name = kehillah_moment_size value = kehillah_council_moment_moderate }
+	}
+}
+
+# Scope: a Kehillah leader; scope:kehillah_moment_officer and
+# kehillah_moment_size saved. Makes room, sets the moment, sends the news.
+kehillah_council_moment_set_effect = {
+	if = {
+		limit = { kehillah_council_moments_$PILLAR$_count_value >= kehillah_council_moment_cap }
+		kehillah_council_moment_make_room_$PILLAR$_effect = yes
+	}
+	primary_title = {
+		set_variable = {
+			name = kehillah_moment_$PILLAR$_$KIND$
+			value = scope:kehillah_moment_size
+			years = kehillah_council_moment_years
+		}
+	}
+	send_interface_message = {
+		type = msg_kehillah_community_news
+		title = kehillah_moment_$PILLAR$_$KIND$_t
+		desc = kehillah_moment_$PILLAR$_$KIND$_d
+		left_icon = scope:kehillah_moment_officer
+		if = {
+			limit = { scope:kehillah_moment_size >= kehillah_council_moment_moderate }
+			custom_tooltip = kehillah_moment_$PILLAR$_moderate_tt
+		}
+		else = { custom_tooltip = kehillah_moment_$PILLAR$_minor_tt }
+	}
+	debug_log = "kehillah_council_moment: $PILLAR$ $KIND$"
+}
+
+# --- Prosperity: the Gabbai, Trade at the Fairs ---
+kehillah_council_moment_roll_prosperity_effect = {
+	cp:councillor_steward ?= { save_scope_as = kehillah_moment_officer }
+	if = {
+		limit = { exists = scope:kehillah_moment_officer }
+		random = {
+			chance = scope:kehillah_moment_officer.kehillah_council_moment_chance_stewardship_value
+			kehillah_council_moment_size_effect = { SKILL = stewardship }
+			random_list = {
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_moment_prosperity_fair } } }
+					kehillah_council_moment_set_effect = { PILLAR = prosperity KIND = fair }
+				}
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_moment_prosperity_house } } }
+					kehillah_council_moment_set_effect = { PILLAR = prosperity KIND = house }
+				}
+				10 = {
+					trigger = {
+						primary_title = { NOT = { has_variable = kehillah_moment_prosperity_craft } }
+						kehillah_bd_trades_value > 0
+					}
+					kehillah_council_moment_set_effect = { PILLAR = prosperity KIND = craft }
+				}
+				10 = {
+					trigger = {
+						primary_title = { NOT = { has_variable = kehillah_moment_prosperity_officials } }
+						domicile.domicile_location.county.holder ?= { is_landed = yes }
+					}
+					kehillah_council_moment_set_effect = { PILLAR = prosperity KIND = officials }
+				}
+			}
+		}
+	}
+}
+kehillah_council_moment_make_room_prosperity_effect = {
+	primary_title = {
+		random_list = {
+			1 = { trigger = { has_variable = kehillah_moment_prosperity_fair } remove_variable = kehillah_moment_prosperity_fair }
+			1 = { trigger = { has_variable = kehillah_moment_prosperity_house } remove_variable = kehillah_moment_prosperity_house }
+			1 = { trigger = { has_variable = kehillah_moment_prosperity_craft } remove_variable = kehillah_moment_prosperity_craft }
+			1 = { trigger = { has_variable = kehillah_moment_prosperity_officials } remove_variable = kehillah_moment_prosperity_officials }
+		}
+	}
+}
+
+# --- Stability: the Shtadlan, Seek Protection ---
+kehillah_council_moment_roll_stability_effect = {
+	cp:councillor_chancellor ?= { save_scope_as = kehillah_moment_officer }
+	if = {
+		limit = { exists = scope:kehillah_moment_officer }
+		random = {
+			chance = scope:kehillah_moment_officer.kehillah_council_moment_chance_diplomacy_value
+			kehillah_council_moment_size_effect = { SKILL = diplomacy }
+			random_list = {
+				10 = {
+					trigger = {
+						primary_title = { NOT = { has_variable = kehillah_moment_stability_bishop } }
+						domicile.domicile_location.county.holder.top_liege ?= { exists = cp:councillor_court_chaplain }
+					}
+					kehillah_council_moment_set_effect = { PILLAR = stability KIND = bishop }
+				}
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_moment_stability_council } } }
+					kehillah_council_moment_set_effect = { PILLAR = stability KIND = council }
+				}
+				10 = {
+					trigger = {
+						primary_title = { NOT = { has_variable = kehillah_moment_stability_steward } }
+						domicile.domicile_location.county.holder ?= { is_landed = yes }
+					}
+					kehillah_council_moment_set_effect = { PILLAR = stability KIND = steward }
+				}
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_moment_stability_neighbours } } }
+					kehillah_council_moment_set_effect = { PILLAR = stability KIND = neighbours }
+				}
+			}
+		}
+	}
+}
+kehillah_council_moment_make_room_stability_effect = {
+	primary_title = {
+		random_list = {
+			1 = { trigger = { has_variable = kehillah_moment_stability_bishop } remove_variable = kehillah_moment_stability_bishop }
+			1 = { trigger = { has_variable = kehillah_moment_stability_council } remove_variable = kehillah_moment_stability_council }
+			1 = { trigger = { has_variable = kehillah_moment_stability_steward } remove_variable = kehillah_moment_stability_steward }
+			1 = { trigger = { has_variable = kehillah_moment_stability_neighbours } remove_variable = kehillah_moment_stability_neighbours }
+		}
+	}
+}
+
+# --- Greatness: the Dayyan, Teach the Community ---
+kehillah_council_moment_roll_greatness_effect = {
+	cp:councillor_court_chaplain ?= { save_scope_as = kehillah_moment_officer }
+	if = {
+		limit = { exists = scope:kehillah_moment_officer }
+		random = {
+			chance = scope:kehillah_moment_officer.kehillah_council_moment_chance_learning_value
+			kehillah_council_moment_size_effect = { SKILL = learning }
+			random_list = {
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_moment_greatness_sermons } } }
+					kehillah_council_moment_set_effect = { PILLAR = greatness KIND = sermons }
+				}
+				10 = {
+					trigger = {
+						primary_title = { NOT = { has_variable = kehillah_moment_greatness_student } }
+						kehillah_has_yeshiva_trigger = yes
+					}
+					kehillah_council_moment_set_effect = { PILLAR = greatness KIND = student }
+				}
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_moment_greatness_minhag } } }
+					kehillah_council_moment_set_effect = { PILLAR = greatness KIND = minhag }
+				}
+				10 = {
+					trigger = { primary_title = { NOT = { has_variable = kehillah_moment_greatness_siyum } } }
+					kehillah_council_moment_set_effect = { PILLAR = greatness KIND = siyum }
+				}
+			}
+		}
+	}
+}
+kehillah_council_moment_make_room_greatness_effect = {
+	primary_title = {
+		random_list = {
+			1 = { trigger = { has_variable = kehillah_moment_greatness_sermons } remove_variable = kehillah_moment_greatness_sermons }
+			1 = { trigger = { has_variable = kehillah_moment_greatness_student } remove_variable = kehillah_moment_greatness_student }
+			1 = { trigger = { has_variable = kehillah_moment_greatness_minhag } remove_variable = kehillah_moment_greatness_minhag }
+			1 = { trigger = { has_variable = kehillah_moment_greatness_siyum } remove_variable = kehillah_moment_greatness_siyum }
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# SHTADLAN: Seek Protection's religious assurance (moved from the retired
+# task_kehillah_seek_religious_support, unchanged). Scope: the Shtadlan,
+# inside a council task (scope:councillor_liege saved).
+# ---------------------------------------------------------------------
+kehillah_seek_religious_support_monthly_effect = {
+	scope:councillor_liege.domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_safety_host }
+	if = {
+		limit = {
+			exists = scope:kehillah_safety_host
+			scope:kehillah_safety_host = { exists = cp:councillor_court_chaplain }
+			scope:councillor_liege = { primary_title ?= { NOT = { has_variable = kehillah_safety_religious_support } } }
+		}
+		scope:kehillah_safety_host = { cp:councillor_court_chaplain = { save_scope_as = kehillah_safety_cleric } }
+		random = {
+			chance = kehillah_safety_religious_support_monthly_chance_value
+			scope:councillor_liege = {
+				primary_title = { set_variable = { name = kehillah_safety_religious_support value = yes years = 2 } }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_safety_cleric_agrees_t
+					desc = kehillah_safety_cleric_agrees_d
+					left_icon = scope:kehillah_safety_cleric
+					right_icon = scope:kehillah_safety_host
+				}
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# GABBAI: Trade at the Fairs -- cultural acceptance between the
+# community's culture and the host county's. Scope: a Kehillah leader.
+# ---------------------------------------------------------------------
+kehillah_trade_fairs_acceptance_effect = {
+	if = {
+		limit = { kehillah_trade_fairs_has_other_culture_trigger = yes }
+		cp:councillor_steward ?= {
+			save_scope_value_as = { name = kehillah_fairs_acceptance value = kehillah_trade_fairs_acceptance_value }
+		}
+		domicile.domicile_location.county.culture = { save_scope_as = kehillah_fairs_town_culture }
+		culture = {
+			change_cultural_acceptance = {
+				target = scope:kehillah_fairs_town_culture
+				value = scope:kehillah_fairs_acceptance
+				desc = kehillah_trade_fairs_acceptance_reason
+			}
+		}
+	}
+}
+
+# ---------------------------------------------------------------------
+# ROSH HA-SHMIRAH: Farm the Lord's Revenues. Scope: a Kehillah leader.
+# ---------------------------------------------------------------------
+kehillah_farm_revenues_monthly_effect = {
+	save_scope_as = kehillah_farm_tenant
+	domicile.domicile_location.county.holder ?= {
+		save_scope_as = kehillah_farm_lord
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_farm_lord
+			NOT = { scope:kehillah_farm_lord = this }
+		}
+		add_gold = kehillah_farm_revenues_gold_value
+		scope:kehillah_farm_lord = {
+			add_opinion = {
+				target = scope:kehillah_farm_tenant
+				modifier = kehillah_farm_revenues_opinion
+			}
+		}
+	}
+}

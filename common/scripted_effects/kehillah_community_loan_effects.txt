@@ -68,6 +68,25 @@ kehillah_community_adopt_loans_effect = {
 					NOT = { has_variable = kehillah_lent_for }
 				}
 				set_variable = { name = kehillah_lent_for value = scope:kehillah_adopting_seat }
+				# 2026-11-25 (council redesign): the Ne'eman's Keep the Pledge
+				# Chest writes better terms on an open-interest loan -- once,
+				# as the community takes the loan up.
+				if = {
+					limit = {
+						var:instrument ?= flag:open
+						exists = var:amount_owed
+						scope:kehillah_adopting_leader = { kehillah_pledge_chest_interest_rate_value > 0 }
+					}
+					change_variable = {
+						name = amount_owed
+						add = {
+							value = var:amount_owed
+							multiply = scope:kehillah_adopting_leader.kehillah_pledge_chest_interest_rate_value
+							round = yes
+						}
+					}
+					set_variable = { name = kehillah_pledge_chest_terms value = yes }
+				}
 			}
 			if = {
 				limit = {
@@ -264,8 +283,13 @@ kehillah_community_loan_repaid_effect = {
 kehillah_bond_chest_collect_effect = {
 	if = {
 		limit = {
-			domicile ?= { has_domicile_parameter = kehillah_has_bond_chest }
 			exists = primary_title
+			# 2026-11-25: the Ne'eman's Keep the Pledge Chest collects even
+			# without a Bond Chest.
+			OR = {
+				domicile ?= { has_domicile_parameter = kehillah_has_bond_chest }
+				kehillah_pledge_chest_active_value = 1
+			}
 		}
 		save_scope_as = kehillah_bond_lender
 		primary_title = { save_scope_as = kehillah_bond_seat }
@@ -295,7 +319,9 @@ kehillah_bond_chest_collect_effect = {
 				name = kehillah_bond_collected
 				value = {
 					value = scope:kehillah_bond_loan.var:amount_owed
-					multiply = 0.2
+					# 0.2, more under Keep the Pledge Chest
+					# (kehillah_council_task_values.txt).
+					multiply = scope:kehillah_bond_lender.kehillah_pledge_chest_collect_share_value
 					if = {
 						limit = { exists = cp:councillor_spymaster }
 						multiply = {

@@ -48,7 +48,12 @@ task_kehillah_petition_host = {
 		frame = "gfx/interface/buttons/button_round_frame.dds"
 		glow = "gfx/particles/halo.dds"
 	}
-	effect_desc = task_kehillah_petition_host_effect_desc
+	# 2026-11-25 (council redesign): the petition also covers the charter --
+	# when the host seals one, kehillah_charter_rungs_effect reads this task.
+	effect_desc = {
+		desc = task_kehillah_petition_host_effect_desc
+		desc = task_kehillah_petition_host_charter_desc
+	}
 
 	on_monthly = {
 		scope:councillor_liege.domicile.domicile_location.county.holder.top_liege ?= {
@@ -97,21 +102,56 @@ task_kehillah_petition_host = {
 			kehillah_shtadlan_audience_yearly_effect = yes
 		}
 	}
-	ai_will_do = { value = 1 }
+	ai_will_do = { value = 2 }
 }
 
-# The Shtadlan can work with the host's own religious adviser. Their public
-# assurance is a temporary local protection, not a permanent change to the
-# faith's teaching or an order from its head. This task competes with the
-# petition for the same council slot.
-task_kehillah_seek_religious_support = {
+# Seek Protection (council redesign, docs/spec/2026-11-24-council-tasks-
+# redesign.md section 3.1). The Shtadlan cultivates the community's
+# protectors: the bishop, the lord's officials, the town's notables.
+#  - Stability moments (kehillah_council_moment_roll_effect, each January).
+#  - Absorbs Seek Religious Support: while the host has a court chaplain
+#    and no assurance is in force, a monthly chance of the two-year public
+#    assurance (-8 danger; +3 Spared monthly during an attack warning).
+task_kehillah_seek_protection = {
 	position = councillor_chancellor
-	is_shown = {
-		scope:councillor_liege ?= {
-			government_has_flag = government_is_kehillah
-			domicile.domicile_location.county.holder.top_liege ?= { exists = cp:councillor_court_chaplain }
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_domestic_affairs.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = {
+		desc = task_kehillah_seek_protection_effect_desc
+		triggered_desc = {
+			trigger = { scope:councillor_liege.domicile.domicile_location.county.holder.top_liege ?= { exists = cp:councillor_court_chaplain } }
+			desc = task_kehillah_seek_protection_cleric_desc
+		}
+		desc = kehillah_council_moment_active_desc_stability
+	}
+	on_monthly = {
+		kehillah_seek_religious_support_monthly_effect = yes
+		if = {
+			limit = { current_month = 1 }
+			scope:councillor_liege = { kehillah_council_moment_roll_effect = { PILLAR = stability } }
 		}
 	}
+	ai_will_do = {
+		value = 1
+		if = {
+			limit = { scope:councillor_liege ?= { kehillah_danger_value >= 30 } }
+			value = 3
+		}
+	}
+}
+
+# Retired 2026-11-25 (folded into Seek Protection). Kept defined, hidden, so
+# saves load; the quarterly fix-up moves a Shtadlan off it.
+task_kehillah_seek_religious_support = {
+	position = councillor_chancellor
+	is_shown = { always = no }
 	task_type = task_type_general
 	task_progress = task_progress_infinite
 	asset = {
@@ -121,42 +161,16 @@ task_kehillah_seek_religious_support = {
 		glow = "gfx/particles/halo.dds"
 	}
 	effect_desc = task_kehillah_seek_religious_support_effect_desc
-	on_monthly = {
-		scope:councillor_liege.domicile.domicile_location.county.holder.top_liege ?= { save_scope_as = kehillah_safety_host }
-		if = {
-			limit = {
-				exists = scope:kehillah_safety_host
-				scope:kehillah_safety_host = { exists = cp:councillor_court_chaplain }
-				scope:councillor_liege = { primary_title ?= { NOT = { has_variable = kehillah_safety_religious_support } } }
-			}
-			scope:kehillah_safety_host = { cp:councillor_court_chaplain = { save_scope_as = kehillah_safety_cleric } }
-			random = {
-				chance = kehillah_safety_religious_support_monthly_chance_value
-				scope:councillor_liege = {
-					primary_title = { set_variable = { name = kehillah_safety_religious_support value = yes years = 2 } }
-					send_interface_message = {
-						type = msg_kehillah_community_news
-						title = kehillah_safety_cleric_agrees_t
-						desc = kehillah_safety_cleric_agrees_d
-						left_icon = scope:kehillah_safety_cleric
-						right_icon = scope:kehillah_safety_host
-					}
-				}
-			}
-		}
-	}
 	ai_will_do = { value = 0 }
 }
 
-# V34 section 7b (2026-10-13): the Shtadlan's embassy abroad. Instead of
-# the host, he courts the warmest lord within reach whose realm does not
-# yet encourage Jewish settlement, and argues for an invitation
-# (kehillah_seek_invitation_monthly_effect). A council task rather than a
-# decision (Daniel: not too many decisions). The AI keeps to Petition the
-# Host; AI lords open their doors through the open-door review.
+# V34 section 7b (2026-10-13): the Shtadlan's embassy abroad.
+# Retired 2026-11-25 (too narrow; council redesign). AI lords still open
+# their doors through the open-door review. Kept defined, hidden, so saves
+# load; the quarterly fix-up moves a Shtadlan off it.
 task_kehillah_seek_invitation = {
 	position = councillor_chancellor
-	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	is_shown = { always = no }
 	task_type = task_type_general
 	task_progress = task_progress_infinite
 	asset = {
@@ -166,10 +180,6 @@ task_kehillah_seek_invitation = {
 		glow = "gfx/particles/halo.dds"
 	}
 	effect_desc = task_kehillah_seek_invitation_effect_desc
-
-	on_monthly = {
-		kehillah_seek_invitation_monthly_effect = yes
-	}
 	ai_will_do = { value = 0 }
 }
 
@@ -216,12 +226,92 @@ task_kehillah_oversee_construction = {
 	ai_will_do = { value = 1 }
 }
 
-# --- Rosh ha-Shmirah (marshal, martial). Vanilla Manage Guards stays available.
+# Trade at the Fairs (council redesign, 2026-11-25). The Prosperity pillar
+# task: Prosperity moments each January (kehillah_council_moment_roll_
+# effect), and vanilla-style cultural acceptance between the community's
+# culture and the host county's (kehillah_trade_fairs_acceptance_effect).
+task_kehillah_trade_at_fairs = {
+	position = councillor_steward
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_market_oversight.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = {
+		desc = task_kehillah_trade_at_fairs_effect_desc
+		triggered_desc = {
+			trigger = { scope:councillor_liege ?= { kehillah_trade_fairs_has_other_culture_trigger = yes } }
+			desc = task_kehillah_trade_at_fairs_acceptance_desc
+		}
+		desc = kehillah_council_moment_active_desc_prosperity
+	}
+	on_monthly = {
+		if = {
+			limit = { current_month = 1 }
+			scope:councillor_liege = {
+				kehillah_council_moment_roll_effect = { PILLAR = prosperity }
+				kehillah_trade_fairs_acceptance_effect = yes
+			}
+		}
+	}
+	ai_will_do = {
+		value = 1
+		if = {
+			limit = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah kehillah_leadership_is_commercial_trigger = yes } }
+			value = 3
+		}
+	}
+}
 
-# The watch acts in events/kehillah_protection_events.txt: while a Rosh
-# ha-Shmirah keeps it, the yearly protection events fire less often
-# (weight_multiplier) and their watch checks use his Martial when it
-# beats the leader's (kehillah_watch_prevails_trigger).
+# Manage Tzedakah (council redesign, 2026-11-25). Hooks mutual aid
+# (kehillah_mutual_aid_effects.txt / _values.txt). No monthly work: the aid
+# values read is_performing_council_task. Prosperity Healthy or better:
+# gifts count for more (Greatness and giving reputation x1.5). Below
+# Healthy: AI communities answer our appeals more readily, and relief
+# raises more Prosperity (x1.5).
+task_kehillah_manage_tzedakah = {
+	position = councillor_steward
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_spiritual_guidence.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:councillor_liege ?= { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold } } }
+				desc = task_kehillah_manage_tzedakah_giving_desc
+			}
+			desc = task_kehillah_manage_tzedakah_receiving_desc
+		}
+	}
+	ai_will_do = {
+		value = 0
+		if = {
+			limit = { scope:councillor_liege ?= { NOT = { kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_healthy_threshold } } } }
+			value = 2
+		}
+	}
+}
+
+# --- Rosh ha-Shmirah (marshal, martial).
+
+# Defend the Quarter (2026-11-25; was Keep the Night Watch, same key so
+# saves and the seat default keep working). Three effects:
+#  - a shield term in the danger breakdown (kehillah_danger_watch_value,
+#    kehillah_danger_values.txt), by Martial and each Wall and Gates tier;
+#  - Spared progress each month while a crisis race runs against the
+#    community (kehillah_crisis_protection_points_value);
+#  - the old protection events fire less often (weight_multiplier) and
+#    their watch checks use his Martial (kehillah_watch_prevails_trigger).
 task_kehillah_night_watch = { # Kehillah default (set on taking the seat)
 	position = councillor_marshal
 	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
@@ -233,8 +323,99 @@ task_kehillah_night_watch = { # Kehillah default (set on taking the seat)
 		frame = "gfx/interface/buttons/button_round_frame.dds"
 		glow = "gfx/particles/halo.dds"
 	}
-	effect_desc = task_kehillah_night_watch_effect_desc
+	effect_desc = task_kehillah_defend_quarter_effect_desc
 	ai_will_do = { value = 2 }
+}
+
+# Escort the Travellers (2026-11-25): vanilla travel safety and speed for
+# the leader, and fewer losses on the commenda (kehillah_commenda.0001).
+task_kehillah_escort_travellers = {
+	position = councillor_marshal
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_lead_troops.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_escort_travellers_effect_desc
+	council_owner_modifier = {
+		name = task_kehillah_escort_travellers_modifier
+		character_travel_safety = 10 # up to +10 at Martial 20
+		character_travel_speed_mult = 0.15 # up to +15%
+		scale = kehillah_council_martial_scale
+	}
+	ai_will_do = {
+		value = 0
+		if = {
+			limit = { scope:councillor_liege ?= { is_travelling = yes } }
+			value = 3
+		}
+	}
+}
+
+# Farm the Lord's Revenues (2026-11-25). The lord lets out his tolls, mint
+# or estates; the Rosh ha-Shmirah's men collect. Monthly gold (a share of
+# the county lord's income, by Martial) and the lord's opinion -- and a
+# danger term while it runs (kehillah_danger_tax_farming_value).
+task_kehillah_farm_revenues = {
+	position = councillor_marshal
+	is_shown = {
+		scope:councillor_liege ?= {
+			government_has_flag = government_is_kehillah
+			domicile.domicile_location.county.holder ?= { is_landed = yes }
+		}
+	}
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_collect_taxes.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_farm_revenues_effect_desc
+	on_monthly = {
+		scope:councillor_liege = { kehillah_farm_revenues_monthly_effect = yes }
+	}
+	ai_will_do = {
+		value = 0
+		if = {
+			limit = { scope:councillor_liege ?= { kehillah_danger_value < 20 short_term_gold < 50 } }
+			value = 3
+		}
+	}
+}
+
+# --- Ne'eman (spymaster, intrigue). Vanilla Disrupt Schemes (default),
+# Support Schemes and Find Secrets stay.
+
+# Keep the Pledge Chest (2026-11-25): all community lending. Read by
+# kehillah_community_adopt_loans_effect (a higher premium on each new
+# open-interest loan) and kehillah_bond_chest_collect_effect (quarterly
+# collection from debtors who can pay; runs without a Bond Chest while
+# this task is kept, and collects more with one).
+task_kehillah_pledge_chest = {
+	position = councillor_spymaster
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_find_secrets.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_pledge_chest_effect_desc
+	ai_will_do = {
+		value = 0
+		if = {
+			limit = { scope:councillor_liege ?= { has_variable_list = owes_me_money } }
+			value = 3
+		}
+	}
 }
 
 # --- Dayyan (court chaplain, learning). Vanilla Religious Relations is hidden
@@ -269,9 +450,12 @@ task_kehillah_prepare_bet_din = { # Kehillah default (set on taking the seat)
 # faith's anti-Jewish pressure falls 1 and its goodwill rises 1 (at most 3
 # goodwill a year per faith); goodwill can soften its teaching at the
 # yearly review (kehillah_rite_teaching_yearly_effect).
+# Retired 2026-11-25 (council redesign: slow and invisible). Kept defined,
+# hidden, so saves load; the quarterly fix-up moves a Dayyan off it. The
+# ten-year religious-tension relief it set still runs out normally.
 task_kehillah_learned_exchange = {
 	position = councillor_court_chaplain
-	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	is_shown = { always = no }
 	task_type = task_type_general
 	task_progress = task_progress_infinite
 	asset = {
@@ -281,24 +465,67 @@ task_kehillah_learned_exchange = {
 		glow = "gfx/particles/halo.dds"
 	}
 	effect_desc = task_kehillah_learned_exchange_effect_desc
+	ai_will_do = { value = 0 }
+}
 
+# Teach the Community (2026-11-25). The Greatness pillar task: Greatness
+# moments each January; the sermon decision may be taken twice a year
+# (kehillah_deliver_sermon_decision reads this task); a yeshiva draws more
+# travelling students (kehillah_yeshiva_effects.txt).
+task_kehillah_teach_community = {
+	position = councillor_court_chaplain
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_spiritual_guidence.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = {
+		desc = task_kehillah_teach_community_effect_desc
+		triggered_desc = {
+			trigger = { scope:councillor_liege ?= { kehillah_has_yeshiva_trigger = yes } }
+			desc = task_kehillah_teach_community_yeshiva_desc
+		}
+		desc = kehillah_council_moment_active_desc_greatness
+	}
 	on_monthly = {
 		if = {
 			limit = { current_month = 1 }
-			kehillah_learned_exchange_yearly_effect = yes
+			scope:councillor_liege = { kehillah_council_moment_roll_effect = { PILLAR = greatness } }
 		}
 	}
-	# The AI sends its Dayyan when the chance is worth it; otherwise he
-	# prepares the bet din (2).
 	ai_will_do = {
-		value = 0
+		value = 1
 		if = {
-			limit = {
-				scope:councillor = { kehillah_exchange_yearly_chance_value >= 15 }
-			}
+			limit = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah kehillah_leadership_is_scholarly_trigger = yes } }
 			value = 3
 		}
 	}
+}
+
+# Learn in Chavruta (2026-11-25). The Dayyan studies with the leader:
+#  - Study Torah: the Dayyan is offered as the chavrusa partner
+#    (kehillah_study_torah.0002), so the existing chavrusa bonus, panel
+#    line and spark route all apply;
+#  - Write a Sefer and Examine the Miqra: a success bonus by his Learning;
+#  - sefarim cost less to buy (kehillah_library.0002/.0005) and to repair
+#    (kehillah_lib_repair_*_cost_value): kehillah_council_sefer_price_mult_value.
+task_kehillah_learn_chavruta = {
+	position = councillor_court_chaplain
+	is_shown = { scope:councillor_liege ?= { government_has_flag = government_is_kehillah } }
+	task_type = task_type_general
+	task_progress = task_progress_infinite
+	asset = {
+		icon = "gfx/interface/icons/council_task_types/task_manage_talent.dds"
+		background = "gfx/interface/buttons/button_round_bg.dds"
+		frame = "gfx/interface/buttons/button_round_frame.dds"
+		glow = "gfx/particles/halo.dds"
+	}
+	effect_desc = task_kehillah_learn_chavruta_effect_desc
+	ai_will_do = { value = 1 }
 }
 
 # --- Spouse: vanilla's six tasks, cloned with identical stat mechanics and

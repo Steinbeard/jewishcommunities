@@ -160,3 +160,80 @@ kehillah_council_debug.2 = {
 		debug_log = "kehillah_council_debug.2: fix-up -- END"
 	}
 }
+
+# ---------------------------------------------------------------------
+# Council redesign (2026-11-25), docs/spec/2026-11-24-council-tasks-
+# redesign.md. Select or play a Kehillah leader, then:
+#   event kehillah_council_debug.10 -- put every seat on its new task and
+#                                      log each task's numbers
+#   event kehillah_council_debug.11 -- force one moment for each pillar
+#                                      (skips the yearly chance) and log
+#                                      the counts and baseline terms
+#   event kehillah_council_debug.12 -- move seats onto the retired tasks,
+#                                      run the quarterly fix-up, report
+# ---------------------------------------------------------------------
+
+kehillah_council_debug.10 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_council_debug.10: council redesign -- START"
+		cp:councillor_chancellor ?= { set_council_task = { task_type = task_kehillah_seek_protection } }
+		cp:councillor_steward ?= { set_council_task = { task_type = task_kehillah_manage_tzedakah } }
+		cp:councillor_marshal ?= { set_council_task = { task_type = task_kehillah_night_watch } }
+		cp:councillor_spymaster ?= { set_council_task = { task_type = task_kehillah_pledge_chest } }
+		cp:councillor_court_chaplain ?= { set_council_task = { task_type = task_kehillah_learn_chavruta } }
+		debug_log = "kehillah_council_debug.10: watch=[ROOT.Char.MakeScope.ScriptValue('kehillah_danger_watch_value')|2] watch_crisis=[ROOT.Char.MakeScope.ScriptValue('kehillah_council_watch_crisis_points_value')|2] danger=[ROOT.Char.MakeScope.ScriptValue('kehillah_danger_value')|2]"
+		debug_log = "kehillah_council_debug.10: tzedakah active=[ROOT.Char.MakeScope.ScriptValue('kehillah_tzedakah_task_active_value')|2] gift_mult=[ROOT.Char.MakeScope.ScriptValue('kehillah_tzedakah_gift_mult_value')|2] relief=[ROOT.Char.MakeScope.ScriptValue('kehillah_tzedakah_relief_prosperity_value')|2] answer=[ROOT.Char.MakeScope.ScriptValue('kehillah_tzedakah_answer_bonus_value')|2]"
+		debug_log = "kehillah_council_debug.10: pledge active=[ROOT.Char.MakeScope.ScriptValue('kehillah_pledge_chest_active_value')|2] rate=[ROOT.Char.MakeScope.ScriptValue('kehillah_pledge_chest_interest_rate_value')|2] share=[ROOT.Char.MakeScope.ScriptValue('kehillah_pledge_chest_collect_share_value')|2]"
+		debug_log = "kehillah_council_debug.10: chavruta price_mult=[ROOT.Char.MakeScope.ScriptValue('kehillah_council_sefer_price_mult_value')|2] major=[ROOT.Char.MakeScope.ScriptValue('kehillah_sefer_price_major_value')|2] scheme=[ROOT.Char.MakeScope.ScriptValue('kehillah_chavruta_scheme_bonus_value')|2]"
+		debug_log = "kehillah_council_debug.10: farm_gold=[ROOT.Char.MakeScope.ScriptValue('kehillah_farm_revenues_gold_value')|2] (Rosh not on it, so read as a hypothetical) charter_chance=[ROOT.Char.MakeScope.ScriptValue('kehillah_charter_petition_improve_chance_value')|2] (Shtadlan on Seek Protection, so 0 expected)"
+		debug_log = "kehillah_council_debug.10: council redesign -- END"
+	}
+}
+
+kehillah_council_debug.11 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_council_debug.11: moments -- START"
+		save_scope_value_as = { name = kehillah_moment_size value = kehillah_council_moment_moderate }
+		cp:councillor_steward ?= { save_scope_as = kehillah_moment_officer }
+		if = {
+			limit = { exists = scope:kehillah_moment_officer }
+			kehillah_council_moment_set_effect = { PILLAR = prosperity KIND = fair }
+		}
+		cp:councillor_chancellor ?= { save_scope_as = kehillah_moment_officer }
+		kehillah_council_moment_set_effect = { PILLAR = stability KIND = council }
+		cp:councillor_court_chaplain ?= { save_scope_as = kehillah_moment_officer }
+		kehillah_council_moment_set_effect = { PILLAR = greatness KIND = siyum }
+		debug_log = "kehillah_council_debug.11: terms prosperity=[ROOT.Char.MakeScope.ScriptValue('kehillah_bd_council_moments_prosperity_value')|2] stability=[ROOT.Char.MakeScope.ScriptValue('kehillah_bd_council_moments_stability_value')|2] greatness=[ROOT.Char.MakeScope.ScriptValue('kehillah_bd_council_moments_greatness_value')|2] (25 each expected); greatness count=[ROOT.Char.MakeScope.ScriptValue('kehillah_council_moments_greatness_count_value')|2] baseline=[ROOT.Char.MakeScope.ScriptValue('kehillah_greatness_baseline_value')|2]"
+		debug_log = "kehillah_council_debug.11: moments -- END"
+	}
+}
+
+kehillah_council_debug.12 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		debug_log = "kehillah_council_debug.12: retired-task fix-up -- START"
+		cp:councillor_chancellor ?= { set_council_task = { task_type = task_kehillah_seek_religious_support } }
+		cp:councillor_court_chaplain ?= { set_council_task = { task_type = task_kehillah_learned_exchange } }
+		trigger_event = { on_action = kehillah_council_task_fixup }
+		cp:councillor_chancellor ?= {
+			if = {
+				limit = { is_performing_council_task = task_kehillah_seek_protection }
+				debug_log = "kehillah_council_debug.12: FIXUP PASS Shtadlan moved to Seek Protection"
+			}
+			else = { debug_log = "kehillah_council_debug.12: FIXUP CHECK Shtadlan not on Seek Protection (the engine may refuse a hidden task, so the setup may not have applied)" }
+		}
+		cp:councillor_court_chaplain ?= {
+			if = {
+				limit = { is_performing_council_task = task_kehillah_prepare_bet_din }
+				debug_log = "kehillah_council_debug.12: FIXUP PASS Dayyan moved to Prepare the Bet Din"
+			}
+			else = { debug_log = "kehillah_council_debug.12: FIXUP CHECK Dayyan not on Prepare the Bet Din" }
+		}
+		debug_log = "kehillah_council_debug.12: retired-task fix-up -- END"
+	}
+}
