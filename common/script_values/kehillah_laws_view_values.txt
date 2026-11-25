@@ -1,0 +1,122 @@
+# =====================================================================
+# 2026-11-25 -- My Realm > Laws as a dashboard
+# (docs/implementation/2026-11-25-laws-dashboard.md). Display only.
+# Scope: a Kehillah leader; the charter cache is on the primary title
+# (kehillah_charter_cache_*, see kehillah_settlement_policy_triggers.txt).
+#
+# Each term's favour to the community, 1 (harsh) to 3 (generous), for the
+# term cards' three pips. Missing cache reads as the middle rung.
+# =====================================================================
+
+# Construction: 0 free, 1 by permission, 2 forbidden.
+kehillah_charter_favour_construction_value = {
+	value = 2
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_construction } }
+		value = 3
+		subtract = primary_title.var:kehillah_charter_cache_construction
+	}
+	min = 1
+	max = 3
+}
+
+# Security: 0 disarmed, 1 a licensed watch, 2 a recognized watch / host protection.
+kehillah_charter_favour_security_value = {
+	value = 2
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_security } }
+		value = primary_title.var:kehillah_charter_cache_security
+		add = 1
+	}
+	min = 1
+	max = 3
+}
+
+# Jurisdiction: 0 the local court, 1 royal appeal / arbitration, 2 the Bet Din.
+kehillah_charter_favour_jurisdiction_value = {
+	value = 2
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_jurisdiction } }
+		value = primary_title.var:kehillah_charter_cache_jurisdiction
+		add = 1
+	}
+	min = 1
+	max = 3
+}
+
+# Talmudic study (Christian charter: 0 proscribed, 1 licensed, 2 free) or
+# market access (Muslim charter: 0 local, 1 regional, 2 chartered).
+kehillah_charter_favour_knowledge_or_trade_value = {
+	value = 2
+	if = {
+		limit = {
+			kehillah_cached_christian_charter_trigger = yes
+			primary_title ?= { has_variable = kehillah_charter_cache_text_study }
+		}
+		value = primary_title.var:kehillah_charter_cache_text_study
+		add = 1
+	}
+	else_if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_market_access } }
+		value = primary_title.var:kehillah_charter_cache_market_access
+		add = 1
+	}
+	min = 1
+	max = 3
+}
+
+# Lending (fallback charter): 0 forbidden, 1 pawnbroking, 2 full.
+kehillah_charter_favour_lending_value = {
+	value = 1
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_lending } }
+		value = primary_title.var:kehillah_charter_cache_lending
+		add = 1
+	}
+	min = 1
+	max = 3
+}
+
+# Walled quarter (fallback charter): the right to gate and wall is a privilege.
+kehillah_charter_favour_walled_value = {
+	value = 1
+	if = {
+		limit = { kehillah_cached_charter_quarter_walled_trigger = yes }
+		value = 3
+	}
+}
+
+# Tribute: 0 none, 1 customary, 2 heavy.
+kehillah_charter_favour_tribute_value = {
+	value = 2
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_tribute } }
+		value = 3
+		subtract = primary_title.var:kehillah_charter_cache_tribute
+	}
+	min = 1
+	max = 3
+}
+
+# The charter as a whole, the mean favour of the terms it has, 1 to 3:
+# Harsh below 1.75, Generous from 2.5, Fair between (KehillahCharterFavour).
+kehillah_charter_favour_overall_value = {
+	value = 2
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_construction } }
+		value = kehillah_charter_favour_construction_value
+		add = kehillah_charter_favour_security_value
+		add = kehillah_charter_favour_jurisdiction_value
+		add = kehillah_charter_favour_knowledge_or_trade_value
+		add = kehillah_charter_favour_tribute_value
+		divide = 5
+	}
+	else_if = {
+		limit = { primary_title ?= { has_variable = kehillah_charter_cache_lending } }
+		value = kehillah_charter_favour_lending_value
+		add = kehillah_charter_favour_walled_value
+		add = kehillah_charter_favour_tribute_value
+		divide = 3
+	}
+}
+
