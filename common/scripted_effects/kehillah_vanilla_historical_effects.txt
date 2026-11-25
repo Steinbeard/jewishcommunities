@@ -1,0 +1,84 @@
+﻿# Vanilla's own historical Jews, brought into the Kehillah world at game start.
+# See docs/implementation/2026-11-25-vanilla-historical-jews.md.
+#
+# Vanilla defines about a hundred rabbinic-faith characters (franconian.txt,
+# egyptian.txt, maghrebi.txt, sephardi.txt, yemeni.txt, norman.txt ...). They
+# live in files we do not replace, so their history cannot be edited from here;
+# these effects run once at start instead, as the Granada duplicate retirement
+# does (kehillah_granada_duplicate_on_actions.txt).
+
+# $PERSON$ is a vanilla character id (character:...). A scholar the sources
+# call a rabbi gets the Rabbi trait through the same entry point every other
+# script grant uses. Rabbanite rite only: a Karaite never receives it.
+kehillah_vanilla_historical_rabbi_effect = {
+	$PERSON$ ?= {
+		if = {
+			limit = {
+				is_alive = yes
+				is_rabbinic_authority_jewish_trigger = yes
+				NOT = { has_trait = kehillah_rabbi_trait }
+			}
+			kehillah_grant_rabbi_trait_effect = yes
+		}
+	}
+}
+
+# $PERSON$ is a vanilla character id, $COMMUNITY$ the title key of the
+# community they belong to historically. A living adult who is still in the
+# pool (no court, not a ruler) joins that community's leader's court. Anyone
+# already at a court, including a merchant's own family, stays where vanilla
+# put them: moving them would split a household or show a "Councillor Left
+# Court" notice to a player ruler.
+kehillah_vanilla_historical_settle_effect = {
+	# A scope saved by the previous call must not survive into a community
+	# that has no holder.
+	clear_saved_scope = kehillah_vanilla_host
+	title:$COMMUNITY$ ?= {
+		holder ?= { save_scope_as = kehillah_vanilla_host }
+	}
+	if = {
+		limit = { exists = scope:kehillah_vanilla_host }
+		$PERSON$ ?= {
+			if = {
+				limit = {
+					is_alive = yes
+					is_adult = yes
+					is_pool_character = yes
+				}
+				set_employer = scope:kehillah_vanilla_host
+				debug_log = "kehillah_vanilla_historical: settled $PERSON$ in $COMMUNITY$"
+			}
+			else_if = {
+				limit = { is_alive = yes }
+				debug_log = "kehillah_vanilla_historical: left $PERSON$ where vanilla put them (not in the pool)"
+			}
+		}
+	}
+}
+
+kehillah_seed_vanilla_historical_jews_effect = {
+	# Rabbis. Maimonides is Fustat's 1178 leader; the Qalonimus house is the
+	# Kalonymides of Mainz, scholars as well as merchants (vanilla gives the
+	# patriarch Moses and his son Yekuthiel learning 3).
+	kehillah_vanilla_historical_rabbi_effect = { PERSON = character:maimonides_1 }
+	kehillah_vanilla_historical_rabbi_effect = { PERSON = character:ashkenazi_qalonimus_1 }
+	kehillah_vanilla_historical_rabbi_effect = { PERSON = character:ashkenazi_qalonimus_5 }
+
+	# Mainz: Moses Qalonimus's sons. Vanilla keeps them in his court while he
+	# holds his merchant company, so this only acts if they are in the pool.
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:ashkenazi_qalonimus_2 COMMUNITY = d_kehillah_mainz }
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:ashkenazi_qalonimus_3 COMMUNITY = d_kehillah_mainz }
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:ashkenazi_qalonimus_4 COMMUNITY = d_kehillah_mainz }
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:ashkenazi_qalonimus_5 COMMUNITY = d_kehillah_mainz }
+
+	# Fustat: Cairo's Jewish financiers. The Awkalids and Karima al-Dallala
+	# served the Fatimid court; Barhun al-Taharti "relocated to Cairo" in
+	# vanilla's own words, and his brothers followed the trade.
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:egyptian_awkalid_3 COMMUNITY = d_kehillah_fustat }
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:egyptian_awkalid_4 COMMUNITY = d_kehillah_fustat }
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:bookmark_wuhsha_al_dallala COMMUNITY = d_kehillah_fustat }
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:maghrebi_taherti_22 COMMUNITY = d_kehillah_fustat }
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:maghrebi_taherti_23 COMMUNITY = d_kehillah_fustat }
+	# 1178: the al-Lebdi house of Cairo, in Maimonides' circle.
+	kehillah_vanilla_historical_settle_effect = { PERSON = character:egyptian_al_lebdi_1 COMMUNITY = d_kehillah_fustat }
+}
