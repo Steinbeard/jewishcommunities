@@ -1,6 +1,6 @@
 # Jewish Communities
 
-[Player wiki source and preview instructions](docs/wiki/README.md) — gameplay guides and generated book/building references; Pages publication pending.
+**[Player wiki](https://steinbeard.github.io/jewishcommunities/)**: gameplay guides, what's new in 0.2.0, a Rashi playthrough, and generated book and building references ([source and build instructions](docs/wiki/README.md)).
 
 A Crusader Kings III mod about the Jewish communities of medieval Europe and the Near East. You
 play as the leader of a **Kehillah**, a self-governing Jewish community living inside a Christian

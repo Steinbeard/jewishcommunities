@@ -1,6 +1,6 @@
 # Player wiki
 
-**Status:** IMPLEMENTED 2026-11-25; initial local build validates 24 pages, 95 named book entries, and all local links/anchors. GitHub publication is blocked by the current connection's read-only integration access. Intended for the existing `https://steinbeard.github.io/jewishcommunities/` address, not a separate GitHub Wiki repository. Browser review and live deployment remain pending.
+**Status:** LIVE 2026-11-26 at https://steinbeard.github.io/jewishcommunities/ (26 pages, 0.2.0 content, screenshots from a live Rashi run). First built 2026-11-25. Pages now builds from GitHub Actions (Settings → Pages source switched from the legacy `docs/prealpha-readme-wiki-20261116` branch, and `master` added to the `github-pages` environment's allowed branches, 2026-11-26). Every push to `master` that touches the paths in `.github/workflows/kehillah-wiki.yml` redeploys it.
 
 This is the player-facing wiki. Keep internal specifications and test logs in their existing locations and link to them as evidence. `articles.json` contains authored guide pages, grouped navigation, summaries, and repository source paths. Its `body` fields are trusted, reviewed HTML fragments. The builder generates a shared layout, section anchors, search, and two reference pages directly from the mod's book catalog, English localization, and building definitions.
 
