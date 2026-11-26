@@ -7,7 +7,6 @@ from PIL import Image
 from test_kehillah_tenet_polish import ROOT, source, block, parse, child
 from kehillah_revival_build import TENETS, GAME
 from kehillah_library_catalog import TENET_INDEX
-from kehillah_reform_build import TARGETS, REPLACEABLE
 from kehillah_faith_revision_build import ROSTERS, KNOWN
 
 
@@ -77,16 +76,19 @@ class Revival(unittest.TestCase):
 
     def test_append_only_book_reform_and_handwritten_dispatch(self):
         self.assertEqual(tuple(TENET_INDEX[14:17]), TENETS)
-        self.assertEqual(tuple(key for key, _ in TARGETS[14:17]), TENETS)
-        self.assertEqual(tuple(key for key, _ in REPLACEABLE[21:24]), TENETS)
+        bridge = source('common/scripted_effects/kehillah_reform_effects.txt')
+        for i, key in enumerate(TENETS, 15):
+            self.assertIn(f'var:kehillah_reform_pending_tenet ?= {i}', bridge)
+            self.assertIn(f'value = tenet:{key}', bridge)
         for file in ('common/scripted_effects/kehillah_minds_effects.txt', 'common/scripted_triggers/kehillah_minds_triggers.txt',
                      'common/scripted_effects/kehillah_sefer_effects.txt', 'events/kehillah_sefer_events.txt'):
             text = source(file)
             for key in TENETS:
                 self.assertIn(key, text)
         reform = source('common/scripted_triggers/kehillah_reform_triggers.txt')
-        self.assertIn('kehillah_revival_adoption_allowed_trigger', reform)
-        self.assertIn('kehillah_reform_chosen_can_core_trigger = yes', source('common/scripted_effects/kehillah_reform_effects.txt'))
+        self.assertIn('kehillah_temple_service_available_trigger = yes', reform)
+        self.assertIn('has_character_flag = kehillah_prophetic_calling', reform)
+        self.assertIn('kehillah_reform_choice_valid_trigger = yes', bridge)
 
     def test_mission_pledge_and_reckoning_are_not_passive_piety(self):
         events = source('events/kehillah_revival_events.txt')

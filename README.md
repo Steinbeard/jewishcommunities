@@ -1,5 +1,7 @@
 # Jewish Communities
 
+[Player wiki source and preview instructions](docs/wiki/README.md) — gameplay guides and generated book/building references; Pages publication pending.
+
 A Crusader Kings III mod about the Jewish communities of medieval Europe and the Near East. You
 play as the leader of a **Kehillah**, a self-governing Jewish community living inside a Christian
 or Muslim host realm. You hold no land. You build up the community's Jewish Quarter, seat its

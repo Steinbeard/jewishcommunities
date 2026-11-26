@@ -1,4 +1,7 @@
-﻿# =====================================================================
+﻿# 2026-11-26: Targeted invitations replace open attendance and the old
+# guest categories described in the historical notes below. The panel
+# is still selected from arrivals. Synod delegates retain their own rule.
+# =====================================================================
 # Kehillah Bet Din Conference -- travelled-to gathering activity.
 #
 # Source of truth: docs/spec/v5-bet-din-conference.md, generalized to all
@@ -341,7 +344,8 @@ activity_kehillah_bet_din_conference = {
 	# effect (common/scripted_effects/kehillah_bet_din_scripted_effects.
 	# txt) is what decides, from whoever actually attends, which two
 	# become the real co-judges.
-	open_invite = yes
+	# 2026-11-26: send named invitations; the panel is still selected on arrival.
+	open_invite = no
 
 	# FIXED 2026-10-15 (20-year soak): the same four rules were listed under
 	# both rules and defaults. Vanilla (_activity_type.info): defaults "will
@@ -350,10 +354,9 @@ activity_kehillah_bet_din_conference = {
 	# Defaults alone, as vanilla camp_party does.
 	guest_invite_rules = {
 		defaults = {
-			1 = kehillah_bet_din_invite_rule_jewish_regional_leaders
-			2 = kehillah_bet_din_invite_rule_jewish_courtiers
-			3 = kehillah_bet_din_invite_rule_jewish_scholars
-			4 = kehillah_bet_din_invite_rule_jewish_adventurers
+			1 = kehillah_bet_din_invite_rule_targeted_sages
+			2 = kehillah_bet_din_invite_rule_local_scholars
+
 			5 = kehillah_bet_din_invite_rule_synod_delegates
 		}
 	}
@@ -393,7 +396,11 @@ activity_kehillah_bet_din_conference = {
 	# 2026-11-25: who may ATTEND, not who may judge (kehillah_bet_din_
 	# benches_triggers.txt). Non-rabbis come and sit on the benches.
 	can_be_activity_guest = {
-		kehillah_bet_din_may_attend_trigger = { HOST = scope:host }
+		trigger_if = {
+			limit = { scope:host = { has_variable = kehillah_bet_din_stand_in_for } }
+			kehillah_bet_din_may_attend_trigger = { HOST = scope:host.var:kehillah_bet_din_stand_in_for }
+		}
+		trigger_else = { kehillah_bet_din_may_attend_trigger = { HOST = scope:host } }
 	}
 
 	# CAP, answering "can we cap the number of people who can accept" at
@@ -688,9 +695,12 @@ activity_kehillah_bet_din_conference = {
 			# than an interruption in either of the first two cases.
 			if = {
 				limit = { scope:activity = { has_variable = kehillah_synod_takkanah } }
+				kehillah_synod_prepare_closing_ruling_effect = yes
 				trigger_event = kehillah_synod.0103
 			}
 			trigger_event = kehillah_bet_din.0099
+			# A synod may now conclude without nominating a motion.
+			remove_variable = kehillah_synod_in_session
 			if = { limit = { has_variable = kehillah_bet_din_lay_seat } remove_variable = kehillah_bet_din_lay_seat }
 		}
 		# 2026-11-25: each guest's own close -- semicha examined, a friend

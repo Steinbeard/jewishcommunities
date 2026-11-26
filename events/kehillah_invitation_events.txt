@@ -1,9 +1,18 @@
 ﻿# =====================================================================
-# INVITATIONS -- V34 section 7 / V35 player clarity (2026-10-13).
-#   .0001 a lord's letter of invitation reaches a player's community that
-#         could answer it (kehillah_invitation_issue_effect). Scopes:
-#         kehillah_policy_host, kehillah_policy_realm.
+# INVITATIONS -- V34 section 7 / V35 player clarity (2026-10-13);
+# rebuilt 2026-11-25 (docs/spec/2026-11-25-invitation-letters.md).
+#   .0001 a lord's letter names a county and calls this community, one of
+#         the few nearest it (kehillah_invitation_issue_effect). Answered
+#         in the letter itself. Scopes: kehillah_policy_host,
+#         kehillah_policy_realm, kehillah_call_county.
+#         Since 2026-11-25 it also reaches the nearest Jewish adventurers
+#         and merchant companies, each with their own way to answer.
 #   .0010 (V44) a Jewish adventurer arrives in an inviting realm.
+#   .0011 a player's band arrives where a lord invited it.
+#   .0012 the founding for a band that answered (hidden).
+#   .0020 an AI community, adventurer or merchant called decides (hidden).
+#   .0021 the founding for a community's answered call (hidden).
+#   .0024 the founding for a merchant's answered call (hidden).
 # =====================================================================
 namespace = kehillah_invitation
 
@@ -11,13 +20,122 @@ kehillah_invitation.0001 = {
 	type = character_event
 	title = kehillah_invitation.0001.t
 	desc = {
+		# Who writes, and why.
 		first_valid = {
 			triggered_desc = {
 				trigger = { scope:kehillah_policy_realm = { has_variable = kehillah_norman_special_invitation } }
 				desc = kehillah_invitation.0001.england_desc
 			}
-			desc = kehillah_invitation.0001.desc
+			triggered_desc = {
+				trigger = { has_government = landless_adventurer_government }
+				desc = kehillah_invitation.0001.opening_band
+			}
+			triggered_desc = {
+				trigger = { has_government = merchant_government }
+				desc = kehillah_invitation.0001.opening_merchant
+			}
+			desc = kehillah_invitation.0001.opening
 		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_realm = { has_variable = kehillah_norman_special_invitation } }
+				desc = kehillah_invitation.0001.reason_none
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_host = { has_character_flag = kehillah_open_door_refugees_flag } }
+				desc = kehillah_invitation.0001.reason_refugees
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_realm.var:kehillah_policy_reason ?= flag:credit }
+				desc = kehillah_invitation.0001.reason_credit
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_realm.var:kehillah_policy_reason ?= flag:towns }
+				desc = kehillah_invitation.0001.reason_towns
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_realm.var:kehillah_policy_reason ?= flag:petition }
+				desc = kehillah_invitation.0001.reason_petition
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_realm.var:kehillah_policy_reason ?= flag:plea }
+				desc = kehillah_invitation.0001.reason_plea
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_realm.var:kehillah_policy_reason ?= flag:justice }
+				desc = kehillah_invitation.0001.reason_justice
+			}
+			desc = kehillah_invitation.0001.reason_default
+		}
+		# What he promises, by his outlook and character.
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_realm = { has_variable = kehillah_norman_special_invitation } }
+				desc = kehillah_invitation.0001.reason_none
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_host = { kehillah_outlook_protector_trigger = yes } }
+				desc = kehillah_invitation.0001.promise_protector
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_host = { has_trait = zealous } }
+				desc = kehillah_invitation.0001.promise_zealous
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_policy_host = { has_trait = greedy } }
+				desc = kehillah_invitation.0001.promise_greedy
+			}
+			desc = kehillah_invitation.0001.promise_default
+		}
+		# The place he names.
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:kehillah_call_county = {
+						prosperity_level >= 30
+						any_county_province = { has_holding_type = city_holding }
+					}
+				}
+				desc = kehillah_invitation.0001.site_rich_town
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_call_county = { any_county_province = { has_holding_type = city_holding } } }
+				desc = kehillah_invitation.0001.site_town
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_call_county = { prosperity_level >= 15 } }
+				desc = kehillah_invitation.0001.site_castle
+			}
+			desc = kehillah_invitation.0001.site_rural
+		}
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:kehillah_call_distance = 1 }
+				desc = kehillah_invitation.0001.distance_near
+			}
+			triggered_desc = {
+				trigger = { scope:kehillah_call_distance = 2 }
+				desc = kehillah_invitation.0001.distance_medium
+			}
+			desc = kehillah_invitation.0001.distance_far
+		}
+		# Our own quarter, band or company.
+		first_valid = {
+			triggered_desc = {
+				trigger = { has_government = landless_adventurer_government }
+				desc = kehillah_invitation.0001.band_line
+			}
+			triggered_desc = {
+				trigger = { has_government = merchant_government }
+				desc = kehillah_invitation.0001.merchant_line
+			}
+			triggered_desc = {
+				trigger = { NOT = { kehillah_quarter_has_room_trigger = yes } }
+				desc = kehillah_invitation.0001.quarter_crowded
+			}
+			desc = kehillah_invitation.0001.quarter_room
+		}
+		desc = kehillah_invitation.0001.closing
 	}
 	theme = realm
 	left_portrait = {
@@ -28,21 +146,80 @@ kehillah_invitation.0001 = {
 		character = root
 		animation = thinking
 	}
-	# V44 (2026-10-15, 20-year soak: nine single-option letters): answer it
-	# now, thank the lord, or let it wait.
-	option = {
-		name = kehillah_invitation.0001.b
-		custom_tooltip = kehillah_invitation_settlers_open_tt
-		custom_tooltip = kehillah_invitation_answer_now_tt
-		open_view_data = {
-			view = decision_detail
-			data = decision:kehillah_send_out_settlers_decision
-			player = root
-		}
+
+	immediate = {
+		kehillah_invitation_letter_setup_effect = yes
 	}
 
+	# The strongest eligible volunteer leads a single party.
 	option = {
-		name = kehillah_invitation.0001.c
+		name = kehillah_invitation.0001.send_volunteer
+		trigger = {
+			government_has_flag = government_is_kehillah
+			exists = scope:kehillah_invitation_volunteer
+			kehillah_invitation_can_answer_trigger = yes
+		}
+		show_as_unavailable = {
+			government_has_flag = government_is_kehillah
+			exists = scope:kehillah_invitation_volunteer
+		}
+		scope:kehillah_invitation_volunteer = { save_scope_as = kehillah_settlers_leader }
+		kehillah_invitation_send_settlers_effect = yes
+		hidden_effect = { trigger_event = kehillah_invitation.0021 }
+		ai_chance = { base = 0 }
+	}
+	# A leader may accept the charter personally, leaving the old seat to
+	# its appointed successor. The title transfer runs in a hidden event.
+	option = {
+		name = kehillah_invitation.0001.lead_self
+		trigger = {
+			government_has_flag = government_is_kehillah
+			kehillah_invitation_can_answer_trigger = yes
+			exists = primary_title.current_heir
+			primary_title.current_heir = {
+				is_alive = yes
+				is_jewish_character_trigger = yes
+				NOT = { this = root }
+			}
+		}
+		show_as_unavailable = { government_has_flag = government_is_kehillah }
+		remove_short_term_gold = kehillah_invitation_send_cost_value
+		custom_tooltip = kehillah_invitation_lead_self_tt
+		hidden_effect = { trigger_event = kehillah_invitation.0022 }
+		ai_chance = { base = 0 }
+	}
+	# 2026-11-25: an adventurer takes his band to the county.
+	option = {
+		name = kehillah_invitation.0001.band_go
+		trigger = {
+			has_government = landless_adventurer_government
+			kehillah_invitation_band_can_answer_trigger = yes
+		}
+		show_as_unavailable = { has_government = landless_adventurer_government }
+		kehillah_invitation_band_set_out_effect = yes
+		ai_chance = { base = 0 }
+	}
+	# 2026-11-25: a merchant sends a factor and families of the company.
+	option = {
+		name = kehillah_invitation.0001.merchant_send
+		trigger = {
+			has_government = merchant_government
+			exists = scope:kehillah_settlers_lead_merchant
+			kehillah_invitation_merchant_can_answer_trigger = yes
+		}
+		show_as_unavailable = {
+			has_government = merchant_government
+			exists = scope:kehillah_settlers_lead_merchant
+		}
+		scope:kehillah_settlers_lead_merchant = { save_scope_as = kehillah_settlers_leader }
+		kehillah_invitation_merchant_send_effect = yes
+		hidden_effect = { trigger_event = kehillah_invitation.0024 }
+		ai_chance = { base = 0 }
+	}
+	# Welcome news; thank him (2026-11-25: "welcome news" and "write to
+	# thank him" merged, Daniel).
+	option = {
+		name = kehillah_invitation.0001.thank
 		scope:kehillah_policy_host = {
 			add_opinion = {
 				target = root
@@ -51,11 +228,7 @@ kehillah_invitation.0001 = {
 			}
 		}
 		add_prestige = minor_prestige_gain
-	}
-
-	option = {
-		name = kehillah_invitation.0001.a
-		custom_tooltip = kehillah_invitation_settlers_open_tt
+		ai_chance = { base = 100 }
 	}
 }
 
@@ -70,5 +243,173 @@ kehillah_invitation.0010 = {
 		domicile ?= { move_domicile = root.location }
 		add_character_flag = { flag = kehillah_answered_invitation_flag years = 5 }
 		debug_log = "kehillah_invitation.0010: a Jewish adventurer has come to an inviting realm"
+	}
+}
+
+# 2026-11-25. Whoever an AI lord's letter called decides, some months
+# after the letter (so a player called with it can answer first). The
+# first community founded there takes the site; a later answer finds the
+# call closed. A community sends settlers, an adventurer takes his band
+# there, a merchant sends a factor with families of the company.
+kehillah_invitation.0020 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		kehillah_invitation_call_open_trigger = yes
+	}
+	immediate = {
+		kehillah_invitation_letter_setup_effect = yes
+		if = {
+			limit = {
+				government_has_flag = government_is_kehillah
+				exists = primary_title
+				kehillah_invitation_can_answer_trigger = yes
+				OR = {
+					exists = scope:kehillah_settlers_lead_baal
+					exists = scope:kehillah_settlers_lead_rabbi
+					exists = scope:kehillah_settlers_lead_kin
+				}
+			}
+			random = {
+				chance = kehillah_invitation_ai_answer_chance
+				if = {
+					limit = { exists = scope:kehillah_settlers_lead_baal }
+					scope:kehillah_settlers_lead_baal = { save_scope_as = kehillah_settlers_leader }
+				}
+				else_if = {
+					limit = { exists = scope:kehillah_settlers_lead_rabbi }
+					scope:kehillah_settlers_lead_rabbi = { save_scope_as = kehillah_settlers_leader }
+				}
+				else = {
+					scope:kehillah_settlers_lead_kin = { save_scope_as = kehillah_settlers_leader }
+				}
+				kehillah_invitation_send_settlers_effect = yes
+				kehillah_settlers_go_effect = yes
+				debug_log = "kehillah_invitation.0020: an AI community answered a lord's call"
+			}
+		}
+		else_if = {
+			limit = {
+				has_government = landless_adventurer_government
+				kehillah_invitation_band_can_answer_trigger = yes
+			}
+			random = {
+				chance = kehillah_invitation_ai_band_chance
+				kehillah_invitation_band_set_out_effect = yes
+				debug_log = "kehillah_invitation.0020: an AI adventurer set out for a lord's call"
+			}
+		}
+		else_if = {
+			limit = {
+				has_government = merchant_government
+				exists = scope:kehillah_settlers_lead_merchant
+				kehillah_invitation_merchant_can_answer_trigger = yes
+			}
+			random = {
+				chance = kehillah_invitation_ai_merchant_chance
+				scope:kehillah_settlers_lead_merchant = { save_scope_as = kehillah_settlers_leader }
+				kehillah_invitation_merchant_send_effect = yes
+				kehillah_invitation_merchant_go_effect = yes
+				debug_log = "kehillah_invitation.0020: an AI merchant answered a lord's call"
+			}
+		}
+		debug_log_scopes = yes
+	}
+}
+
+# 2026-11-25. Hidden: the founding for a player's answered call, outside
+# the option so the engine's tooltip dry run never reaches the new title
+# (see kehillah_settlers.0003). Re-checks the site: the founding is the
+# same day, but nothing else may have taken it.
+kehillah_invitation.0021 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		exists = scope:kehillah_settlers_leader
+		exists = scope:kehillah_founding_county
+		scope:kehillah_founding_county = { kehillah_founding_site_base_trigger = yes }
+	}
+	immediate = {
+		kehillah_settlers_go_effect = yes
+	}
+}
+
+# Keep title creation and transfer out of the option tooltip's dry run.
+kehillah_invitation.0022 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		kehillah_invitation_call_open_trigger = yes
+		exists = primary_title.current_heir
+		primary_title.current_heir = {
+			is_alive = yes
+			is_jewish_character_trigger = yes
+			NOT = { this = root }
+		}
+	}
+	immediate = {
+		kehillah_invitation_lead_self_effect = yes
+	}
+}
+
+# 2026-11-25. A player's band has reached the county a lord invited it to
+# (kehillah_invitation_band_set_out_effect). Found the community here at
+# the promised half cost, or wait (the decision stays open at full cost).
+kehillah_invitation.0011 = {
+	type = character_event
+	title = kehillah_invitation.0011.t
+	desc = kehillah_invitation.0011.desc
+	theme = realm
+	left_portrait = {
+		character = root
+		animation = happiness
+	}
+	trigger = { exists = var:kehillah_invited_to_county }
+	immediate = {
+		domicile ?= { move_domicile = root.location }
+		var:kehillah_invited_to_county = { save_scope_as = kehillah_call_county }
+	}
+	option = {
+		name = kehillah_invitation.0011.a
+		trigger = { kehillah_invitation_band_can_found_trigger = yes }
+		show_as_unavailable = { always = yes }
+		remove_short_term_gold = kehillah_invitation_band_found_cost_value
+		custom_tooltip = kehillah_invitation_band_found_tt
+		hidden_effect = { trigger_event = kehillah_invitation.0012 }
+	}
+	option = {
+		name = kehillah_invitation.0011.b
+		custom_tooltip = kehillah_invitation_band_wait_tt
+	}
+}
+
+# 2026-11-25. Hidden: the band's founding, outside the option so the
+# tooltip dry run never reaches the new title (see kehillah_settlers.0003).
+# The same founding as the Found a Jewish Community decision.
+kehillah_invitation.0012 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		has_government = landless_adventurer_government
+		exists = location.county
+		location.county = { kehillah_founding_site_base_trigger = yes }
+	}
+	immediate = {
+		remove_variable = kehillah_invited_to_county
+		kehillah_found_community_here_effect = yes
+	}
+}
+
+# 2026-11-25. Hidden: a player merchant's founding for an answered call.
+kehillah_invitation.0024 = {
+	type = character_event
+	hidden = yes
+	trigger = {
+		exists = scope:kehillah_settlers_leader
+		exists = scope:kehillah_founding_county
+		scope:kehillah_founding_county = { kehillah_founding_site_base_trigger = yes }
+	}
+	immediate = {
+		kehillah_invitation_merchant_go_effect = yes
 	}
 }

@@ -1,0 +1,79 @@
+﻿# The actual community leader may differ from the AI planner (stand-in).
+# Select a small, ranked list; guest eligibility is checked again by CK3.
+kehillah_bet_din_invite_rule_targeted_sages = {
+ effect = {
+  if = {
+   limit = { has_variable = kehillah_bet_din_stand_in_for }
+   var:kehillah_bet_din_stand_in_for = { save_temporary_scope_as = kbd_invitation_host }
+  }
+  else = { save_temporary_scope_as = kbd_invitation_host }
+  every_independent_ruler = {
+   limit = {
+    NOT = { this = scope:kbd_invitation_host }
+    in_diplomatic_range = scope:kbd_invitation_host
+    kehillah_shares_rite_trigger = { OTHER = scope:kbd_invitation_host }
+    is_alive = yes
+    is_adult = yes
+    is_imprisoned = no
+    kehillah_bet_din_eligible_judge_trigger = { HOST = scope:kbd_invitation_host }
+    exists = location
+   }
+   add_to_temporary_list = kbd_invitation_candidates
+  }
+  # Search nearby communities' households as well as their leaders; most
+  # ordained rabbis are courtiers rather than independent rulers.
+  every_independent_ruler = {
+   limit = {
+    NOT = { this = scope:kbd_invitation_host }
+    government_has_flag = government_is_kehillah
+    in_diplomatic_range = scope:kbd_invitation_host
+    kehillah_shares_rite_trigger = { OTHER = scope:kbd_invitation_host }
+   }
+   every_courtier = {
+    limit = {
+     NOT = { this = scope:kbd_invitation_host }
+     in_diplomatic_range = scope:kbd_invitation_host
+     kehillah_shares_rite_trigger = { OTHER = scope:kbd_invitation_host }
+     is_alive = yes
+    is_adult = yes
+    is_imprisoned = no
+    kehillah_bet_din_eligible_judge_trigger = { HOST = scope:kbd_invitation_host }
+     exists = location
+    }
+    add_to_temporary_list = kbd_invitation_candidates
+   }
+  }
+  ordered_in_list = {
+   list = kbd_invitation_candidates
+   order_by = kehillah_bet_din_invitation_score
+   max = 6
+   check_range_bounds = no
+   add_to_list = characters
+  }
+ }
+}
+
+# Local learned members can attend even if a visiting judge cannot travel.
+kehillah_bet_din_invite_rule_local_scholars = {
+ effect = {
+  if = {
+   limit = { has_variable = kehillah_bet_din_stand_in_for }
+   var:kehillah_bet_din_stand_in_for = { save_temporary_scope_as = kbd_local_host }
+  }
+  else = { save_temporary_scope_as = kbd_local_host }
+  scope:kbd_local_host = {
+   every_courtier = {
+    limit = {
+     is_jewish_character_trigger = yes
+     faith = scope:kbd_local_host.faith
+     is_adult = yes
+     OR = {
+      kehillah_rabbi_or_karaite_trigger = yes
+      learning >= kehillah_bet_din_local_dayan_learning_threshold
+     }
+    }
+    add_to_list = characters
+   }
+  }
+ }
+}

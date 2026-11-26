@@ -1,4 +1,9 @@
-## 2026-11-15 - County library relocation: live verification and Git delivery blocked
+﻿## 2026-11-15 - County library relocation: live verification and Git delivery blocked
+
+## 2026-11-26 - Synod consolidation: live verification and publication pending
+
+Source implementation and the vanilla comparison are in docs/spec/2026-11-26-synod-consolidation.md; validation is in docs/testing/2026-11-26-synod-consolidation.md. A delegated Luna tester could not inspect CK3 ownership: CIM resource access was unavailable, and live tools were not exposed. No game was launched; engine enumeration/rendering/enactment remain unrun. Local Git metadata is read-only in this session. The GitHub integration rejected creation of codex/synod-consolidation-20261126 from master with HTTP 403 Resource not accessible by integration, so no commit/push/PR was possible. Work remains in the shared main checkout on its pre-existing sefarim-reviews-cherem-and-crisis-politics branch; unrelated edits and the concurrent closing-ruling fix were preserved. Needed: an environment with Git write access/working GitHub credentials and a safe isolated live tester.
+
 
 Built in the shared checkout; see docs/implementation/2026-11-15-county-library-preservation.md. Five focused checks pass; xTiger has no diagnostics on the changed files. Luna found no CK3 tools and could not inspect process ownership (CIM denied); grant/save/tooltip checks remain unrun. Staging the focused files failed creating .git/index.lock (Permission denied); no commit/push/PR. Preserve concurrent work when delivering this unit.
 

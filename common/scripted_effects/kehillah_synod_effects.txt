@@ -219,7 +219,6 @@ kehillah_seed_minhag_sepharad_effect = {
 	}
 }
 
-
 # ---------------------------------------------------------------------
 # Open a synod inside a Sitting of the Bet Din. Scope: the host, from
 # phase_bet_din_case_3's on_phase_active after two ordinary rulings
@@ -229,6 +228,14 @@ kehillah_seed_minhag_sepharad_effect = {
 # ---------------------------------------------------------------------
 kehillah_synod_open_session_effect = {
 	scope:activity = {
+        clear_variable_list = kehillah_synod_voted
+        clear_variable_list = kehillah_synod_voted_for
+        clear_variable_list = kehillah_synod_voted_against
+        clear_variable_list = kehillah_synod_electorate
+        add_to_variable_list = { name = kehillah_synod_voted target = root }
+        add_to_variable_list = { name = kehillah_synod_voted_for target = root }
+        add_to_variable_list = { name = kehillah_synod_electorate target = root }
+
 		set_variable = { name = kehillah_synod_votes_for value = 1 }
 		set_variable = { name = kehillah_synod_votes_against value = 0 }
 	}
@@ -250,7 +257,10 @@ kehillah_synod_open_session_effect = {
 # The doctrine is set by the doctrine-motion event before this shared helper.
 # MOTION: flag:<takkanah>.
 kehillah_synod_put_motion_effect = {
-	involved_activity ?= { set_variable = { name = kehillah_synod_takkanah value = $MOTION$ } }
+	involved_activity ?= {
+        set_variable = { name = kehillah_synod_takkanah value = $MOTION$ }
+        add_activity_log_entry = { key = kehillah_synod_vote_for_log character = root tags = { completed } show_in_conclusion = yes }
+    }
 	add_prestige = {
 		value = kehillah_synod_prestige_cost
 		multiply = -1
@@ -492,7 +502,6 @@ kehillah_synod_enact_takkanah_effect = {
 	if = {
 		limit = { scope:kehillah_synod_takkanah = flag:tenet_reform }
 		kehillah_reform_enact_effect = yes
-		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
 	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:herem_polygamy }
@@ -507,18 +516,24 @@ kehillah_synod_enact_takkanah_effect = {
 		rite:rabbinism ?= { change_rite_doctrine = scope:kehillah_synod_proposed_doctrine }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
 	}
-	# 2026-11-11 cherem track: the synod places the full ban on a leader.
-	else_if = {
-		limit = { scope:kehillah_synod_takkanah = flag:herem_person }
-		scope:kehillah_synod_herem_target ?= {
-			custom_tooltip = kehillah_synod_herem_person_tt
-			hidden_effect = {
-				save_scope_value_as = { name = kehillah_cherem_pronounced_by value = flag:synod }
-				kehillah_cherem_pronounce_effect = yes
-			}
-		}
-		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
-	}
+
+    # A personal sanction is revalidated when acknowledged.
+    else_if = {
+        limit = { scope:kehillah_synod_takkanah = flag:herem_person }
+        if = {
+            limit = { scope:kehillah_synod_herem_target ?= { is_alive = yes kehillah_synod_herem_target_trigger = { HOST = root } } }
+            save_scope_value_as = { name = kehillah_synod_applied value = yes }
+            scope:kehillah_synod_herem_target = {
+                custom_tooltip = kehillah_synod_herem_person_tt
+                hidden_effect = {
+                    save_scope_value_as = { name = kehillah_cherem_pronounced_by value = flag:synod }
+                    kehillah_cherem_pronounce_effect = yes
+                }
+            }
+            kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+        }
+        else = { custom_tooltip = kehillah_reform_lapsed_tt }
+    }
 	else_if = {
 		limit = { scope:kehillah_synod_takkanah = flag:ketubbah_clause }
 		kehillah_synod_bind_effect = { VAR = kehillah_takkanah_ketubbah_clause }
@@ -550,22 +565,32 @@ kehillah_synod_enact_takkanah_effect = {
 		kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_letters_stability }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_letters_greatness }
 	}
-	# 2026-11-25 law and custom: a doctrine of the host's rite. At a Sanhedrin
-	# too it binds the host's rite only; faith-wide doctrine is not a synod's.
-	# A controversial ruling divides the communities.
-	else_if = {
-		limit = { scope:kehillah_synod_takkanah = flag:rite_doctrine }
-		custom_tooltip = kehillah_synod_rite_doctrine_tt
-		rite ?= { change_rite_doctrine = scope:kehillah_synod_proposed_doctrine }
-		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
-		if = {
-			limit = {
-				exists = scope:kehillah_synod_controversy
-				scope:kehillah_synod_controversy >= kehillah_synod_controversy_moderate
-			}
-			kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_controversy_stability_value }
-		}
-	}
+
+    # Practice proposals revalidate the exact rite and its previous doctrine.
+    else_if = {
+        limit = { scope:kehillah_synod_takkanah = flag:rite_doctrine }
+        if = {
+            limit = {
+                exists = scope:kehillah_synod_proposal_rite
+                exists = scope:kehillah_synod_previous_doctrine
+                rite = scope:kehillah_synod_proposal_rite
+                rite = {
+                    rite_has_doctrine = scope:kehillah_synod_previous_doctrine
+                    NOT = { rite_has_doctrine = scope:kehillah_synod_proposed_doctrine }
+                    rite_can_choose_doctrine = scope:kehillah_synod_proposed_doctrine
+                }
+            }
+            rite = { change_rite_doctrine = scope:kehillah_synod_proposed_doctrine }
+            save_scope_value_as = { name = kehillah_synod_applied value = yes }
+            custom_tooltip = kehillah_synod_rite_doctrine_tt
+            kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+            if = {
+                limit = { exists = scope:kehillah_synod_controversy scope:kehillah_synod_controversy >= kehillah_synod_controversy_moderate }
+                kehillah_change_pillar_effect = { PILLAR = stability AMOUNT = kehillah_synod_controversy_stability_value }
+            }
+        }
+        else = { custom_tooltip = kehillah_reform_lapsed_tt }
+    }
 	# 2026-11-25 dynamic agenda: the gathering names a head of the rite.
 	# Re-checked: he may have died, or someone else been raised, since the vote.
 	else_if = {
@@ -578,11 +603,21 @@ kehillah_synod_enact_takkanah_effect = {
 					kehillah_synod_rite_headship_open_trigger = yes
 				}
 			}
-			scope:kehillah_synod_nominee = {
-				custom_tooltip = kehillah_synod_head_named_tt
-				hidden_effect = { kehillah_gaonate_grant_effect = yes }
-			}
-			kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+
+            scope:kehillah_synod_nominee = {
+                hidden_effect = { kehillah_gaonate_grant_effect = yes }
+                if = {
+                    limit = { has_title = title:d_kehillah_gaonate exists = rite.head_of_rite rite.head_of_rite = this }
+                    save_scope_value_as = { name = kehillah_synod_applied value = yes }
+                    custom_tooltip = kehillah_synod_head_named_tt
+                    debug_log = "KEHILLAH_SYNOD: title and engine headship confirmed"
+                }
+                else = { custom_tooltip = kehillah_synod_head_unconfirmed_tt debug_log = "KEHILLAH_SYNOD: headship grant not confirmed" }
+            }
+            if = {
+                limit = { scope:kehillah_synod_applied ?= yes }
+                kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_passed_greatness }
+            }
 		}
 		else = { custom_tooltip = kehillah_synod_head_lapsed_tt }
 	}
@@ -608,7 +643,90 @@ kehillah_synod_enact_takkanah_effect = {
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_synod_levy_greatness }
 	}
 	if = {
-		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }
+		limit = { scope:kehillah_synod_level ?= flag:sanhedrin scope:kehillah_synod_applied ?= yes }
 		kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_sanhedrin_passed_greatness }
 	}
+}
+
+# Snapshot the ruling in on_complete, before the activity link is cleared.
+# Scope: host; scope:activity: the completion callback's activity.
+kehillah_synod_prepare_closing_ruling_effect = {
+	save_scope_value_as = { name = kehillah_synod_applied value = no }
+	scope:activity.var:kehillah_reform_topic ?= { save_scope_as = kehillah_reform_topic }
+	scope:activity.var:kehillah_reform_replacement ?= { save_scope_as = kehillah_reform_replacement }
+	if = {
+		limit = { scope:activity.var:kehillah_synod_takkanah ?= flag:tenet_reform exists = scope:activity.var:kehillah_reform_topic }
+		set_variable = { name = kehillah_reform_topic value = scope:activity.var:kehillah_reform_topic }
+		set_variable = { name = kehillah_reform_rite value = scope:activity.var:kehillah_reform_rite }
+		set_variable = { name = kehillah_reform_action value = scope:activity.var:kehillah_reform_action }
+		remove_variable = kehillah_reform_replacement
+		if = { limit = { exists = scope:activity.var:kehillah_reform_replacement } set_variable = { name = kehillah_reform_replacement value = scope:activity.var:kehillah_reform_replacement } }
+	}
+	scope:activity.var:kehillah_synod_proposal_rite ?= { save_scope_as = kehillah_synod_proposal_rite }
+	scope:activity.var:kehillah_synod_previous_doctrine ?= { save_scope_as = kehillah_synod_previous_doctrine }
+	save_scope_value_as = {
+		name = kehillah_synod_takkanah
+		value = scope:activity.var:kehillah_synod_takkanah
+	}
+	scope:activity.var:kehillah_synod_proposed_doctrine ?= {
+		save_scope_as = kehillah_synod_proposed_doctrine
+	}
+	scope:activity.var:kehillah_synod_herem_target ?= { save_scope_as = kehillah_synod_herem_target }
+	scope:activity.var:kehillah_synod_nominee ?= { save_scope_as = kehillah_synod_nominee }
+	save_scope_value_as = {
+		name = kehillah_synod_level
+		value = scope:activity.var:kehillah_synod_level
+	}
+	# 2026-11-25 law and custom: the controversy, for the ruling's cost.
+	if = {
+		limit = { exists = scope:activity.var:kehillah_synod_controversy }
+		save_scope_value_as = {
+			name = kehillah_synod_controversy
+			value = scope:activity.var:kehillah_synod_controversy
+		}
+	}
+	if = {
+		limit = { kehillah_synod_closing_quorum_trigger = no }
+		save_scope_value_as = { name = kehillah_synod_outcome value = flag:no_quorum }
+	}
+	else_if = {
+		limit = {
+			scope:activity = {
+				has_variable = kehillah_synod_votes_for
+				has_variable = kehillah_synod_votes_against
+				var:kehillah_synod_votes_for > var:kehillah_synod_votes_against
+			}
+		}
+		save_scope_value_as = { name = kehillah_synod_outcome value = flag:passed }
+	}
+	else = {
+		save_scope_value_as = { name = kehillah_synod_outcome value = flag:failed }
+	}
+	remove_variable = kehillah_synod_in_session
+
+    set_variable = { name = kehillah_synod_result_for value = scope:activity.var:kehillah_synod_votes_for }
+    set_variable = { name = kehillah_synod_result_against value = scope:activity.var:kehillah_synod_votes_against }
+    set_variable = { name = kehillah_synod_result_uncast value = 0 }
+    clear_variable_list = kehillah_synod_roll_for
+    clear_variable_list = kehillah_synod_roll_against
+    clear_variable_list = kehillah_synod_roll_uncast
+    scope:activity = {
+        every_in_list = {
+            variable = kehillah_synod_voted_for
+            root = { add_to_variable_list = { name = kehillah_synod_roll_for target = prev } }
+        }
+        every_in_list = {
+            variable = kehillah_synod_voted_against
+            root = { add_to_variable_list = { name = kehillah_synod_roll_against target = prev } }
+        }
+        every_in_list = {
+            variable = kehillah_synod_electorate
+            limit = { NOT = { scope:activity = { is_target_in_variable_list = { name = kehillah_synod_voted target = prev } } } }
+            root = {
+                add_to_variable_list = { name = kehillah_synod_roll_uncast target = prev }
+                change_variable = { name = kehillah_synod_result_uncast add = 1 }
+            }
+        }
+    }
+	debug_log = "KEHILLAH_SYNOD: closing ruling captured"
 }

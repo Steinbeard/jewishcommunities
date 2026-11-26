@@ -187,9 +187,9 @@ class FaithRevision(unittest.TestCase):
         aliases = [cond for cond, tenet in branches if "_tenet_b ?= 6" in cond]
         self.assertEqual(len(aliases), 1)
         self.assertIn("_tenet_a ?= 1", aliases[0]); self.assertIn("_tenet_a ?= 6", aliases[0])
-        from kehillah_reform_build import REPLACEABLE
-        self.assertEqual(REPLACEABLE[12][0], "tenet_legalism")
-        self.assertEqual(REPLACEABLE[19][0], "tenet_kehillah_sacred_liturgy")
+        reform = source("events/kehillah_reform_events.txt")
+        self.assertIn("ordered_rite_tenet", reform)
+        self.assertIn("value = var:kehillah_reform_drop_1", reform)
 
     def test_no_dlc_dependency_and_poet_virtue(self):
         text = source("common/religion/tenet_types/kehillah_study_and_liturgy_tenets.txt")

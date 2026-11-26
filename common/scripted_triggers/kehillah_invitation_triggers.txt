@@ -111,3 +111,137 @@ kehillah_invitation_suitor_target_trigger = {
 		}
 	}
 }
+
+# =====================================================================
+# INVITATION CALLS -- 2026-11-25 (docs/spec/2026-11-25-invitation-
+# letters.md). A lord's invitation names one county; the communities
+# nearest it are called, and the first to found there closes the call.
+# =====================================================================
+
+# Scope: a community title (kehillah_registered_communities);
+# scope:kehillah_call_province saved. A community the call can reach:
+# led, housed, within squared_distance_large of the county, and not still
+# resting from its last settlers.
+kehillah_invitation_callable_community_trigger = {
+	exists = holder
+	holder = { government_has_flag = government_is_kehillah }
+	exists = holder.domicile.domicile_location
+	NOT = { has_variable = kehillah_settlers_cooldown }
+	holder.domicile.domicile_location = {
+		squared_distance = {
+			target = scope:kehillah_call_province
+			value <= squared_distance_large
+		}
+	}
+}
+
+# Scope: anything; scope:kehillah_policy_realm and scope:kehillah_call_county
+# saved. The lord's call still stands: he has not withdrawn or let it lapse,
+# and no community has been founded there yet.
+kehillah_invitation_call_open_trigger = {
+	exists = scope:kehillah_call_county
+	scope:kehillah_policy_realm = { var:kehillah_invitation_county ?= scope:kehillah_call_county }
+	scope:kehillah_call_county = { kehillah_founding_site_base_trigger = yes }
+}
+
+# Scope: a Kehillah leader; the call's scopes saved. Can this community
+# answer the call now? (The leader of the party is checked per option.)
+kehillah_invitation_can_answer_trigger = {
+	custom_tooltip = {
+		text = kehillah_invitation_call_open_tt
+		kehillah_invitation_call_open_trigger = yes
+	}
+	custom_tooltip = {
+		text = kehillah_settlers_prosperity_tt
+		kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_prosperity THRESHOLD = kehillah_band_strained_threshold }
+	}
+	custom_tooltip = {
+		text = kehillah_settlers_cooldown_tt
+		primary_title = { NOT = { has_variable = kehillah_settlers_cooldown } }
+	}
+	gold >= kehillah_invitation_send_cost_value
+	is_available_adult = yes
+}
+
+# Scope: a character; scope:kehillah_call_province saved. A Jewish
+# adventurer the call can reach (2026-11-25): one who could found a
+# community (the Found a Jewish Community decision's own leader rules),
+# within squared_distance_large, not already bound for another invitation.
+kehillah_invitation_callable_band_trigger = {
+	is_adult = yes
+	is_imprisoned = no
+	kehillah_can_found_kehillah_faith_trigger = yes
+	kehillah_leader_is_rabbinic_trigger = yes
+	NOT = { has_character_flag = kehillah_answered_invitation_flag }
+	NOT = { has_variable = kehillah_invited_to_county }
+	exists = location
+	location = {
+		squared_distance = {
+			target = scope:kehillah_call_province
+			value <= squared_distance_large
+		}
+	}
+}
+
+# Scope: a character; scope:kehillah_call_province saved. A Jewish
+# merchant company the call can reach (2026-11-25).
+kehillah_invitation_callable_merchant_trigger = {
+	is_adult = yes
+	is_imprisoned = no
+	is_jewish_character_trigger = yes
+	exists = location
+	location = {
+		squared_distance = {
+			target = scope:kehillah_call_province
+			value <= squared_distance_large
+		}
+	}
+}
+
+# Scope: a Jewish adventurer; the call's scopes saved. Can his band set out
+# for the county now?
+kehillah_invitation_band_can_answer_trigger = {
+	custom_tooltip = {
+		text = kehillah_invitation_call_open_tt
+		kehillah_invitation_call_open_trigger = yes
+	}
+	is_available_adult = yes
+	is_travelling = no
+	is_at_war = no
+}
+
+# Scope: a Jewish merchant; the call's scopes saved. Can he send a factor
+# and families now?
+kehillah_invitation_merchant_can_answer_trigger = {
+	custom_tooltip = {
+		text = kehillah_invitation_call_open_tt
+		kehillah_invitation_call_open_trigger = yes
+	}
+	gold >= kehillah_invitation_send_cost_value
+	is_available_adult = yes
+}
+
+# Scope: a Jewish adventurer arrived where a lord invited him
+# (kehillah_invitation.0011). Can he found the community here now? The
+# Found a Jewish Community decision's rules, at the invited county.
+kehillah_invitation_band_can_found_trigger = {
+	custom_tooltip = {
+		text = kehillah_invitation_band_here_tt
+		exists = var:kehillah_invited_to_county
+		location.county ?= var:kehillah_invited_to_county
+		var:kehillah_invited_to_county = { kehillah_founding_site_base_trigger = yes }
+	}
+	kehillah_leader_is_rabbinic_trigger = yes
+	custom_tooltip = {
+		text = kehillah_found_community_requires_ten_jewish_followers_tt
+		OR = {
+			has_variable = kehillah_exiles_from
+			any_courtier = {
+				count >= 10
+				is_jewish_character_trigger = yes
+			}
+		}
+	}
+	gold >= kehillah_invitation_band_found_cost_value
+	is_available_adult = yes
+}

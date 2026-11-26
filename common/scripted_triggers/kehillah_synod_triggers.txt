@@ -163,55 +163,20 @@ kehillah_synod_can_propose_letters_trigger = {
 # A Synod's exceptional third matter is a rite-doctrine proposal. Communal
 # ordinances remain defined for future use, but do not open this intent.
 kehillah_synod_has_marriage_motion_trigger = {
-	OR = {
-		kehillah_synod_can_propose_herem_polygamy_trigger = yes
-		kehillah_synod_can_propose_herem_all_israel_trigger = yes
-		# 2026-11-25 dynamic agenda: the ketubbah clause is a marriage motion.
-		kehillah_synod_can_propose_ketubbah_clause_trigger = yes
-	}
+    always = no # Retired in the 2026-11-26 consolidation.
 }
 kehillah_synod_has_communal_motion_trigger = {
-	OR = {
-		kehillah_synod_can_propose_gentile_courts_trigger = yes
-		kehillah_synod_can_propose_informers_trigger = yes
-		kehillah_synod_can_propose_hayishuv_trigger = yes
-		kehillah_synod_can_propose_letters_trigger = yes
-	}
+    always = no # Retired in the 2026-11-26 consolidation.
 }
 
 kehillah_synod_has_open_takkanah_trigger = {
-	exists = primary_title
-	OR = {
-		kehillah_synod_has_marriage_motion_trigger = yes
-		# 2026-11-11 cherem track: a leader in reach is in Niddui.
-		kehillah_synod_can_propose_herem_person_trigger = yes
-		# 2026-11-08 Sefer redesign: a question of belief also opens a sitting,
-		# or no Synod could sit once Gershom's herem was renewed. An AI host
-		# convenes for one only when a Machloket has put a tenet on its rite's
-		# agenda, so AI synods do not reshuffle tenets every fifteen years.
-		AND = {
-			kehillah_reform_any_motion_trigger = yes
-			OR = {
-				is_ai = no
-				rite ?= { has_variable = kehillah_reform_pending_tenet }
-			}
-		}
-		# 2026-11-25 dynamic agenda (docs/spec/2026-11-25-dynamic-synod-agenda.md):
-		# ordinances, the headship of the rite and common undertakings also open
-		# a sitting. Undertakings repeat on a cooldown, so only a player host
-		# convenes for one; an AI host may still choose one once convened.
-		kehillah_synod_has_communal_motion_trigger = yes
-		kehillah_synod_rite_headship_open_trigger = yes
-		AND = {
-			is_ai = no
-			OR = {
-				kehillah_synod_has_undertaking_motion_trigger = yes
-				# Law and custom is always open, so it opens a sitting only for
-				# a player; an AI host rarely picks it (kehillah_synod.0100).
-				kehillah_synod_has_law_motion_trigger = yes
-			}
-		}
-	}
+    exists = primary_title
+    OR = {
+        kehillah_synod_can_propose_herem_person_trigger = yes
+        kehillah_synod_rite_headship_open_trigger = yes
+        AND = { kehillah_reform_any_motion_trigger = yes OR = { is_ai = no rite ?= { has_variable = kehillah_reform_pending_tenet } } }
+        AND = { is_ai = no kehillah_synod_has_law_motion_trigger = yes }
+    }
 }
 
 # ---------------------------------------------------------------------
@@ -313,25 +278,16 @@ kehillah_synod_can_propose_recognition_trigger = {
 	rite = { NOT = { rite_has_doctrine = kehillah_recognition_of_sages } }
 }
 kehillah_synod_has_law_motion_trigger = {
-	OR = {
-		kehillah_synod_can_propose_divorce_approval_trigger = yes
-		kehillah_synod_can_propose_divorce_allowed_trigger = yes
-		kehillah_synod_can_propose_proselytism_encouraged_trigger = yes
-		kehillah_synod_can_propose_proselytism_discouraged_trigger = yes
-		kehillah_synod_can_propose_clergy_either_trigger = yes
-		kehillah_synod_can_propose_clergy_male_trigger = yes
-		kehillah_synod_can_propose_funeral_bewailment_trigger = yes
-		kehillah_synod_can_propose_funeral_stoic_trigger = yes
-		kehillah_synod_can_propose_recognition_trigger = yes
-	}
+    kehillah_synod_law_rite_trigger = yes
+    OR = {
+        rite = { OR = { AND = { rite_has_doctrine = doctrine_monogamy rite_can_choose_doctrine = doctrine_polygamy } AND = { rite_has_doctrine = doctrine_polygamy rite_can_choose_doctrine = doctrine_monogamy } } }
+        rite = { OR = { AND = { rite_has_doctrine = kehillah_proselytism_discouraged rite_can_choose_doctrine = kehillah_proselytism_encouraged } AND = { rite_has_doctrine = kehillah_proselytism_encouraged rite_can_choose_doctrine = kehillah_proselytism_discouraged } } }
+        rite = { OR = { AND = { rite_has_doctrine = doctrine_clerical_gender_male_only rite_can_choose_doctrine = doctrine_clerical_gender_either } AND = { rite_has_doctrine = doctrine_clerical_gender_either rite_can_choose_doctrine = doctrine_clerical_gender_male_only } } }
+    }
 }
 
 kehillah_synod_has_undertaking_motion_trigger = {
-	OR = {
-		kehillah_synod_can_propose_captives_trigger = yes
-		kehillah_synod_can_propose_fast_trigger = yes
-		kehillah_synod_can_propose_levy_trigger = yes
-	}
+    always = no # Retired in the 2026-11-26 consolidation.
 }
 
 # 2026-11-22 (Daniel): who may convene a Synod -- a community whose
@@ -341,4 +297,31 @@ kehillah_synod_has_undertaking_motion_trigger = {
 # invite trigger).
 kehillah_synod_greatness_gate_trigger = {
 	kehillah_pillar_at_least_trigger = { PILLAR = kehillah_var_greatness THRESHOLD = kehillah_band_flourishing_threshold }
+}
+
+# Completion callback version: never uses the hosts involved_activity link.
+# scope:activity is supplied by on_complete; scope:kehillah_synod_level is captured.
+kehillah_synod_closing_quorum_trigger = {
+	trigger_if = {
+		limit = { scope:kehillah_synod_level ?= flag:sanhedrin }
+		scope:activity = {
+			any_attending_character = {
+				count >= kehillah_sanhedrin_quorum
+				NOT = { this = root }
+				is_alive = yes
+				government_has_flag = government_is_kehillah
+			}
+		}
+	}
+	trigger_else = {
+		scope:activity = {
+			any_attending_character = {
+				count >= kehillah_synod_quorum
+				NOT = { this = root }
+				is_alive = yes
+				government_has_flag = government_is_kehillah
+				kehillah_shares_rite_trigger = { OTHER = root }
+			}
+		}
+	}
 }

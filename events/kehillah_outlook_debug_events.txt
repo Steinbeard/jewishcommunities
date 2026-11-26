@@ -289,3 +289,41 @@ kehillah_outlook_debug.17 = {
 		debug_log = "kehillah_outlook_debug.17: the county faith"
 	}
 }
+
+# Console: event kehillah_outlook_debug.18 on a Kehillah player
+# (2026-11-25, docs/spec/2026-11-25-invitation-letters.md). The nearest
+# independent duke or greater other than our own host -- any outlook --
+# issues an invitation now, naming a county and calling the communities
+# nearest it. Logs the county and who was called; the letter should reach
+# this player if this community is among the nearest three.
+kehillah_outlook_debug.18 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		save_scope_as = kehillah_dbg_player
+		domicile.domicile_location = { save_scope_as = kehillah_dbg_quarter }
+		ordered_independent_ruler = {
+			limit = {
+				highest_held_title_tier >= tier_duchy
+				exists = capital_province
+				NOT = { government_has_flag = government_is_kehillah }
+				NOT = { scope:kehillah_dbg_player.domicile.domicile_location.county.holder.top_liege ?= this }
+			}
+			order_by = {
+				value = 0
+				subtract = "capital_province.squared_distance(scope:kehillah_dbg_quarter)"
+			}
+			# A founding site needs a realm that allows Jewish settlement.
+			if = {
+				limit = { NOT = { primary_title = { kehillah_jewish_settlement_policy_allowed_trigger = yes } } }
+				kehillah_set_settlement_law_effect = { RUNG = allowed VALUE = 2 }
+			}
+			primary_title = {
+				set_variable = { name = kehillah_policy_reason value = flag:towns }
+			}
+			kehillah_invitation_issue_effect = yes
+			debug_log_scopes = yes
+			debug_log = "kehillah_outlook_debug.18: an invitation issued with a named county"
+		}
+	}
+}

@@ -48,7 +48,11 @@ kehillah_found_with_founder_effect = {
 			set_variable = { name = kehillah_naturally_founded value = yes }
 			# Takes root before sending settlers of its own (2026-10-13).
 			set_variable = { name = kehillah_settlers_cooldown value = yes years = kehillah_settlers_new_community_years }
-			set_variable = { name = kehillah_mother_community value = scope:kehillah_mother_title }
+			# 2026-11-25: a merchant's factor founds with no mother community.
+			if = {
+				limit = { exists = scope:kehillah_mother_title }
+				set_variable = { name = kehillah_mother_community value = scope:kehillah_mother_title }
+			}
 		}
 		kehillah_history_record_founding_effect = yes
 		kehillah_update_leader_flavor_effect = yes
@@ -262,7 +266,16 @@ kehillah_settlers_pick_effect = {
 		}
 		save_scope_as = kehillah_settlers_dest_3
 	}
-	# One of each kind of leader (Daniel 2026-10-13).
+	kehillah_settlers_pick_leaders_effect = yes
+}
+
+# Scope: the mother leader; scope:kehillah_mother_leader saved. One of
+# each kind of leader (Daniel 2026-10-13): kehillah_settlers_lead_baal,
+# _rabbi, _kin. Split out 2026-11-25 for the invitation letter.
+kehillah_settlers_pick_leaders_effect = {
+	clear_saved_scope = kehillah_settlers_lead_baal
+	clear_saved_scope = kehillah_settlers_lead_rabbi
+	clear_saved_scope = kehillah_settlers_lead_kin
 	ordered_courtier = {
 		limit = {
 			kehillah_settlers_leader_candidate_trigger = yes
@@ -319,6 +332,12 @@ kehillah_settlers_go_effect = {
 	# The party: exactly the overflow (Daniel 2026-10-13) -- his own
 	# household first, then others, until the quarter is back to capacity.
 	set_variable = { name = kehillah_settlers_to_send value = kehillah_settlers_overflow_value }
+	# 2026-11-25: answering a lord's call sends at least
+	# kehillah_invitation_party_min, even from a quarter with room.
+	if = {
+		limit = { exists = scope:kehillah_settlers_invited }
+		set_variable = { name = kehillah_settlers_to_send value = kehillah_invitation_party_size_value }
+	}
 	change_variable = { name = kehillah_settlers_to_send add = -1 } # the leader himself
 	scope:kehillah_settlers_leader = {
 		every_close_family_member = {
@@ -357,9 +376,13 @@ kehillah_settlers_go_effect = {
 		save_scope_as = kehillah_settler
 		scope:kehillah_natural_founder = { add_courtier = scope:kehillah_settler }
 	}
-	# The mother community's credit: a daughter is greatness.
-	scope:kehillah_mother_title = {
-		change_variable = { name = kehillah_var_greatness add = 20 }
+	# The mother community's credit: a daughter is greatness. (An answered
+	# call pays its larger Greatness in kehillah_invitation_send_settlers_effect.)
+	if = {
+		limit = { NOT = { exists = scope:kehillah_settlers_invited } }
+		scope:kehillah_mother_title = {
+			change_variable = { name = kehillah_var_greatness add = 20 }
+		}
 	}
 	debug_log = "kehillah_settlers_go_effect: settlers left to found a daughter community"
 }

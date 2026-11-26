@@ -6,7 +6,6 @@ import unittest
 from kehillah_holiday_revision_build import block
 from kehillah_faith_revision_build import KNOWN, PERMITTED, PROHIBITED, ROSTERS, COVENANT
 from kehillah_library_catalog import TENET_INDEX
-from kehillah_reform_build import REPLACEABLE
 from test_kehillah_faith_revision import parse, child
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -123,9 +122,10 @@ class TenetPolish(unittest.TestCase):
         self.assertEqual(TENET_INDEX[7], "tenet_communal_identity")
         self.assertEqual(TENET_INDEX[12], "tenet_kehillah_sacred_liturgy")
         self.assertEqual(TENET_INDEX[13], COVENANT)
-        self.assertEqual(REPLACEABLE[12][0], "tenet_legalism")
-        self.assertEqual(REPLACEABLE[19][0], "tenet_kehillah_sacred_liturgy")
-        self.assertEqual(REPLACEABLE[20][0], COVENANT)
+        # Book ordinals remain stable; synod replacement choices are now actual core objects.
+        reform = source("events/kehillah_reform_events.txt")
+        self.assertIn("ordered_rite_tenet", reform)
+        self.assertNotIn("kehillah_reform_replace value =", reform)
 
     def test_all_starting_cores_have_a_reviewed_status(self):
         for faith, rites in (("rabbinic_faith", ["rabbinism", "minhag_ashkenaz", "minhag_sepharad", "minhag_yerushalmi", "merkabah"]),

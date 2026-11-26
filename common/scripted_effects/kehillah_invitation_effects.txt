@@ -44,58 +44,353 @@ kehillah_open_door_review_effect = {
 }
 
 # Scope: the host ruler, just raised to Encouraged (end of kehillah_
-# raise_jewish_settlement_policy_effect); scope:kehillah_policy_host and
-# scope:kehillah_policy_realm saved. The invitation: open for 20 years,
-# announced to Kehillah players within diplomatic range (his own
-# communities already have the policy notice).
+# raise_jewish_settlement_policy_effect), or taking Invite Jewish Settlers,
+# or the Norman conqueror; scope:kehillah_policy_realm saved. The
+# invitation: open for 20 years across the realm.
+# 2026-11-25 (docs/spec/2026-11-25-invitation-letters.md): it also names
+# one county -- the best founding site of his own domain -- and calls the
+# three communities nearest it by name. A player community called gets the
+# letter (kehillah_invitation.0001) and answers in it; an AI community
+# decides some months later (kehillah_invitation.0020), so a player can
+# answer first. The first community founded there closes the call
+# (kehillah_invitation_answered_effect). Other Kehillah players in
+# diplomatic range hear of it in the feed.
 kehillah_invitation_issue_effect = {
+	save_scope_as = kehillah_policy_host
 	primary_title = {
+		save_scope_as = kehillah_policy_realm
 		set_variable = { name = kehillah_invitation_open value = yes years = 20 }
+	}
+	clear_saved_scope = kehillah_call_county
+	ordered_realm_county = {
+		limit = {
+			holder = scope:kehillah_policy_host
+			kehillah_founding_site_base_trigger = yes
+		}
+		order_by = kehillah_invitation_site_score_value
+		save_scope_as = kehillah_call_county
+	}
+	if = {
+		limit = { NOT = { exists = scope:kehillah_call_county } }
+		ordered_realm_county = {
+			limit = { kehillah_founding_site_base_trigger = yes }
+			order_by = kehillah_invitation_site_score_value
+			save_scope_as = kehillah_call_county
+		}
+	}
+	if = {
+		limit = { exists = scope:kehillah_call_county }
+		scope:kehillah_call_county.title_province = { save_scope_as = kehillah_call_province }
+		scope:kehillah_policy_realm = {
+			set_variable = {
+				name = kehillah_invitation_county
+				value = scope:kehillah_call_county
+				years = kehillah_invitation_call_years
+			}
+		}
+		ordered_in_global_list = {
+			variable = kehillah_registered_communities
+			limit = { kehillah_invitation_callable_community_trigger = yes }
+			order_by = kehillah_invitation_call_nearness_value
+			max = kehillah_invitation_called_communities
+			check_range_bounds = no
+			holder = { kehillah_invitation_deliver_letter_effect = yes }
+		}
+		# 2026-11-25 (Daniel: "send invites to adventurers and merchants
+		# too"): the nearest Jewish adventurers who could found a community,
+		# and the nearest Jewish merchant companies, who could send families.
+		ordered_ruler = {
+			government_type_filter = government_type:landless_adventurer_government
+			limit = { kehillah_invitation_callable_band_trigger = yes }
+			order_by = kehillah_invitation_char_nearness_value
+			max = kehillah_invitation_called_bands
+			check_range_bounds = no
+			kehillah_invitation_deliver_letter_effect = yes
+		}
+		ordered_ruler = {
+			government_type_filter = government_type:merchant_government
+			limit = { kehillah_invitation_callable_merchant_trigger = yes }
+			order_by = kehillah_invitation_char_nearness_value
+			max = kehillah_invitation_called_merchants
+			check_range_bounds = no
+			kehillah_invitation_deliver_letter_effect = yes
+		}
 	}
 	every_player = {
 		limit = {
 			government_has_flag = government_is_kehillah
 			in_diplomatic_range = scope:kehillah_policy_host
-			NOT = { domicile.domicile_location.county.holder.top_liege ?= scope:kehillah_policy_host }
+			NOT = { is_in_list = kehillah_invitation_called }
 		}
-		# V35 (2026-10-13, player clarity): a community that could answer
-		# (an invited county within its settlers' reach) gets the letter
-		# as an event, the lord shown; others hear of it in the feed.
-		# V44 (2026-10-15): the letter itself only from a realm bordering this
-		# community (squared_distance_medium) and at most once in
-		# kehillah_invitation_letter_years; the rest is feed news.
-		if = {
-			limit = {
-				save_temporary_scope_as = kehillah_mother_leader
-				any_county = { kehillah_settlers_invited_destination_trigger = yes }
-				NOT = { has_character_flag = kehillah_invitation_letter_recent_flag }
-				exists = domicile.domicile_location
-				domicile.domicile_location = { save_temporary_scope_as = kehillah_letter_quarter }
-				scope:kehillah_policy_host = {
-					any_realm_county = {
-						title_province = {
-							squared_distance = {
-								target = scope:kehillah_letter_quarter
-								value <= squared_distance_medium
-							}
-						}
-					}
-				}
-			}
-			add_character_flag = { flag = kehillah_invitation_letter_recent_flag years = kehillah_invitation_letter_years }
-			trigger_event = kehillah_invitation.0001
-		}
-		else = {
-			send_interface_message = {
-				type = msg_kehillah_community_news
-				title = kehillah_news_invitation_t
-				desc = kehillah_news_invitation_d
-				left_icon = scope:kehillah_policy_host
-			}
+		send_interface_message = {
+			type = msg_kehillah_community_news
+			title = kehillah_news_invitation_t
+			desc = kehillah_news_invitation_d
+			left_icon = scope:kehillah_policy_host
 		}
 	}
 	debug_log_scopes = yes
 	debug_log = "kehillah_invitation_issue_effect: a ruler invites Jewish settlers"
+}
+
+# Scope: the mother community's leader; scope:kehillah_call_county,
+# scope:kehillah_policy_host and scope:kehillah_settlers_leader saved.
+# Answering a call: the costs and gains the letter's send option shows.
+# The founding itself is kehillah_invitation.0021 (never inside an
+# option: the tooltip dry run of a founding stalled the game, 2026-10-13).
+kehillah_invitation_send_settlers_effect = {
+	remove_short_term_gold = kehillah_invitation_send_cost_value
+	custom_tooltip = kehillah_invitation_send_party_tt
+	kehillah_change_pillar_effect = { PILLAR = greatness AMOUNT = kehillah_invitation_send_greatness }
+	add_prestige = medium_prestige_gain
+	scope:kehillah_policy_host = {
+		add_opinion = {
+			target = root
+			modifier = respect_opinion
+			opinion = kehillah_invitation_send_opinion
+		}
+	}
+	save_scope_value_as = { name = kehillah_settlers_invited value = yes }
+	scope:kehillah_call_county = { save_scope_as = kehillah_founding_county }
+}
+
+# A player answers personally. The old community passes by the same
+# change_title_holder route as voluntary abdication, then the former
+# leader founds the new seat using the established founder effect.
+# This must run from an event immediate, never an option tooltip.
+kehillah_invitation_lead_self_effect = {
+	save_scope_as = kehillah_mother_leader
+	primary_title = { save_scope_as = kehillah_mother_title }
+	primary_title.current_heir = { save_scope_as = kehillah_departure_successor }
+	scope:kehillah_call_county = { save_scope_as = kehillah_founding_county }
+	scope:kehillah_mother_title = {
+		set_variable = { name = kehillah_settlers_cooldown value = yes years = kehillah_settlers_cooldown_years }
+		change_variable = { name = kehillah_var_greatness add = kehillah_invitation_send_greatness }
+	}
+	add_prestige = medium_prestige_gain
+	scope:kehillah_policy_host = {
+		add_opinion = {
+			target = root
+			modifier = respect_opinion
+			opinion = kehillah_invitation_send_opinion
+		}
+	}
+	# Collect followers before the old court passes to the successor.
+	every_close_family_member = {
+		limit = {
+			is_courtier_of = root
+			NOT = { this = scope:kehillah_departure_successor }
+		}
+		add_to_list = kehillah_settlers_party
+	}
+	create_title_and_vassal_change = {
+		type = granted
+		save_scope_as = kehillah_invitation_handoff_change
+		add_claim_on_loss = no
+	}
+	scope:kehillah_mother_title = {
+		change_title_holder = {
+			holder = scope:kehillah_departure_successor
+			change = scope:kehillah_invitation_handoff_change
+			government_base = scope:kehillah_mother_leader
+		}
+	}
+	resolve_title_and_vassal_change = scope:kehillah_invitation_handoff_change
+	debug_log = "kehillah_invitation_lead_self_effect: old seat passed to appointed successor"
+	# Remove the departing leader's old realm office before establishing
+	# the new seat; the successor can be appointed separately.
+	if = {
+		limit = { has_variable = kehillah_nagid_of }
+		kehillah_nagid_step_down_effect = yes
+	}
+	kehillah_found_with_founder_effect = yes
+	every_in_list = {
+		list = kehillah_settlers_party
+		limit = { NOT = { is_courtier_of = scope:kehillah_natural_founder } }
+		save_scope_as = kehillah_settler
+		scope:kehillah_natural_founder = { add_courtier = scope:kehillah_settler }
+	}
+	kehillah_refresh_map_view_for_players_effect = yes
+	debug_log = "kehillah_invitation_lead_self_effect: leader founded the invited community personally"
+}
+
+# Scope: a community leader, adventurer or merchant called by name
+# (kehillah_invitation_issue_effect). A player gets the letter now; the AI
+# decides some months later, so a player called with it can answer first.
+kehillah_invitation_deliver_letter_effect = {
+	add_to_temporary_list = kehillah_invitation_called
+	if = {
+		limit = { is_ai = no }
+		trigger_event = kehillah_invitation.0001
+	}
+	else = {
+		trigger_event = {
+			id = kehillah_invitation.0020
+			days = { 30 240 }
+		}
+	}
+}
+
+# Scope: whoever was called, in kehillah_invitation.0001/.0020. Saves what
+# the letter shows: the leader candidates, the party's size (a community)
+# and the distance band to the called county (from a community's quarter,
+# or from where an adventurer or merchant is).
+kehillah_invitation_letter_setup_effect = {
+	save_scope_as = kehillah_mother_leader
+	clear_saved_scope = kehillah_settlers_lead_merchant
+	if = {
+		limit = { government_has_flag = government_is_kehillah }
+		primary_title = { save_scope_as = kehillah_mother_title }
+		kehillah_settlers_pick_leaders_effect = yes
+		# A single volunteer is named in the letter. The existing three
+		# candidate types remain available to Send Out Settlers elsewhere.
+		ordered_courtier = {
+			limit = { kehillah_settlers_leader_candidate_trigger = yes }
+			order_by = { value = stewardship add = learning }
+			save_scope_as = kehillah_invitation_volunteer
+		}
+		save_scope_value_as = { name = kehillah_invitation_party_size value = kehillah_invitation_party_size_value }
+		domicile.domicile_location ?= { save_scope_as = kehillah_call_from }
+	}
+	else_if = {
+		limit = { has_government = merchant_government }
+		ordered_courtier = {
+			limit = { kehillah_settlers_leader_candidate_trigger = yes }
+			order_by = { value = stewardship add = learning }
+			save_scope_as = kehillah_settlers_lead_merchant
+		}
+		location ?= { save_scope_as = kehillah_call_from }
+	}
+	else = {
+		location ?= { save_scope_as = kehillah_call_from }
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_call_from
+			scope:kehillah_call_county.title_province = {
+				squared_distance = {
+					target = scope:kehillah_call_from
+					value <= squared_distance_small
+				}
+			}
+		}
+		save_scope_value_as = { name = kehillah_call_distance value = 1 }
+	}
+	else_if = {
+		limit = {
+			exists = scope:kehillah_call_from
+			scope:kehillah_call_county.title_province = {
+				squared_distance = {
+					target = scope:kehillah_call_from
+					value <= squared_distance_medium
+				}
+			}
+		}
+		save_scope_value_as = { name = kehillah_call_distance value = 2 }
+	}
+	else = {
+		save_scope_value_as = { name = kehillah_call_distance value = 3 }
+	}
+}
+
+# Scope: a Jewish adventurer answering a call; scope:kehillah_call_county
+# and scope:kehillah_policy_host saved. The band sets out for the county;
+# on arrival a player may found the community there at the promised
+# discount (kehillah_invitation.0011), and an AI adventurer's founding
+# decision weighs heavily (kehillah_invitation.0010).
+kehillah_invitation_band_set_out_effect = {
+	custom_tooltip = kehillah_invitation_band_set_out_tt
+	add_prestige = minor_prestige_gain
+	scope:kehillah_policy_host = {
+		add_opinion = {
+			target = root
+			modifier = respect_opinion
+			opinion = kehillah_invitation_thanks_opinion
+		}
+	}
+	set_variable = {
+		name = kehillah_invited_to_county
+		value = scope:kehillah_call_county
+		years = kehillah_invitation_call_years
+	}
+	hidden_effect = {
+		if = {
+			limit = { is_ai = no }
+			start_travel_plan = {
+				destination = scope:kehillah_call_county.title_province
+				return_trip = no
+				on_arrival_event = kehillah_invitation.0011
+			}
+		}
+		else = {
+			start_travel_plan = {
+				destination = scope:kehillah_call_county.title_province
+				return_trip = no
+				on_arrival_event = kehillah_invitation.0010
+			}
+		}
+	}
+}
+
+# Scope: a Jewish merchant answering a call; scope:kehillah_call_county,
+# scope:kehillah_policy_host and scope:kehillah_settlers_leader saved. The
+# costs and gains the letter's merchant option shows; the founding is
+# kehillah_invitation.0024 (kehillah_invitation_merchant_go_effect).
+kehillah_invitation_merchant_send_effect = {
+	remove_short_term_gold = kehillah_invitation_send_cost_value
+	custom_tooltip = kehillah_invitation_merchant_party_tt
+	add_prestige = medium_prestige_gain
+	scope:kehillah_policy_host = {
+		add_opinion = {
+			target = root
+			modifier = respect_opinion
+			opinion = kehillah_invitation_send_opinion
+		}
+	}
+	save_scope_value_as = { name = kehillah_settlers_invited value = yes }
+	scope:kehillah_call_county = { save_scope_as = kehillah_founding_county }
+}
+
+# Scope: the merchant; scope:kehillah_settlers_leader and scope:kehillah_
+# founding_county saved. His factor goes with his own household and up to
+# kehillah_invitation_party_min Jewish families of the company, and founds
+# the community. Not a daughter community: the merchant company is no
+# Kehillah, so no mother title is recorded.
+kehillah_invitation_merchant_go_effect = {
+	save_scope_as = kehillah_mother_leader
+	clear_saved_scope = kehillah_mother_title
+	set_variable = { name = kehillah_settlers_to_send value = kehillah_invitation_party_min }
+	scope:kehillah_settlers_leader = {
+		every_close_family_member = {
+			limit = {
+				is_courtier_of = scope:kehillah_mother_leader
+				NOT = { this = scope:kehillah_mother_leader }
+				NOT = { is_close_family_of = scope:kehillah_mother_leader }
+				NOT = { is_spouse_of = scope:kehillah_mother_leader }
+			}
+			add_to_list = kehillah_settlers_party
+		}
+	}
+	while = {
+		limit = {
+			var:kehillah_settlers_to_send > 0
+			any_courtier = { kehillah_settlers_follower_candidate_trigger = yes }
+		}
+		random_courtier = {
+			limit = { kehillah_settlers_follower_candidate_trigger = yes }
+			add_to_list = kehillah_settlers_party
+		}
+		change_variable = { name = kehillah_settlers_to_send add = -1 }
+	}
+	remove_variable = kehillah_settlers_to_send
+	scope:kehillah_settlers_leader = { kehillah_found_with_founder_effect = yes }
+	every_in_list = {
+		list = kehillah_settlers_party
+		limit = { NOT = { is_courtier_of = scope:kehillah_natural_founder } }
+		save_scope_as = kehillah_settler
+		scope:kehillah_natural_founder = { add_courtier = scope:kehillah_settler }
+	}
+	debug_log = "kehillah_invitation_merchant_go_effect: a merchant's factor founded a community"
 }
 
 # Scope: the leader of a community just founded (Send Out Settlers, the
@@ -117,6 +412,14 @@ kehillah_invitation_answered_effect = {
 			change_variable = { name = kehillah_var_prosperity add = kehillah_invitation_answered_prosperity }
 			change_variable = { name = kehillah_var_stability add = kehillah_invitation_answered_stability }
 			set_variable = { name = kehillah_founded_by_invitation value = scope:kehillah_inviter }
+		}
+		# 2026-11-25: a community founded in the county the lord named
+		# closes his call (docs/spec/2026-11-25-invitation-letters.md).
+		scope:kehillah_inviter.primary_title = {
+			if = {
+				limit = { var:kehillah_invitation_county ?= scope:kehillah_invited_county }
+				remove_variable = kehillah_invitation_county
+			}
 		}
 		scope:kehillah_inviter = {
 			kehillah_shift_outlook_effect = { AMOUNT = kehillah_invitation_answered_outlook }

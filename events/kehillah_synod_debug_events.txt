@@ -406,3 +406,99 @@ kehillah_synod_debug.10 = {
 		kehillah_reform_clear_choice_effect = yes
 	}
 }
+
+# 2026-11-26: replay the completion callback on an expendable test save.
+# Requires a sitting with a motion already nominated and votes recorded.
+# Opens the real ruling; a passed motion is enacted immediately on opening.
+kehillah_synod_debug.11 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		if = {
+			limit = { involved_activity ?= { has_variable = kehillah_synod_takkanah } }
+			involved_activity = { save_scope_as = activity }
+			kehillah_synod_prepare_closing_ruling_effect = yes
+			debug_log_scopes = yes
+			trigger_event = kehillah_synod.0103
+		}
+		else = { debug_log = "KEHILLAH_SYNOD: probe unrun, no active motion" }
+	}
+}
+
+# Report actual title and engine recognition after acknowledging the ruling.
+kehillah_synod_debug.12 = {
+	type = character_event
+	hidden = yes
+	orphan = yes
+	immediate = {
+		if = {
+			limit = { kehillah_is_gaonate_holder_trigger = yes }
+			debug_log = "KEHILLAH_SYNOD: character holds the Gaonate"
+		}
+		else = { debug_log = "KEHILLAH_SYNOD: character does not hold the Gaonate" }
+		if = {
+			limit = { rite.head_of_rite ?= root }
+			debug_log = "KEHILLAH_SYNOD: engine recognizes character as head of rite"
+		}
+		else = { debug_log = "KEHILLAH_SYNOD: engine does not recognize character as head of rite" }
+	}
+}
+
+# Scope-based picker probe. Use an expendable save, outside an active motion:
+# it clears the character's unsubmitted belief-selection scratch state.
+# Reports the real engine's known-tenet enumeration, page limits and duplicates.
+kehillah_synod_debug.13 = {
+    type = character_event
+    hidden = yes
+    orphan = yes
+    immediate = {
+        kehillah_reform_clear_choice_effect = yes
+        debug_log = "SYNOD_PICKER: first page"
+        kehillah_reform_pick_pressing_effect = yes
+        if = {
+            limit = { exists = var:kehillah_reform_pick_1 }
+            set_variable = { name = kehillah_synod_probe_first_1 value = var:kehillah_reform_pick_1 }
+            if = { limit = { knows_tenet = var:kehillah_reform_pick_1 } debug_log = "SYNOD_PICKER: slot 1 is known" }
+            else = { debug_log = "SYNOD_PICKER: FAIL slot 1 is unknown" }
+        }
+        else = { debug_log = "SYNOD_PICKER: no eligible known tenet; enumeration untested" }
+        if = {
+            limit = { exists = var:kehillah_reform_pick_2 }
+            set_variable = { name = kehillah_synod_probe_first_2 value = var:kehillah_reform_pick_2 }
+            if = { limit = { knows_tenet = var:kehillah_reform_pick_2 } debug_log = "SYNOD_PICKER: slot 2 is known" }
+            else = { debug_log = "SYNOD_PICKER: FAIL slot 2 is unknown" }
+        }
+        if = {
+            limit = { exists = var:kehillah_reform_pick_3 }
+            set_variable = { name = kehillah_synod_probe_first_3 value = var:kehillah_reform_pick_3 }
+            if = { limit = { knows_tenet = var:kehillah_reform_pick_3 } debug_log = "SYNOD_PICKER: slot 3 is known" }
+            else = { debug_log = "SYNOD_PICKER: FAIL slot 3 is unknown" }
+        }
+        debug_log_scopes = yes
+        debug_log = "SYNOD_PICKER: second page"
+        kehillah_reform_pick_pressing_effect = yes
+        if = {
+            limit = {
+                OR = {
+                    var:kehillah_reform_pick_1 ?= var:kehillah_synod_probe_first_1
+                    var:kehillah_reform_pick_1 ?= var:kehillah_synod_probe_first_2
+                    var:kehillah_reform_pick_1 ?= var:kehillah_synod_probe_first_3
+                    var:kehillah_reform_pick_2 ?= var:kehillah_synod_probe_first_1
+                    var:kehillah_reform_pick_2 ?= var:kehillah_synod_probe_first_2
+                    var:kehillah_reform_pick_2 ?= var:kehillah_synod_probe_first_3
+                    var:kehillah_reform_pick_3 ?= var:kehillah_synod_probe_first_1
+                    var:kehillah_reform_pick_3 ?= var:kehillah_synod_probe_first_2
+                    var:kehillah_reform_pick_3 ?= var:kehillah_synod_probe_first_3
+                }
+            }
+            debug_log = "SYNOD_PICKER: FAIL a tenet repeated across pages"
+        }
+        else = { debug_log = "SYNOD_PICKER: no cross-page duplicates (inspect slot count)" }
+        debug_log_scopes = yes
+        remove_variable = kehillah_synod_probe_first_1
+        remove_variable = kehillah_synod_probe_first_2
+        remove_variable = kehillah_synod_probe_first_3
+        kehillah_reform_clear_choice_effect = yes
+    }
+}

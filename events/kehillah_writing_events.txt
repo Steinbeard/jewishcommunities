@@ -57,25 +57,87 @@ kehillah_writing.0100 = {
 			weight = { base = 1 modifier = { add = 3 learning >= 16 } }
 			save_scope_as = kehillah_writing_candidate
 		}
+		# 2026-11-25: the option's tooltip printed "+VALUE%" when it evaluated
+		# the value itself; vanilla passes a saved scope value (00_scripted_
+		# effects' loan lines), so this does too.
+		if = {
+			limit = { exists = scope:kehillah_writing_candidate }
+			save_scope_value_as = { name = kehillah_writing_partner_help value = kehillah_writing_partner_chance_value }
+		}
 	}
+	# 2026-11-25 (Daniel: the trade-offs were unclear): every change is now a
+	# tooltip line, and each option has its own price. Careful: the surest
+	# quality, paid in Stress. Chavrusa: less quality, a better chance to
+	# finish (a line in the scheme's odds). Bold: a Learning duel, free, the
+	# best gain for a strong scholar. Before, careful (+10, free) beat bold
+	# (a blind 50/50 of +20/-10) outright.
 	option = {
 		name = kehillah_writing.0100.a
-		change_variable = { name = kehillah_book_tally add = 10 }
-		custom_tooltip = kehillah_writing.0100.a.tt
+		flavor = kehillah_writing.0100.a.flavor
+		custom_description = {
+			text = kehillah_writing_quality_gain
+			value = kehillah_writing_evidence_careful_gain
+			change_variable = { name = kehillah_book_tally add = kehillah_writing_evidence_careful_gain }
+		}
+		add_stress = minor_stress_gain
+		ai_chance = { base = 1 }
 	}
 	option = {
 		name = kehillah_writing.0100.b
+		flavor = kehillah_writing.0100.b.flavor
 		trigger = { exists = scope:kehillah_writing_candidate }
-		set_variable = { name = kehillah_writing_partner value = scope:kehillah_writing_candidate }
-		change_variable = { name = kehillah_book_tally add = 8 }
-		custom_tooltip = kehillah_writing.0100.b.tt
+		custom_description = {
+			text = kehillah_writing_quality_gain
+			value = kehillah_writing_evidence_partner_gain
+			change_variable = { name = kehillah_book_tally add = kehillah_writing_evidence_partner_gain }
+		}
+		custom_description = {
+			text = kehillah_writing_partner_chance
+			value = scope:kehillah_writing_partner_help
+			set_variable = { name = kehillah_writing_partner value = scope:kehillah_writing_candidate }
+		}
+		ai_chance = { base = 1 }
 	}
 	option = {
 		name = kehillah_writing.0100.c
-		random_list = {
-			50 = { change_variable = { name = kehillah_book_tally add = 20 } custom_tooltip = kehillah_writing.0100.c.success }
-			50 = { change_variable = { name = kehillah_book_tally subtract = 10 } custom_tooltip = kehillah_writing.0100.c.failure }
+		flavor = kehillah_writing.0100.c.flavor
+		duel = {
+			skill = learning
+			value = decent_skill_rating
+			50 = {
+				desc = kehillah_writing.0100.c.success
+				compare_modifier = { value = scope:duel_value multiplier = 3.5 }
+				min = 10
+				send_interface_toast = {
+					type = event_toast_text_and_effect_good
+					title = kehillah_toast_success
+					desc = kehillah_writing.0100.c.success_desc
+					left_icon = root
+					custom_description = {
+						text = kehillah_writing_quality_gain
+						value = kehillah_writing_evidence_bold_gain
+						change_variable = { name = kehillah_book_tally add = kehillah_writing_evidence_bold_gain }
+					}
+				}
+			}
+			50 = {
+				desc = kehillah_writing.0100.c.failure
+				compare_modifier = { value = scope:duel_value multiplier = -3.5 }
+				min = 10
+				send_interface_toast = {
+					type = event_toast_text_and_effect_bad
+					title = kehillah_toast_failure
+					desc = kehillah_writing.0100.c.failure_desc
+					left_icon = root
+					custom_description = {
+						text = kehillah_writing_quality_loss
+						value = kehillah_writing_evidence_bold_loss
+						change_variable = { name = kehillah_book_tally subtract = kehillah_writing_evidence_bold_loss }
+					}
+				}
+			}
 		}
+		ai_chance = { base = 1 }
 	}
 }
 
