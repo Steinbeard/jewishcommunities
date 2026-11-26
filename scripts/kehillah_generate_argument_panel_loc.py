@@ -6,7 +6,7 @@ CATALOG = ROOT / "common/customizable_localization/kehillah_din_citation_custom_
 OUTPUT = ROOT / "common/customizable_localization/kehillah_din_argument_panel_custom_loc.txt"
 
 
-def choice_loc(name, variable):
+def choice_loc(name, variable, fallback="kehillah_din_argument_unrecorded"):
     lines = [f"{name} = {{", "\ttype = character"]
     for n in range(1, 115):
         eid = f"{n-1:03d}" if n <= 9 else f"0{n}"
@@ -17,7 +17,7 @@ def choice_loc(name, variable):
                 f"\t\tlocalization_key = kehillah_bet_din.{eid}1.{letter}",
                 "\t}",
             ]
-    lines += ["\ttext = { trigger = { always = yes } localization_key = kehillah_din_argument_unrecorded }", "}"]
+    lines += [f"\ttext = {{ trigger = {{ always = yes }} localization_key = {fallback} }}", "}"]
     return "\n".join(lines)
 
 
@@ -67,7 +67,9 @@ def generate():
         parts.append(result_loc(f"KehillahDinVote{seat}Result", f"kehillah_din_vote_{seat}_success"))
     parts.append(choice_loc("KehillahDinPanelWinner", "kehillah_din_panel_winner"))
     # 2026-11-25: the benches' leaning and their choice of position.
-    parts.append(choice_loc("KehillahDinRowsLean", "kehillah_din_rows_winner"))
+    # 2026-11-26: the lean line ends with the option name's own period, so its
+    # fallback carries one too (the panel showed "...the horn.." before).
+    parts.append(choice_loc("KehillahDinRowsLean", "kehillah_din_rows_winner", "kehillah_din_argument_unrecorded_sentence"))
     for position in range(1, 4):
         parts.append(fixed_loc(f"KehillahDinBenchPosition{position}", position))
     OUTPUT.write_text("\n\n".join(parts) + "\n", encoding="utf-8-sig", newline="\r\n")

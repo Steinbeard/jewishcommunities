@@ -50,3 +50,45 @@ Screenshots were saved to `docs/images/` (`rashi-*.jpg` and the screen names) an
 
 The error.log baseline after boot was 2,234 lines (1,967 tagged kehillah). Most of the new lines
 are the two floods above.
+
+## Addendum 2026-11-26: fixes after the run
+
+**Status:** source-fixed and xTiger-checked (no new reports on the touched files; the
+`popular_opinion` reports are xTiger 1.20 not knowing the 1.21 token, on all 27 uses). Not yet
+live-tested.
+
+1. **Rashi's named commentary: not a bug.** The sparks-v2 landmark gate
+   (`kehillah_writing_rashi_talmud_ready_trigger`) needs four Bavli orders mastered, plus the
+   Scholarly Study tenet (Minhag Ashkenaz has it). Rashi had three orders. The prep event
+   `kehillah_sefer_v2_debug.21` still checked the old ambition trigger and added only two orders. It
+   now adds Nashim and Zeraim too, tests the v2 gate, and notes when Scholarly Study is missing. The
+   wiki's writing and playthrough pages now say this. Survey Lasting Works is still absent: the
+   decision was retired, and only the 2026-11-17 doc names it.
+2. **Bet Din argument flood fixed.** `kehillah_din_roll_argument_effect` no longer sets a variable
+   and reads it back in the same effect. A hidden `random_list` branches once, and each branch writes the
+   outcome, weight and seat vote directly (`kehillah_din_argument_outcome_effect`,
+   `kehillah_din_argument_store_seat_effect`, `kehillah_din_argument_held/failed_vote_weight_value`).
+   The odds and stored results are the same. The unused `kehillah_din_argument_display_weight` is
+   gone; nothing read it.
+3. **'county' flood fixed.** The danger plague, war, crusade, teaching and incidents values and the
+   three revenue-farming values now walk `domicile ?= { domicile_location ?= { county ?= { ... } } }`
+   instead of the chained link. Many other files still use the chained form. Fix them as they show
+   up in error.log, not all at once.
+4. **Double period fixed.** The benches' lean line no longer adds its own period: 339 of the 340
+   option names it quotes already end with one. The fallback uses the new
+   `kehillah_din_argument_unrecorded_sentence` key. Generator:
+   `scripts/kehillah_generate_argument_panel_loc.py`.
+5. **Nicknames defined.** `nick_kehillah_rashi`, `nick_kehillah_gaon` and `nick_kehillah_ha_darshan`
+   were given in history but never defined in `common/nicknames/`, so the game dropped them.
+
+Not fixed: the overlap between the Docket Closed event and the Conclusion window, and how often
+mutual-aid letters arrive (a balance call).
+
+### Live checklist (Troyes 1066, Rashi)
+- [ ] Rashi shows his "Rashi" nickname, and error.log has no `nick_kehillah_*` line.
+- [ ] Open Community Safety and the Council for a minute. error.log gains no "scope 'county'" lines.
+- [ ] Host a Bet Din, then hover each argument option. No `kehillah_din_argument_success` or
+      `kehillah_din_roll_argument_effect` lines appear. The ruling reads "...examining the horn."
+      with one period, and each judge's vote and the lean still match.
+- [ ] `event kehillah_sefer_v2_debug.21`, then `kehillah_writing_debug.3` and `.4` until the spark is
+      a Great Work. Write it. The completion names a historical landmark: Rashi's Talmud commentary.

@@ -43,11 +43,21 @@ kehillah_danger_stability_value = {
 # Recent incidents in the county's faith (V40), x3.
 kehillah_danger_incidents_value = {
 	value = 0
-	if = {
-		limit = { domicile.domicile_location.county.faith ?= { has_variable = kehillah_faith_pressure } }
-		value = domicile.domicile_location.county.faith.var:kehillah_faith_pressure
-		multiply = 3
+	# Step by step: a chained "a.b.county ?=" guards only the last link, and
+	# floods error.log when the danger panel is on screen (Rashi demo 2026-11-26).
+	domicile ?= {
+		domicile_location ?= {
+			county ?= {
+				faith ?= {
+					if = {
+						limit = { has_variable = kehillah_faith_pressure }
+						add = var:kehillah_faith_pressure
+					}
+				}
+			}
+		}
 	}
+	multiply = 3
 	round = yes
 }
 
@@ -60,30 +70,45 @@ kehillah_danger_hard_times_value = {
 }
 # 2026-11-09: each kind of hard times is its own term, so the danger
 # breakdown can say which one is pressing.
+# 2026-11-26: these four flooded error.log ("Could not fetch title or
+# province from scope 'county'", ~12,000 lines each in the Rashi demo) through
+# the chained link; each now walks domicile -> location -> county step by step.
 kehillah_danger_plague_value = {
 	value = 0
-	domicile.domicile_location.county ?= {
-		if = {
-			limit = { any_county_province_epidemic = { always = yes } }
-			add = 15
+	domicile ?= {
+		domicile_location ?= {
+			county ?= {
+				if = {
+					limit = { any_county_province_epidemic = { always = yes } }
+					add = 15
+				}
+			}
 		}
 	}
 }
 kehillah_danger_war_value = {
 	value = 0
-	domicile.domicile_location.county ?= {
-		if = {
-			limit = { holder ?= { is_at_war = yes } }
-			add = 10
+	domicile ?= {
+		domicile_location ?= {
+			county ?= {
+				if = {
+					limit = { holder ?= { is_at_war = yes } }
+					add = 10
+				}
+			}
 		}
 	}
 }
 kehillah_danger_crusade_value = {
 	value = 0
-	domicile.domicile_location.county ?= {
-		if = {
-			limit = { faith ?= { exists = great_holy_war } }
-			add = 15
+	domicile ?= {
+		domicile_location ?= {
+			county ?= {
+				if = {
+					limit = { faith ?= { exists = great_holy_war } }
+					add = 15
+				}
+			}
 		}
 	}
 }
@@ -91,14 +116,22 @@ kehillah_danger_crusade_value = {
 # The teaching of the host's faith: strict +10, exclusionary +20.
 kehillah_danger_teaching_value = {
 	value = 0
-	domicile.domicile_location.county.holder.top_liege ?= {
-		if = {
-			limit = { kehillah_teaching_exclusionary_trigger = yes }
-			value = 20
-		}
-		else_if = {
-			limit = { kehillah_teaching_strict_trigger = yes }
-			value = 10
+	domicile ?= {
+		domicile_location ?= {
+			county ?= {
+				holder ?= {
+					top_liege ?= {
+						if = {
+							limit = { kehillah_teaching_exclusionary_trigger = yes }
+							value = 20
+						}
+						else_if = {
+							limit = { kehillah_teaching_strict_trigger = yes }
+							value = 10
+						}
+					}
+				}
+			}
 		}
 	}
 }

@@ -65,38 +65,60 @@ kehillah_din_choose_argument_citation_effect = {
 	kehillah_din_cite_cherem_effect = { SLOT = $SLOT$ }
 }
 
+# 2026-11-26: the roll used to set kehillah_din_argument_success and then read
+# it back. Called from an event's `after`, it is evaluated for every option's
+# tooltip, where set_variable does not run, so each read failed every frame
+# (about 23,000 error.log lines in one Bet Din sitting, Rashi demo). The roll
+# now branches once and each branch only writes; nothing set here is read
+# back here. Same odds and the same stored results.
 kehillah_din_roll_argument_effect = {
 	involved_activity = {
-		set_variable = { name = kehillah_din_argument_success value = 0 }
-		random = { chance = var:kehillah_din_argument_final_chance set_variable = { name = kehillah_din_argument_success value = 1 } }
-		set_variable = { name = kehillah_din_argument_weight value = kehillah_din_argument_failure_weight }
-		if = {
-			limit = { var:kehillah_din_argument_success = 1 }
-			set_variable = { name = kehillah_din_argument_weight value = kehillah_din_argument_success_weight }
-			if = { limit = { exists = var:kehillah_din_argument_cite_weight } change_variable = { name = kehillah_din_argument_weight add = var:kehillah_din_argument_cite_weight } }
-		}
-		if = {
-			limit = { exists = var:kehillah_din_argument_cited_work }
-			if = {
-				limit = { var:kehillah_din_argument_success = 1 }
-				kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_argument_cited_work RESULT = held JUDGE = root }
+		hidden_effect = { random_list = {
+			0 = {
+				modifier = { add = var:kehillah_din_argument_final_chance }
+				kehillah_din_argument_outcome_effect = { SUCCESS = 1 RESULT = held }
+				set_variable = {
+					name = kehillah_din_argument_weight
+					value = {
+						value = kehillah_din_argument_success_weight
+						if = { limit = { exists = var:kehillah_din_argument_cite_weight } add = var:kehillah_din_argument_cite_weight }
+					}
+				}
+				kehillah_din_argument_store_seat_effect = { SUCCESS = 1 WEIGHT = held }
 			}
-			else = { kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_argument_cited_work RESULT = failed JUDGE = root } }
-		}
-		if = { limit = { var:kehillah_din_argument_seat = 1 } kehillah_din_store_argument_vote_effect = { SEAT = 1 } }
-		if = { limit = { var:kehillah_din_argument_seat = 2 } kehillah_din_store_argument_vote_effect = { SEAT = 2 } }
-		if = { limit = { var:kehillah_din_argument_seat = 3 } kehillah_din_store_argument_vote_effect = { SEAT = 3 } }
+			0 = {
+				modifier = { add = { value = 100 subtract = var:kehillah_din_argument_final_chance } }
+				kehillah_din_argument_outcome_effect = { SUCCESS = 0 RESULT = failed }
+				set_variable = { name = kehillah_din_argument_weight value = kehillah_din_argument_failure_weight }
+				kehillah_din_argument_store_seat_effect = { SUCCESS = 0 WEIGHT = failed }
+			}
+		} }
 		remove_variable = kehillah_din_argument_cite_weight
 	}
 	set_variable = { name = kehillah_din_argument_display_chance value = involved_activity.var:kehillah_din_argument_final_chance }
-	set_variable = { name = kehillah_din_argument_display_weight value = involved_activity.var:kehillah_din_argument_weight }
+}
+
+# Scope: activity; root is the judge. Records the outcome and logs the cited work.
+kehillah_din_argument_outcome_effect = {
+	set_variable = { name = kehillah_din_argument_success value = $SUCCESS$ }
+	if = {
+		limit = { exists = var:kehillah_din_argument_cited_work }
+		kehillah_din_cite_log_dispatch_effect = { SOURCE = var:kehillah_din_argument_cited_work RESULT = $RESULT$ JUDGE = root }
+	}
+}
+
+# Scope: activity. Stores this seat's vote without reading back the roll.
+kehillah_din_argument_store_seat_effect = {
+	if = { limit = { var:kehillah_din_argument_seat = 1 } kehillah_din_store_argument_vote_effect = { SEAT = 1 SUCCESS = $SUCCESS$ WEIGHT = $WEIGHT$ } }
+	if = { limit = { var:kehillah_din_argument_seat = 2 } kehillah_din_store_argument_vote_effect = { SEAT = 2 SUCCESS = $SUCCESS$ WEIGHT = $WEIGHT$ } }
+	if = { limit = { var:kehillah_din_argument_seat = 3 } kehillah_din_store_argument_vote_effect = { SEAT = 3 SUCCESS = $SUCCESS$ WEIGHT = $WEIGHT$ } }
 }
 
 # Scope: activity.
 kehillah_din_store_argument_vote_effect = {
 	set_variable = { name = kehillah_din_vote_$SEAT$_chance value = var:kehillah_din_argument_final_chance }
-	set_variable = { name = kehillah_din_vote_$SEAT$_success value = var:kehillah_din_argument_success }
-	set_variable = { name = kehillah_din_vote_$SEAT$_weight value = var:kehillah_din_argument_weight }
+	set_variable = { name = kehillah_din_vote_$SEAT$_success value = $SUCCESS$ }
+	set_variable = { name = kehillah_din_vote_$SEAT$_weight value = kehillah_din_argument_$WEIGHT$_vote_weight_value }
 	if = {
 		limit = { exists = var:kehillah_din_argument_cited_work }
 		set_variable = { name = kehillah_din_vote_$SEAT$_cited value = var:kehillah_din_argument_cited_work }
