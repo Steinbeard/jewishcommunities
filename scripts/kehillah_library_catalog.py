@@ -2784,6 +2784,59 @@ def write_acquisition_custom_loc(order):
     write(ACQUIRE_CUSTOM_LOC, out)
 
 
+MISSING_FOUND_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_missing_foundation_effects.txt"
+MISSING_FOUND_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_missing_foundation_custom_loc.txt"
+MISSING_FOUND_SLOTS = 5
+
+
+def write_missing_foundation_files(order):
+    """2026-11-25 (Daniel: the Missing Foundational Works notice should list the
+    missing works). The first MISSING_FOUND_SLOTS works that
+    kehillah_lib_foundational_missing_count_value counts are kept on the
+    character as var:kehillah_lib_missing_found_<n>, for the notice to name."""
+    cond = lambda f: [
+        f"\t\t\tkehillah_lib_available_{f}_trigger = yes",
+        f"\t\t\tholder ?= {{ kehillah_lib_standing_{f} >= 9 }}",
+        f"\t\t\tNOT = {{ {held(f)} }}",
+    ]
+    out = HEADER + [
+        "# The Missing Foundational Works notice (common/important_actions/",
+        "# kehillah_library_foundation_actions.txt) names the missing works. Its rules are",
+        "# kehillah_lib_foundational_missing_count_value's; the first "
+        f"{MISSING_FOUND_SLOTS} found, in catalog",
+        "# order, go to var:kehillah_lib_missing_found_1.. on the character.",
+        "# Scope: a Kehillah leader.",
+        "kehillah_lib_note_missing_foundations_effect = {",
+    ]
+    out += [f"\tremove_variable = kehillah_lib_missing_found_{n}" for n in range(1, MISSING_FOUND_SLOTS + 1)]
+    for f in order:
+        out += ["\tif = {", "\t\tlimit = { primary_title ?= {"] + cond(f) + ["\t\t} }"]
+        for n in range(1, MISSING_FOUND_SLOTS + 1):
+            kw = "if" if n == 1 else "else_if"
+            out.append(f"\t\t{kw} = {{ limit = {{ NOT = {{ has_variable = kehillah_lib_missing_found_{n} }} }} "
+                       f"set_variable = {{ name = kehillah_lib_missing_found_{n} value = flag:{f} }} }}")
+        out.append("\t}")
+    out.append("}")
+    write(MISSING_FOUND_EFFECTS, out)
+
+    loc = list(HEADER) + [
+        "# One line per filled slot of kehillah_lib_note_missing_foundations_effect;",
+        "# empty when the slot is.",
+    ]
+    for n in range(1, MISSING_FOUND_SLOTS + 1):
+        loc += [f"KehillahLibMissingFoundLine{n} = {{", "\ttype = character",
+                "\ttext = {", f"\t\ttrigger = {{ has_variable = kehillah_lib_missing_found_{n} }}",
+                f"\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_LINE_{n}", "\t}",
+                "\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_NONE", "\t}", "}"]
+        loc += work_name_custom_loc(order, f"KehillahLibMissingFound{n}Name", f"kehillah_lib_missing_found_{n}")
+    loc += ["KehillahLibMissingFoundMore = {", "\ttype = character",
+            "\ttext = {",
+            f"\t\ttrigger = {{ primary_title ?= {{ kehillah_lib_foundational_missing_count_value > {MISSING_FOUND_SLOTS} }} }}",
+            "\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_MORE", "\t}",
+            "\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_NONE", "\t}", "}"]
+    write(MISSING_FOUND_CUSTOM_LOC, loc)
+
+
 def write_journey_gui(order):
     out = HEADER + [
         "# V49: which other libraries hold a selected work, and planning a Yeshiva",
@@ -3649,6 +3702,7 @@ if __name__ == "__main__":
     write_catalog_list_effects(order, works)
     write_acquisition_gui(order, works)
     write_acquisition_custom_loc(order)
+    write_missing_foundation_files(order)
     write_journey_gui(order)
     write_journey_effects(order, works)
     write_journey_custom_loc(order)
