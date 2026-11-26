@@ -1,0 +1,1545 @@
+﻿# =====================================================================
+# PARKED 2026-11-25 (Daniel: "Let's disable this for now behind a console
+# command, and remove the buttons to access it. It's going to need a lot of
+# work to make it look good"). No button opens this window. Open it from the
+# console with `event kehillah_hub_debug.0001`; its close button, or
+# `event kehillah_hub_debug.0002`, shuts it. The live Ledger of Sefarim is
+# gui/kehillah_sefarim_ledger.gui again, as it was before the hub.
+#
+# THE SCHOLARSHIP HUB (2026-11-25, Daniel): a full-screen window for the whole
+# Jewish scholarship system, in five tabs -- Library, Acquisition, Your
+# scholarship, the Ledger of Sefarim, How standing works. Spec:
+# docs/spec/2026-11-25-full-screen-sefarim-ledger.md.
+#
+# It grew out of the Ledger of Sefarim window (2026-11-08). Its own window,
+# kehillah_scholarship_hub_window, registered in gui/scripted_widgets/
+# kehillah_scripted_widgets.txt, shown while the player has
+# var:kehillah_hub_debug_open (common/scripted_guis/kehillah_scholarship_hub_gui.txt).
+#
+# GUI variable kehillah_hub_tab: library, acquire, profile, standing; unset is
+# the Ledger. Earlier history of the ledger:
+# docs/implementation/2026-11-08-library-shelf-and-ledger.md and
+# docs/implementation/2026-11-15-sefarim-ledger-assessment.md.
+#
+# The Ledger's book page acts on the player's own library
+# (var:kehillah_own_library), as the list's held/sought columns always did.
+# The Library tab shows the same kehillah_library_body the Beit Midrash
+# window and the domicile host, for the library in var:kehillah_lib_view_title.
+# =====================================================================
+
+@ledger_row_w = 800
+@book_w = 540
+@book_text_w = 500
+@filter_w = 250
+
+window = {
+	name = "kehillah_scholarship_hub_window"
+	size = { 100% 100% }
+	parentanchor = center
+	widgetanchor = center
+	movable = no
+	resizable = no
+	layer = top
+	alwaystransparent = no
+	filter_mouse = all
+
+	visible = "[And( And( IsInGame, GetPlayer.IsValid ), And( IsDefaultGUIMode, GetPlayer.MakeScope.Var( 'kehillah_hub_debug_open' ).IsSet ) )]"
+	visible_at_creation = no
+
+	using = Window_Background_No_Edge
+
+	background = {
+		texture = "gfx/interface/component_masks/mask_fade_corner.dds"
+		color = { 0.12 0.12 0.12 1 }
+		mirror = horizontal
+		margin_right = -1200
+		alpha = 0.6
+	}
+
+	state = {
+		name = _show
+		using = Animation_FadeIn_Standard
+		using = Sound_WindowShow_Standard
+	}
+	state = {
+		name = _hide
+		using = Animation_FadeOut_Standard
+		using = Sound_WindowHide_Standard
+	}
+
+	vbox = {
+		layoutpolicy_horizontal = expanding
+		layoutpolicy_vertical = expanding
+		margin = { 30 10 }
+		spacing = 8
+		ignoreinvisible = yes
+
+		header_pattern = {
+			layoutpolicy_horizontal = expanding
+			blockoverride "header_text" { text = "KEHILLAH_HUB_HEADER" }
+			blockoverride "button_close" {
+				onclick = "[GetVariableSystem.Clear( 'kehillah_ledger_rite_menu' )]"
+				onclick = "[GetScriptedGui( 'kehillah_hub_close' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+			}
+		}
+
+		### The tabs.
+		hbox = {
+			layoutpolicy_horizontal = expanding
+			spacing = 4
+			expand = {}
+			button_standard_list = {
+				visible = "[GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).IsSet]"
+				size = { 220 32 }
+				text = "KEHILLAH_HUB_TAB_LIBRARY"
+				down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'library' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_hub_tab', 'library' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_picked_work' )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_lib_parent_corpus' )]"
+				onclick = "[GetScriptedGui( 'kehillah_lib_shelf_layout' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).Title.MakeScope ).End )]"
+			}
+			button_standard_list = {
+				visible = "[Not( GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).IsSet )]"
+				size = { 220 32 }
+				text = "KEHILLAH_HUB_TAB_LIBRARY"
+				down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'library' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_hub_tab', 'library' )]"
+			}
+			button_standard_list = {
+				size = { 220 32 }
+				text = "KEHILLAH_HUB_TAB_ACQUIRE"
+				down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'acquire' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_hub_tab', 'acquire' )]"
+			}
+			button_standard_list = {
+				size = { 220 32 }
+				text = "KEHILLAH_HUB_TAB_PROFILE"
+				down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'profile' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_hub_tab', 'profile' )]"
+			}
+			button_standard_list = {
+				size = { 220 32 }
+				text = "KEHILLAH_HUB_TAB_LEDGER"
+				down = "[Not( GetVariableSystem.Exists( 'kehillah_hub_tab' ) )]"
+				onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+			}
+			button_standard_list = {
+				size = { 220 32 }
+				text = "KEHILLAH_HUB_TAB_STANDING"
+				down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'standing' )]"
+				onclick = "[GetVariableSystem.Set( 'kehillah_hub_tab', 'standing' )]"
+			}
+			expand = {}
+		}
+		divider_light = { layoutpolicy_horizontal = expanding }
+
+		### THE LEDGER (the default tab).
+		hbox = {
+			visible = "[Not( GetVariableSystem.Exists( 'kehillah_hub_tab' ) )]"
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			spacing = 16
+
+			##################################################################
+			### 1. FILTERS
+			##################################################################
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { @filter_w 0 }
+				maximumsize = { @filter_w -1 }
+				margin = { 8 8 }
+				spacing = 4
+				ignoreinvisible = yes
+				background = { using = Background_Area margin = { 0 0 } }
+
+				text_multi = {
+					autoresize = yes
+					max_width = 234
+					text = "[Select_CString( GetScriptedGui( 'kehillah_ledger_viewing_own_rite' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_SEFARIM_SUBHEADER' ), Localize( 'KEHILLAH_SEFARIM_SUBHEADER_RITE' ) )]"
+					tooltip = "[Select_CString( GetScriptedGui( 'kehillah_ledger_viewing_own_rite' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_SEFARIM_FOOTNOTE' ), Localize( 'KEHILLAH_SEFARIM_FOOTNOTE_RITE' ) )]"
+					default_format = "#weak;italic"
+				}
+				widget = { size = { 4 6 } }
+
+				### The rite whose ranks the ledger shows. The menu opens in place,
+				### below the button (it floated over the rows before 2026-11-25).
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { text = "KEHILLAH_SEFARIM_RITE" tooltip = "KEHILLAH_SEFARIM_RITE_TT" default_format = "#weak" }
+					expand = {}
+				}
+				button_normal = {
+					gfxtype = framedbuttongfx
+					effectname = "NoHighlight"
+					upframe = 1
+					overframe = 2
+					downframe = 3
+					disableframe = 4
+					texture = "gfx/interface/buttons/button_drop_down.dds"
+					framesize = { 225 33 }
+					spriteType = Corneredtiled
+					spriteborder = { 75 11 }
+					size = { 234 33 }
+					tooltip = "KEHILLAH_SEFARIM_RITE_TT"
+					using = tooltip_se
+					down = "[GetVariableSystem.Exists( 'kehillah_ledger_rite_menu' )]"
+					onclick = "[GetVariableSystem.Toggle( 'kehillah_ledger_rite_menu' )]"
+					icon = {
+						parentanchor = left|vcenter
+						position = { 8 0 }
+						size = { 26 26 }
+						texture = "[GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.GetIcon]"
+						alwaystransparent = yes
+					}
+					text_single = {
+						parentanchor = left|vcenter
+						position = { 40 0 }
+						text = "[GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.GetNameNoTooltip]"
+						default_format = "#high"
+						max_width = 160
+						alwaystransparent = yes
+					}
+				}
+				vbox = {
+					visible = "[GetVariableSystem.Exists( 'kehillah_ledger_rite_menu' )]"
+					margin = { 2 4 }
+					spacing = 1
+					using = Background_DropDown
+					datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_ledger_rites' )]"
+					item = {
+						button_normal = {
+							gfxtype = framedbuttongfx
+							effectname = "NoHighlight"
+							shaderfile = "gfx/FX/pdxgui_pushbutton.shader"
+							upframe = 1
+							overframe = 2
+							downframe = 3
+							disableframe = 1
+							texture = "gfx/interface/buttons/button_interaction_menu.dds"
+							framesize = { 317 30 }
+							size = { 230 32 }
+							tooltip = "[Scope.Rite.GetFaith.GetNameNoTooltip]"
+							down = "[ObjectsEqual( Scope.Rite.Self, GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.Self )]"
+							onclick = "[GetScriptedGui( 'kehillah_ledger_set_rite' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'rite', Scope.Rite.MakeScope ).End )]"
+							onclick = "[GetVariableSystem.Clear( 'kehillah_ledger_rite_menu' )]"
+							icon = {
+								parentanchor = left|vcenter
+								position = { 6 0 }
+								size = { 24 24 }
+								texture = "[Scope.Rite.GetIcon]"
+								alwaystransparent = yes
+							}
+							text_single = {
+								parentanchor = left|vcenter
+								position = { 36 0 }
+								text = "[Scope.Rite.GetNameNoTooltip]"
+								default_format = "#high"
+								max_width = 186
+								alwaystransparent = yes
+							}
+						}
+					}
+				}
+				widget = { size = { 4 8 } }
+
+				### What to show: the genres (each a toggle).
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { text = "KEHILLAH_SEFARIM_SHOW" default_format = "#weak" }
+					expand = {}
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_LIB_TRACK_PARSHANUT"
+					tooltip = "KEHILLAH_SEFARIM_TOGGLE_TT"
+					down = "[Not( GetVariableSystem.Exists( 'kehillah_ledger_hide_1' ) )]"
+					onclick = "[GetVariableSystem.Toggle( 'kehillah_ledger_hide_1' )]"
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_LIB_TRACK_TALMUDICS"
+					tooltip = "KEHILLAH_SEFARIM_TOGGLE_TT"
+					down = "[Not( GetVariableSystem.Exists( 'kehillah_ledger_hide_2' ) )]"
+					onclick = "[GetVariableSystem.Toggle( 'kehillah_ledger_hide_2' )]"
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_LIB_TRACK_HASHKAFA"
+					tooltip = "KEHILLAH_SEFARIM_TOGGLE_TT"
+					down = "[Not( GetVariableSystem.Exists( 'kehillah_ledger_hide_3' ) )]"
+					onclick = "[GetVariableSystem.Toggle( 'kehillah_ledger_hide_3' )]"
+				}
+				widget = { size = { 4 8 } }
+
+				### Which copies.
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { text = "KEHILLAH_SEFARIM_COPIES_FILTER" default_format = "#weak" }
+					expand = {}
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_SEFARIM_ALL"
+					down = "[Or( Not( GetVariableSystem.Exists( 'kehillah_ledger_status' ) ), EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'all' ) )]"
+					onclick = "[GetVariableSystem.Set( 'kehillah_ledger_status', 'all' )]"
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_SEFARIM_HELD_FILTER"
+					down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'held' )]"
+					onclick = "[GetVariableSystem.Set( 'kehillah_ledger_status', 'held' )]"
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_SEFARIM_MISSING_FILTER"
+					down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'missing' )]"
+					onclick = "[GetVariableSystem.Set( 'kehillah_ledger_status', 'missing' )]"
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_SEFARIM_SOUGHT_FILTER"
+					down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'sought' )]"
+					onclick = "[GetVariableSystem.Set( 'kehillah_ledger_status', 'sought' )]"
+				}
+				widget = { size = { 4 8 } }
+
+				### In what order.
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { text = "KEHILLAH_SEFARIM_SORT" default_format = "#weak" }
+					expand = {}
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_SEFARIM_SORT_DATE"
+					down = "[Not( Or( GetPlayer.MakeScope.Var('kehillah_ledger_by_name').IsSet, GetPlayer.MakeScope.Var('kehillah_ledger_by_rank').IsSet ) )]"
+					onclick = "[GetVariableSystem.Clear( 'kehillah_ledger_sort_name' )]"
+					onclick = "[GetScriptedGui( 'kehillah_lib_catalog_refresh' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_SEFARIM_SORT_NAME"
+					down = "[GetPlayer.MakeScope.Var('kehillah_ledger_by_name').IsSet]"
+					onclick = "[GetVariableSystem.Set( 'kehillah_ledger_sort_name', 'yes' )]"
+					onclick = "[GetScriptedGui( 'kehillah_lib_ledger_sort_name' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+				}
+				button_standard_list = {
+					size = { 234 28 }
+					text = "KEHILLAH_LEDGER_SORT_RANK"
+					tooltip = "KEHILLAH_LEDGER_SORT_RANK_TT"
+					down = "[GetPlayer.MakeScope.Var('kehillah_ledger_by_rank').IsSet]"
+					onclick = "[GetScriptedGui('kehillah_lib_ledger_sort_rank').Execute(GuiScope.SetRoot(GetPlayer.MakeScope).End)]"
+				}
+				expand = {}
+			}
+
+			##################################################################
+			### 2. THE LIST. Picking a row fills the book page; the list keeps its height.
+			##################################################################
+			vbox = {
+				layoutpolicy_horizontal = expanding
+				layoutpolicy_vertical = expanding
+				spacing = 2
+
+				widget = {
+					size = { @ledger_row_w 22 }
+					text_single = { position = { 32 2 } text = "KEHILLAH_SEFARIM_COL_WORK" default_format = "#weak" }
+					text_single = { position = { 298 2 } text = "KEHILLAH_SEFARIM_COL_WRITTEN" default_format = "#weak" }
+					text_single = { position = { 384 2 } text = "KEHILLAH_SEFARIM_COL_AUTHOR" default_format = "#weak" }
+					text_single = { position = { 530 2 } text = "KEHILLAH_SEFARIM_COL_STANDING" default_format = "#weak" tooltip = "KEHILLAH_LIB_LADDER_TT" }
+					text_single = { position = { 654 2 } text = "KEHILLAH_SEFARIM_COL_SCORE" default_format = "#weak" tooltip = "KEHILLAH_SEFARIM_SCORE_TT" }
+					text_single = { position = { 706 2 } text = "KEHILLAH_SEFARIM_COL_COPY" default_format = "#weak" }
+				}
+				divider_light = { layoutpolicy_horizontal = expanding }
+
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					size = { 820 300 }
+					blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 14 }
+					blockoverride "scrollbox_content" {
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 0
+							ignoreinvisible = yes
+							datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_lib_catalog_works' )]"
+							item = {
+								vbox = {
+							visible = "[And( Not( GetVariableSystem.Exists( Concatenate( 'kehillah_ledger_hide_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', Scope.GetFlagName ) ) ) ) ) ) ), Or( Not( GetVariableSystem.Exists( 'kehillah_ledger_status' ) ), Or( EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'all' ), Or( And( EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'held' ), GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) ), Or( And( EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'missing' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) ), And( EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_status' ), 'sought' ), GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_sought_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) ) ) ) ) ) ) ]"
+									layoutpolicy_horizontal = expanding
+
+									widget = {
+										size = { @ledger_row_w 46 }
+
+										### The picked row is lit.
+										widget = {
+											visible = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), Scope.GetFlagName )]"
+											size = { 100% 100% }
+											background = { using = Background_Area_Light }
+										}
+
+										### The binding it has in your rite.
+										kehillah_lib_spine_icon = {
+											parentanchor = left|vcenter
+											position = { 6 0 }
+										}
+
+										button_standard_list = {
+											parentanchor = left|vcenter
+											position = { 32 0 }
+											size = { 236 32 }
+											text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+											down = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), Scope.GetFlagName )]"
+											tooltipwidget = { kehillah_library_work_tooltip = { blockoverride "rank_value" { text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" } blockoverride "owner_line" {} } }
+											onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										}
+										icon = {
+											visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_studied_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+											parentanchor = left|vcenter
+											position = { 272 0 }
+											size = { 18 18 }
+											texture = "gfx/interface/icons/symbols/icon_check.dds"
+											tooltip = "KEHILLAH_SEFARIM_MASTERED_TT"
+										}
+
+										text_single = {
+											parentanchor = left|vcenter
+											position = { 298 0 }
+											text = "[Localize( Concatenate( 'kehillah_lib_year_text_', Scope.GetFlagName ) )]"
+											max_width = 80
+										}
+
+										text_single = {
+											parentanchor = left|vcenter
+											position = { 384 0 }
+											text = "[Select_CString( GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_author_ready_', Scope.GetFlagName ) ), '(CFixedPoint)0' ), Localize( Concatenate( 'kehillah_lib_byline_', Scope.GetFlagName ) ), Localize( Concatenate( 'kehillah_lib_byline_plain_', Scope.GetFlagName ) ) )]"
+											max_width = 140
+										}
+
+										text_single = {
+											parentanchor = left|vcenter
+											position = { 530 0 }
+											text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', Scope.GetFlagName ) ) ) ) ) )]"
+											tooltip = "[Localize( Concatenate( 'KEHILLAH_STANDING_TT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', Scope.GetFlagName ) ) ) ) ) )]"
+											max_width = 118
+										}
+										text_single = {
+											parentanchor = left|vcenter
+											position = { 654 0 }
+											max_width = 40
+											text = "[Select_CString( Or( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', Scope.GetFlagName ) ), '(CFixedPoint)8' ), Not( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', Scope.GetFlagName ) ).IsSet ) ), Localize( 'KEHILLAH_SEFARIM_SCORE_NONE' ), IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', Scope.GetFlagName ) ).GetValue ) ) )]"
+											tooltip = "KEHILLAH_SEFARIM_SCORE_TT"
+										}
+
+										### Your copy: a word, or Seek a copy.
+										text_single = {
+											visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', Scope.GetFlagName ) ), '(CFixedPoint)0' )]"
+											parentanchor = left|vcenter
+											position = { 710 0 }
+											text = "KEHILLAH_SEFARIM_HELD"
+											max_width = 90
+										}
+										text_single = {
+											visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_sought_', Scope.GetFlagName ) ), '(CFixedPoint)0' )]"
+											parentanchor = left|vcenter
+											position = { 710 0 }
+											text = "KEHILLAH_SEFARIM_SOUGHT"
+											max_width = 90
+										}
+										button_standard_list = {
+											visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', Scope.GetFlagName ) ), '(CFixedPoint)0' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_sought_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]"
+											parentanchor = left|vcenter
+											position = { 700 0 }
+											size = { 96 30 }
+											text = "KEHILLAH_SEFARIM_SEEK"
+											tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_SEFARIM_SEEK_TT' ), Concatenate( Localize( 'KEHILLAH_SEFARIM_SEEK_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+											using = tooltip_se
+											enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										}
+									}
+									divider_light = { layoutpolicy_horizontal = expanding }
+								}
+							}
+						}
+					}
+				}
+			}
+
+			##################################################################
+			### 3. THE BOOK PAGE
+			##################################################################
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { @book_w 0 }
+				maximumsize = { @book_w -1 }
+				margin = { 10 8 }
+				ignoreinvisible = yes
+				background = { using = Background_Area margin = { 0 0 } }
+
+				### Nothing picked yet.
+				vbox = {
+					visible = "[Not( GetVariableSystem.Exists( 'kehillah_ledger_selected_work' ) )]"
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					text_multi = {
+						autoresize = yes
+						max_width = @book_text_w
+						text = "KEHILLAH_BOOK_PICK_PROMPT"
+						default_format = "#weak;italic"
+					}
+				}
+
+				scrollbox = {
+					visible = "[GetVariableSystem.Exists( 'kehillah_ledger_selected_work' )]"
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					size = { 520 300 }
+					blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 14 }
+					blockoverride "scrollbox_content" {
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 4
+							ignoreinvisible = yes
+
+							######## The book.
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = {
+									align = left|nobaseline
+									text = "[Localize( Concatenate( 'kehillah_lib_name_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) )]"
+									default_format = "#T"
+									max_width = 440
+								}
+								expand = {}
+								button_close = {
+									size = { 28 28 }
+									tooltip = "KEHILLAH_SEFARIM_CARD_CLOSE"
+									onclick = "[GetVariableSystem.Clear( 'kehillah_ledger_selected_work' )]"
+								}
+							}
+							### Author, date and place in one line.
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = {
+									align = left|nobaseline
+									max_width = @book_text_w
+									text = "[Concatenate( Select_CString( GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_author_ready_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' ), Localize( Concatenate( 'kehillah_lib_byline_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), Localize( Concatenate( 'kehillah_lib_byline_plain_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ), Concatenate( Localize( 'KEHILLAH_BOOK_SEP' ), Concatenate( Localize( Concatenate( 'kehillah_lib_year_text_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), Concatenate( Localize( 'KEHILLAH_BOOK_SEP' ), Localize( Concatenate( 'kehillah_lib_place_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) ) )]"
+								}
+								expand = {}
+							}
+							### Genre and language.
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = {
+									align = left|nobaseline
+									max_width = @book_text_w
+									default_format = "#weak"
+									text = "[Concatenate( Localize( Concatenate( 'kehillah_lib_subject_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), Concatenate( Localize( 'KEHILLAH_BOOK_SEP' ), Concatenate( Localize( Concatenate( 'kehillah_lib_language_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), Localize( Concatenate( 'KEHILLAH_LIB_FLUENCY_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_fluency_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) ) ) ) ) )]"
+									tooltip = "[Concatenate( Concatenate( '#T ', Localize( Concatenate( 'kehillah_lib_language_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ), Concatenate( Localize( 'KEHILLAH_LIB_TT_TITLE_END' ), Localize( Concatenate( 'KEHILLAH_LIB_LANG_TT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_fluency_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) ) ) ) )]"
+								}
+								expand = {}
+							}
+							text_multi = {
+								layoutpolicy_horizontal = expanding
+								autoresize = yes
+								align = left|nobaseline
+								max_width = @book_text_w
+								text = "[Localize( Concatenate( 'kehillah_lib_desc_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) )]"
+								tooltip = "[Localize( Concatenate( 'kehillah_lib_detail_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) )]"
+								default_format = "#italic"
+							}
+
+							######## Your library.
+							widget = { size = { 4 6 } }
+							divider_light = { layoutpolicy_horizontal = expanding }
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline text = "KEHILLAH_BOOK_SECTION_COPY" default_format = "#high" }
+								expand = {}
+							}
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 10
+								text_single = {
+									align = left|nobaseline
+									max_width = 330
+									text = "[Select_CString( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_BOOK_HELD' ), Select_CString( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_sought_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' ), Localize( 'KEHILLAH_BOOK_SOUGHT' ), Localize( 'KEHILLAH_BOOK_NONE' ) ) )]"
+								}
+								### The copy's condition, for a book the library holds.
+								hbox = {
+									visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' )]"
+									spacing = 4
+									tooltip = "[Localize( Concatenate( 'KEHILLAH_LIB_CONDITION_TT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) ) )]"
+									icon = { size = { 20 20 } texture = "gfx/interface/icons/flat_icons/quality.dds" }
+									text_single = {
+										max_width = 140
+										text = "[Localize( Concatenate( 'KEHILLAH_LIB_CONDITION_', IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_condition_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) ) )]"
+									}
+								}
+								expand = {}
+							}
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = {
+									align = left|nobaseline
+									max_width = @book_text_w
+									text = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_studied_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_BOOK_MASTERED' ), Localize( 'KEHILLAH_BOOK_NOT_MASTERED' ) )]"
+								}
+								expand = {}
+							}
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 6
+					ignoreinvisible = yes
+					button_standard_list = {
+						# The shelf's own library goes along as scope:library; the button shows
+						# on any library the player may study from, not only his own.
+						visible = "[Or( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet, Or( GetScriptedGui( Concatenate( 'kehillah_lib_study_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End ), GetScriptedGui( 'kehillah_lib_study_possible' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+						layoutpolicy_horizontal = expanding
+						size = { 180 34 }
+						enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_study_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End )]"
+						onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_study_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End )]"
+						text = "[Select_CString( GetScriptedGui( 'kehillah_lib_study_would_switch' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_LIB_STUDY_SWITCH_ACTION' ), Localize( 'KEHILLAH_LIB_STUDY_ACTION' ) )]"
+						using = tooltip_se
+						# 2026-11-10 (Daniel): the chance a reading masters the book is on hover.
+						tooltipwidget = {
+							kehillah_mastery_chance_breakdown_tooltip = {
+								datacontext = "[GuiScope.SetRoot( GetPlayer.MakeScope ).GetScriptValueBreakdown( Concatenate( 'kehillah_lib_mastery_chance_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) )]"
+							blockoverride "total" {
+								text_single = {
+									layoutpolicy_horizontal = expanding
+									default_format = "#T"
+									text = "[Concatenate( Localize( 'KEHILLAH_LIB_CHANCE_BD_TITLE_PREFIX' ), Concatenate( IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_mastery_chance_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), Localize( 'KEHILLAH_LIB_CHANCE_BD_TITLE_SUFFIX' ) ) )]"
+								}
+							}
+								blockoverride "intro" {
+									text_multi = {
+										visible = "[Not( GetScriptedGui( Concatenate( 'kehillah_lib_study_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End ) )]"
+										layoutpolicy_horizontal = expanding
+										max_width = 400
+										autoresize = yes
+										text = "[Concatenate( Localize( 'KEHILLAH_LIB_STUDY_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_lib_study_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End ) )]"
+									}
+									text_multi = {
+										layoutpolicy_horizontal = expanding
+										max_width = 400
+										autoresize = yes
+										text = "KEHILLAH_LIB_STUDY_TT"
+									}
+									divider_light = { layoutpolicy_horizontal = expanding }
+								}
+							}
+						}
+						icon = {
+							parentanchor = left|vcenter
+							position = { 11 0 }
+							size = { 26 26 }
+							texture = "gfx/interface/icons/scheme_types/icon_scheme_study_scriptures.dds"
+							alwaystransparent = yes
+						}
+					}
+					button_standard_list = {
+						visible = "[And( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet, EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' ) )]"
+						layoutpolicy_horizontal = expanding
+						size = { 150 34 }
+						text = "KEHILLAH_SEFARIM_SEEK"
+						# 2026-11-11 (Daniel: "Why is this seek a copy grayed out?"): when it is, say why.
+						tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_SEFARIM_SEEK_TT' ), Concatenate( Localize( 'KEHILLAH_SEFARIM_SEEK_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+						using = tooltip_se
+						enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					}
+					button_standard_list = {
+						visible = "[GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet]"
+						layoutpolicy_horizontal = expanding
+						size = { 150 34 }
+						enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_donate_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						text = "KEHILLAH_LIB_DONATE_ACTION"
+						tooltip = "KEHILLAH_LIB_DONATE_TT"
+						using = tooltip_se
+						icon = {
+							parentanchor = left|vcenter
+							position = { 6 0 }
+							size = { 20 20 }
+							texture = "gfx/interface/icons/character_interactions/gift_claim_interaction.dds"
+							alwaystransparent = yes
+						}
+					}
+					### 2026-11-24: mend a worn or fragile copy. Shown to the library's holder only.
+					button_standard_list = {
+						visible = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End )]"
+						layoutpolicy_horizontal = expanding
+						size = { 150 34 }
+						text = "KEHILLAH_LIB_REPAIR_ACTION"
+						tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End ), GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).BuildTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End ), Concatenate( Localize( 'KEHILLAH_LIB_REPAIR_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End ) ) )]"
+						using = tooltip_se
+						enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End )]"
+						onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_repair_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End )]"
+						icon = {
+							parentanchor = left|vcenter
+							position = { 6 0 }
+							size = { 20 20 }
+							texture = "gfx/interface/icons/flat_icons/hammer.dds"
+							alwaystransparent = yes
+						}
+					}
+				}
+				### 2026-11-11 (Daniel: reviews, docs/spec/2026-11-11-reviews-and-cherem.md):
+				### a reviewer may give a book a haskamah or pronounce a cherem on it, once.
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 6
+					ignoreinvisible = yes
+					button_standard_list = {
+						visible = "[GetScriptedGui( Concatenate( 'kehillah_review_haskamah_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						layoutpolicy_horizontal = expanding
+						size = { 150 34 }
+						text = "KEHILLAH_REVIEW_HASKAMAH_ACTION"
+						tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_review_haskamah_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_REVIEW_HASKAMAH_TT' ), Concatenate( Localize( 'KEHILLAH_REVIEW_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_review_haskamah_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+						using = tooltip_se
+						enabled = "[GetScriptedGui( Concatenate( 'kehillah_review_haskamah_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[GetScriptedGui( Concatenate( 'kehillah_review_haskamah_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					}
+					button_standard_list = {
+						visible = "[GetScriptedGui( Concatenate( 'kehillah_review_cherem_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsShown( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						layoutpolicy_horizontal = expanding
+						size = { 150 34 }
+						text = "KEHILLAH_REVIEW_CHEREM_ACTION"
+						tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_review_cherem_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_REVIEW_CHEREM_TT' ), Concatenate( Localize( 'KEHILLAH_REVIEW_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_review_cherem_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+						using = tooltip_se
+						enabled = "[GetScriptedGui( Concatenate( 'kehillah_review_cherem_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+						onclick = "[GetScriptedGui( Concatenate( 'kehillah_review_cherem_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+					}
+				}
+
+							######## Its standing in the chosen rite.
+							widget = { size = { 4 6 } }
+							divider_light = { layoutpolicy_horizontal = expanding }
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = {
+									align = left|nobaseline
+									max_width = @book_text_w
+									text = "[Concatenate( Localize( 'KEHILLAH_BOOK_SECTION_STANDING' ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.GetNameNoTooltip )]"
+									default_format = "#high"
+								}
+								expand = {}
+							}
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 20
+								text_single = { text = "[Concatenate(Localize('KEHILLAH_LEDGER_CURRENT_RANK'), Localize(Concatenate('KEHILLAH_STANDING_FMT_', IntToString(FixedPointToInt(GetPlayer.MakeScope.Var('kehillah_ledger_rite').ScriptValue(Concatenate('kehillah_lib_rite_standing_', GetVariableSystem.Get('kehillah_ledger_selected_work'))))))))]" tooltip = "[Localize(Concatenate('kehillah_ledger_assessment_', GetVariableSystem.Get('kehillah_ledger_selected_work')))]" }
+								text_single = { max_width = 300 text = "[Select_CString(GreaterThan_CFixedPoint(GetPlayer.MakeScope.Var('kehillah_ledger_rite').ScriptValue(Concatenate('kehillah_ledger_doctrinal_', GetVariableSystem.Get('kehillah_ledger_selected_work'))), '(CFixedPoint)0'), Localize('KEHILLAH_LEDGER_FIXED_RANK'), Concatenate(Localize('KEHILLAH_LEDGER_HIGHEST_RANK'), Localize(Concatenate('KEHILLAH_STANDING_FMT_', IntToString(FixedPointToInt(GetPlayer.MakeScope.Var('kehillah_ledger_rite').ScriptValue(Concatenate('kehillah_ledger_ceiling_', GetVariableSystem.Get('kehillah_ledger_selected_work')))))))))]" tooltip = "[Localize(Concatenate('kehillah_ledger_assessment_', GetVariableSystem.Get('kehillah_ledger_selected_work')))]" }
+								expand = {}
+							}
+							### What it argues for, labelled.
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 8
+								text_single = { align = left|nobaseline text = "KEHILLAH_SEFARIM_COL_TENETS" default_format = "#weak" }
+								text_single = {
+									align = left|nobaseline
+									max_width = 400
+									text = "[Localize( Concatenate( 'kehillah_lib_tenets_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) )]"
+									tooltip = "KEHILLAH_SEFARIM_TENETS_TT"
+								}
+								expand = {}
+							}
+							### Its record: Score always, the counts only when above zero.
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								spacing = 16
+								ignoreinvisible = yes
+								tooltip = "KEHILLAH_SEFARIM_STATS_TT"
+								text_single = {
+									text = "[Concatenate( Localize( 'KEHILLAH_BOOK_STAT_SCORE' ), Select_CString( Or( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), Not( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsSet ) ), Localize( 'KEHILLAH_SEFARIM_SCORE_NONE' ), IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).GetValue ) ) ) )]"
+								}
+								text_single = {
+									visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_copies_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' )]"
+									text = "[Concatenate( Localize( 'KEHILLAH_BOOK_STAT_COPIES' ), IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_copies_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) )]"
+								}
+									text_single = {
+										visible = "[And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_masters' ) ) ).IsSet, GreaterThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_masters' ) ) ).GetValue, '(CFixedPoint)0' ) )]"
+										text = "[Concatenate( Localize( 'KEHILLAH_BOOK_STAT_MASTERS' ), IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_masters' ) ) ).GetValue ) ) )]"
+									}
+									text_single = {
+										visible = "[And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_approbations' ) ) ).IsSet, GreaterThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_approbations' ) ) ).GetValue, '(CFixedPoint)0' ) )]"
+										text = "[Concatenate( Localize( 'KEHILLAH_BOOK_STAT_APPROBATIONS' ), IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_approbations' ) ) ).GetValue ) ) )]"
+									}
+									text_single = {
+										visible = "[And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_taught' ) ) ).IsSet, GreaterThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_taught' ) ) ).GetValue, '(CFixedPoint)0' ) )]"
+										text = "[Concatenate( Localize( 'KEHILLAH_BOOK_STAT_TAUGHT' ), IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_taught' ) ) ).GetValue ) ) )]"
+									}
+									text_single = {
+										visible = "[And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_citations' ) ) ).IsSet, GreaterThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_citations' ) ) ).GetValue, '(CFixedPoint)0' ) )]"
+										text = "[Concatenate( Localize( 'KEHILLAH_BOOK_STAT_CITED' ), IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_citations' ) ) ).GetValue ) ) )]"
+									}
+								expand = {}
+							}
+			### 2026-11-11 (Daniel: "Yes, build it" -- the score was hard to read): the next
+			### tier in the chosen rite and what it waits on, each requirement green when met
+			### (kehillah_standing_recalc_work_effect and kehillah_standing_next_gate_met_trigger:
+			### one tier a year, the score in the next tier's band, under the ceiling, and the gate).
+			### Then, when the score has fallen below its tier's band, how long it has been.
+			hbox = {
+				visible = "[And( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsSet, Not( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ) ) )]"
+				layoutpolicy_horizontal = expanding
+				spacing = 14
+				ignoreinvisible = yes
+				text_single = { text = "KEHILLAH_SEFARIM_NEXT_LABEL" tooltip = "KEHILLAH_SEFARIM_NEXT_TT" }
+				text_single = {
+					visible = "[EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' )]"
+					text = "KEHILLAH_SEFARIM_NEXT_TOP"
+				}
+				text_single = {
+					visible = "[And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), Not( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) )]"
+					text = "[Concatenate( Localize( 'KEHILLAH_SEFARIM_NEXT_CEILING' ), Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) ) ) )]"
+				}
+				text_single = {
+					visible = "[And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) )]"
+					text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( Add_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)1' ) ) ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' ) )]"
+					text = "[Concatenate( Select_CString( Not( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).GetValue, Multiply_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)10' ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_SCORE' ), Concatenate( IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).GetValue ) ), Concatenate( ' / ', IntToString( FixedPointToInt( Multiply_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)10' ) ) ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)0' ) )]"
+					text = "[Concatenate( Select_CString( Not( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_anathema_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsSet ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_HEREM' ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)6' ) )]"
+					text = "[Concatenate( Select_CString( And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_masters' ) ) ).IsSet, Not( LessThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_masters' ) ) ).GetValue, GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_esteemed_masters' ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_MASTERS' ), Concatenate( Select_CString( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_masters' ) ) ).IsSet, IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_masters' ) ) ).GetValue ) ), '0' ), Concatenate( ' / ', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_esteemed_masters' ) ) ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)7' ) )]"
+					text = "[Concatenate( Select_CString( Not( LessThan_CFixedPoint( Subtract_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_current_year_value' ), GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_year_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ), GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_years' ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_YEARS' ), Concatenate( IntToString( FixedPointToInt( Subtract_CFixedPoint( GetPlayer.MakeScope.ScriptValue( 'kehillah_current_year_value' ), GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_year_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ) ), Concatenate( ' / ', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_years' ) ) ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), And( EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)7' ), GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_author' ) ) ).IsSet ) )]"
+					text = "[Concatenate( Select_CString( Not( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_author' ) ) ).Char.IsAlive ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_AUTHOR' ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), And( EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)7' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)2' ) ) )]"
+					text = "[Concatenate( Select_CString( And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_citations' ) ) ).IsSet, Not( LessThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_citations' ) ) ).GetValue, GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_count' ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_CITED' ), Concatenate( Select_CString( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_citations' ) ) ).IsSet, IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_citations' ) ) ).GetValue ) ), '0' ), Concatenate( ' / ', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_count' ) ) ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), And( EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)7' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)1' ) ) )]"
+					text = "[Concatenate( Select_CString( And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_preached' ) ) ).IsSet, Not( LessThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_preached' ) ) ).GetValue, GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_count' ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_PREACHED' ), Concatenate( Select_CString( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_preached' ) ) ).IsSet, IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_preached' ) ) ).GetValue ) ), '0' ), Concatenate( ' / ', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_count' ) ) ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				text_single = {
+					visible = "[And( And( LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_ledger_ceiling_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ) ), And( EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)7' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_genre_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)3' ) ) )]"
+					text = "[Concatenate( Select_CString( And( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_minds' ) ) ).IsSet, Not( LessThan_CFixedPoint( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_minds' ) ) ).GetValue, GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_count' ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_MET' ), Localize( 'KEHILLAH_SEFARIM_REQ_UNMET' ) ), Concatenate( Concatenate( Localize( 'KEHILLAH_SEFARIM_REQ_MINDS' ), Concatenate( Select_CString( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_minds' ) ) ).IsSet, IntToString( FixedPointToInt( GetGlobalVariable( Concatenate( 'kehillah_wk_', Concatenate( GetVariableSystem.Get( 'kehillah_ledger_selected_work' ), '_minds' ) ) ).GetValue ) ), '0' ), Concatenate( ' / ', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( 'kehillah_gate_authoritative_count' ) ) ) ) ) ), Localize( 'KEHILLAH_SEFARIM_REQ_END' ) ) )]"
+				}
+				expand = {}
+			}
+			hbox = {
+				visible = "[And( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsSet, And( Not( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)8' ) ), And( GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_floor_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ) ), LessThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_reception_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).GetValue, Multiply_CFixedPoint( Subtract_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)1' ), '(CFixedPoint)10' ) ) ) ) )]"
+				layoutpolicy_horizontal = expanding
+				text_single = {
+					text = "[Concatenate( Localize( 'KEHILLAH_SEFARIM_FALLING_A' ), Concatenate( IntToString( FixedPointToInt( Multiply_CFixedPoint( Subtract_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).ScriptValue( Concatenate( 'kehillah_lib_rite_standing_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ), '(CFixedPoint)1' ), '(CFixedPoint)10' ) ) ), Concatenate( Localize( 'KEHILLAH_SEFARIM_FALLING_B' ), Concatenate( Select_CString( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_low_years_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsSet, IntToString( FixedPointToInt( GetPlayer.MakeScope.Var( 'kehillah_ledger_rite' ).Rite.MakeScope.Var( Concatenate( 'kehillah_low_years_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).GetValue ) ), '0' ), Localize( 'KEHILLAH_SEFARIM_FALLING_C' ) ) ) ) )]"
+					tooltip = "KEHILLAH_SEFARIM_NEXT_TT"
+				}
+				expand = {}
+			}
+
+							######## Other traditions: always open.
+							widget = { size = { 4 6 } }
+							divider_light = { layoutpolicy_horizontal = expanding }
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline text = "KEHILLAH_LEDGER_COMPARE" default_format = "#high" tooltip = "KEHILLAH_LEDGER_COMPARE_TT" }
+								expand = {}
+							}
+							vbox = {
+								layoutpolicy_horizontal = expanding
+								datamodel = "[GetPlayer.MakeScope.GetList('kehillah_ledger_rites')]"
+								item = {
+									hbox = {
+										visible = "[Not(ObjectsEqual(Scope.Rite.Self, GetPlayer.MakeScope.Var('kehillah_ledger_rite').Rite.Self))]"
+										layoutpolicy_horizontal = expanding
+										spacing = 10
+										icon = { size = { 20 20 } texture = "[Scope.Rite.GetIcon]" }
+										text_single = { minimumsize = { 200 0 } max_width = 200 align = left|nobaseline text = "[Scope.Rite.GetNameNoTooltip]" }
+										text_single = { minimumsize = { 140 0 } max_width = 140 align = left|nobaseline text = "[Scope.Rite.GetFaith.GetNameNoTooltip]" default_format = "#weak" }
+										text_single = { max_width = 120 text = "[Localize(Concatenate('KEHILLAH_LEDGER_SUMMARY_', IntToString(FixedPointToInt(Scope.ScriptValue(Concatenate('kehillah_lib_rite_standing_', GetVariableSystem.Get('kehillah_ledger_selected_work')))))))]" tooltip = "KEHILLAH_LEDGER_COMPARE_TT" }
+										expand = {}
+									}
+								}
+							}
+
+							######## The rabbis who mastered it.
+							widget = { size = { 4 6 } }
+							divider_light = { layoutpolicy_horizontal = expanding }
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline text = "KEHILLAH_LIB_READERS_LABEL" default_format = "#high" tooltip = "KEHILLAH_LIB_READERS_TT" }
+								expand = {}
+							}
+							button_standard_list = {
+								visible = "[Not( GetScriptedGui( Concatenate( 'kehillah_lib_readers_loaded_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) )]"
+								size = { 274 30 }
+								text = "KEHILLAH_LIB_READERS_ACTION"
+								tooltip = "KEHILLAH_LIB_READERS_TT"
+								onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+							}
+							hbox = {
+								visible = "[And( GetScriptedGui( Concatenate( 'kehillah_lib_readers_loaded_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_lib_readers' ) ) ) )]"
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline default_format = "#weak;italic" text = "KEHILLAH_LIB_READERS_EMPTY" max_width = @book_text_w }
+								expand = {}
+							}
+							hbox = {
+								visible = "[And( GetScriptedGui( Concatenate( 'kehillah_lib_readers_loaded_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_lib_readers' ) ) )]"
+								layoutpolicy_horizontal = expanding
+								fixedgridbox = {
+									datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_lib_readers' )]"
+									addcolumn = 68
+									addrow = 78
+									flipdirection = yes
+									datamodel_wrap = 7
+									item = {
+										portrait_head_small = { datacontext = "[Scope.Char]" }
+									}
+								}
+								expand = {}
+							}
+
+							######## Other libraries that hold it.
+							widget = { size = { 4 6 } }
+							divider_light = { layoutpolicy_horizontal = expanding }
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline text = "KEHILLAH_LIB_HOLDERS_LABEL" default_format = "#high" }
+								expand = {}
+							}
+							hbox = {
+								visible = "[Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_lib_holders' ) ) )]"
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline default_format = "#weak;italic" text = "KEHILLAH_LIB_HOLDERS_EMPTY" max_width = @book_text_w }
+								expand = {}
+							}
+							vbox = {
+								visible = "[DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_lib_holders' ) )]"
+								layoutpolicy_horizontal = expanding
+								spacing = 2
+								datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_lib_holders' )]"
+								item = {
+									hbox = {
+										layoutpolicy_horizontal = expanding
+										spacing = 8
+										portrait_head_small = { datacontext = "[Scope.Title.GetHolder]" }
+										text_single = {
+											align = left|nobaseline
+											text = "[Scope.Title.GetNameNoTooltip]"
+											default_format = "#high"
+											max_width = 260
+										}
+										expand = {}
+										button_standard_list = {
+											size = { 140 30 }
+											text = "KEHILLAH_LIB_JOURNEY_ACTION"
+											tooltip = "KEHILLAH_LIB_JOURNEY_TT"
+											using = tooltip_se
+											enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_journey_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'target', Scope.Title.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_journey_', GetVariableSystem.Get( 'kehillah_ledger_selected_work' ) ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'target', Scope.Title.MakeScope ).End )]"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+
+		##################################################################
+		### LIBRARY: your library, or the libraries you may visit.
+		##################################################################
+		hbox = {
+			visible = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'library' )]"
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			spacing = 16
+
+			### The selector.
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { 340 0 }
+				maximumsize = { 340 -1 }
+				margin = { 10 8 }
+				spacing = 4
+				ignoreinvisible = yes
+				background = { using = Background_Area margin = { 0 0 } }
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { align = left|nobaseline text = "KEHILLAH_HUB_YOUR_LIBRARY" default_format = "#high" }
+					expand = {}
+				}
+				### You have one.
+				hbox = {
+					visible = "[GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet]"
+					layoutpolicy_horizontal = expanding
+					spacing = 8
+					text_single = {
+						align = left|nobaseline
+						max_width = 200
+						text = "[GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.GetNameNoTooltip]"
+					}
+					expand = {}
+					button_standard_list = {
+						size = { 90 28 }
+						text = "KEHILLAH_HUB_SHOW"
+						down = "[ObjectsEqual( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.Self, GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).Title.Self )]"
+						onclick = "[GetScriptedGui( 'kehillah_hub_view_library' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End )]"
+						onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+						onclick = "[GetScriptedGui( 'kehillah_lib_shelf_layout' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope ).End )]"
+					}
+				}
+				### A landed Jewish ruler without one: build one, or hold a temple first.
+				text_multi = {
+					visible = "[And( Not( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet ), And( GetScriptedGui( 'kehillah_hub_is_landed_jew' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), GetScriptedGui( 'kehillah_hub_holds_temple' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+					autoresize = yes
+					max_width = 320
+					text = "KEHILLAH_HUB_BUILD_TEMPLE"
+				}
+				text_multi = {
+					visible = "[And( Not( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet ), And( GetScriptedGui( 'kehillah_hub_is_landed_jew' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Not( GetScriptedGui( 'kehillah_hub_holds_temple' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) ) )]"
+					autoresize = yes
+					max_width = 320
+					text = "KEHILLAH_HUB_NO_TEMPLE"
+				}
+				text_multi = {
+					visible = "[And( Not( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet ), Not( GetScriptedGui( 'kehillah_hub_is_landed_jew' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+					autoresize = yes
+					max_width = 320
+					text = "KEHILLAH_HUB_NO_LIBRARY"
+					default_format = "#weak"
+				}
+
+				widget = { size = { 4 8 } }
+				divider_light = { layoutpolicy_horizontal = expanding }
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { align = left|nobaseline text = "KEHILLAH_HUB_OTHER_LIBRARIES" default_format = "#high" tooltip = "KEHILLAH_HUB_OTHER_LIBRARIES_TT" }
+					expand = {}
+				}
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					size = { 320 200 }
+					blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 12 }
+					blockoverride "scrollbox_content" {
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 2
+							datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_hub_libraries' )]"
+							item = {
+								vbox = {
+									visible = "[Not( ObjectsEqual( Scope.Title.Self, GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.Self ) )]"
+									layoutpolicy_horizontal = expanding
+									widget = {
+										size = { 300 52 }
+										text_single = {
+											parentanchor = left|top
+											position = { 4 4 }
+											max_width = 290
+											text = "[Scope.Title.GetNameNoTooltip]"
+											default_format = "#high"
+										}
+										text_single = {
+											parentanchor = left|bottom
+											position = { 4 -6 }
+											max_width = 120
+											text = "[Scope.Title.GetHolder.GetShortUIName]"
+											default_format = "#weak"
+										}
+										button_standard_list = {
+											parentanchor = right|bottom
+											position = { -88 -2 }
+											size = { 80 26 }
+											text = "KEHILLAH_HUB_SHOW"
+											down = "[ObjectsEqual( Scope.Title.Self, GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).Title.Self )]"
+											onclick = "[GetScriptedGui( 'kehillah_hub_view_library' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Scope.Title.MakeScope ).End )]"
+											onclick = "[GetVariableSystem.Clear( 'kehillah_lib_selected_work' )]"
+											onclick = "[GetScriptedGui( 'kehillah_lib_shelf_layout' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Scope.Title.MakeScope ).End )]"
+										}
+										button_standard_list = {
+											parentanchor = right|bottom
+											position = { 0 -2 }
+											size = { 84 26 }
+											text = "KEHILLAH_HUB_VISIT"
+											using = tooltip_se
+											tooltip = "[Select_CString( GetScriptedGui( 'kehillah_hub_visit_library' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Scope.Title.MakeScope ).End ), Localize( 'KEHILLAH_HUB_VISIT_TT' ), Concatenate( Localize( 'KEHILLAH_HUB_VISIT_BLOCKED' ), GetScriptedGui( 'kehillah_hub_visit_library' ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Scope.Title.MakeScope ).End ) ) )]"
+											enabled = "[GetScriptedGui( 'kehillah_hub_visit_library' ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Scope.Title.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( 'kehillah_hub_visit_library' ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).AddScope( 'library', Scope.Title.MakeScope ).End )]"
+										}
+									}
+									divider_light = { layoutpolicy_horizontal = expanding }
+								}
+							}
+						}
+					}
+				}
+			}
+
+			### The library shown.
+			vbox = {
+				visible = "[GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).IsSet]"
+				layoutpolicy_vertical = expanding
+				minimumsize = { 660 0 }
+				maximumsize = { 660 -1 }
+				margin = { 10 8 }
+				spacing = 4
+				ignoreinvisible = yes
+				background = { using = Background_Area margin = { 0 0 } }
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_view_owner' ).Char]"
+				datacontext = "[GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).Title]"
+
+				hbox = {
+					layoutpolicy_horizontal = expanding
+					text_single = { align = left|nobaseline text = "KEHILLAH_LIB_WINDOW_HEADER" default_format = "#T" max_width = 620 }
+					expand = {}
+				}
+				text_single = {
+					visible = "[Title.MakeScope.Var( 'kehillah_library_sealed' ).IsSet]"
+					layoutpolicy_horizontal = expanding
+					text = "KEHILLAH_LIB_WINDOW_SEALED"
+					default_format = "#N"
+					max_width = 620
+				}
+				kehillah_library_body = {}
+			}
+			vbox = {
+				visible = "[Not( GetPlayer.MakeScope.Var( 'kehillah_lib_view_title' ).IsSet )]"
+				layoutpolicy_vertical = expanding
+				text_single = { text = "KEHILLAH_HUB_PICK_LIBRARY" default_format = "#weak;italic" }
+				expand = {}
+			}
+			expand = {}
+		}
+
+		##################################################################
+		### ACQUISITION: how books come in, what is sought, what is missing.
+		##################################################################
+		hbox = {
+			visible = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'acquire' )]"
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			spacing = 16
+
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { 420 0 }
+				maximumsize = { 420 -1 }
+				margin = { 12 10 }
+				spacing = 10
+				background = { using = Background_Area margin = { 0 0 } }
+				text_multi = { autoresize = yes max_width = 396 text = "KEHILLAH_HUB_ACQ_INTRO" }
+				text_multi = { autoresize = yes max_width = 396 text = "KEHILLAH_SEFARIM_SEEK_TT" }
+				text_multi = { autoresize = yes max_width = 396 text = "KEHILLAH_LIB_JOURNEY_TT" }
+				text_multi = { autoresize = yes max_width = 396 text = "KEHILLAH_HUB_ACQ_GIFTS" }
+				expand = {}
+			}
+
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { 720 0 }
+				maximumsize = { 720 -1 }
+				spacing = 4
+				ignoreinvisible = yes
+
+				text_multi = {
+					visible = "[Not( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet )]"
+					autoresize = yes
+					max_width = 700
+					text = "KEHILLAH_HUB_ACQ_NO_LIBRARY"
+				}
+				scrollbox = {
+					visible = "[GetPlayer.MakeScope.Var( 'kehillah_own_library' ).IsSet]"
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					size = { 720 300 }
+					blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 14 }
+					blockoverride "scrollbox_content" {
+						vbox = {
+							layoutpolicy_horizontal = expanding
+							spacing = 2
+							ignoreinvisible = yes
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline text = "KEHILLAH_HUB_ACQ_SOUGHT" default_format = "#high" }
+								expand = {}
+							}
+							vbox = {
+								layoutpolicy_horizontal = expanding
+								ignoreinvisible = yes
+								datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_lib_catalog_works' )]"
+								item = {
+									widget = {
+										visible = "[GreaterThan_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_sought_', Scope.GetFlagName ) ), '(CFixedPoint)0' )]"
+										size = { 700 46 }
+										kehillah_lib_spine_icon = { parentanchor = left|vcenter position = { 4 0 } }
+										button_standard_list = {
+											parentanchor = left|vcenter
+											position = { 30 0 }
+											size = { 260 30 }
+											text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+											tooltip = "KEHILLAH_HUB_OPEN_IN_LEDGER_TT"
+											onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+											onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										}
+										text_single = { parentanchor = left|vcenter position = { 300 0 } max_width = 120 text = "[Localize( Concatenate( 'kehillah_lib_year_text_', Scope.GetFlagName ) )]" }
+										text_single = { parentanchor = left|vcenter position = { 420 0 } max_width = 130 text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" }
+										text_single = {
+											parentanchor = left|vcenter
+											position = { 560 0 }
+											text = "KEHILLAH_SEFARIM_SOUGHT"
+											max_width = 130
+										}
+									}
+								}
+							}
+							widget = { size = { 4 10 } }
+							hbox = {
+								layoutpolicy_horizontal = expanding
+								text_single = { align = left|nobaseline text = "KEHILLAH_HUB_ACQ_MISSING" default_format = "#high" tooltip = "KEHILLAH_HUB_ACQ_MISSING_TT" }
+								expand = {}
+							}
+							vbox = {
+								layoutpolicy_horizontal = expanding
+								ignoreinvisible = yes
+								datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_lib_catalog_works' )]"
+								item = {
+									widget = {
+										visible = "[And( EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_held_', Scope.GetFlagName ) ), '(CFixedPoint)0' ), EqualTo_CFixedPoint( GetPlayer.MakeScope.Var( 'kehillah_own_library' ).Title.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_sought_', Scope.GetFlagName ) ), '(CFixedPoint)0' ) )]"
+										size = { 700 46 }
+										kehillah_lib_spine_icon = { parentanchor = left|vcenter position = { 4 0 } }
+										button_standard_list = {
+											parentanchor = left|vcenter
+											position = { 30 0 }
+											size = { 260 30 }
+											text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+											tooltip = "KEHILLAH_HUB_OPEN_IN_LEDGER_TT"
+											onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+											onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										}
+										text_single = { parentanchor = left|vcenter position = { 300 0 } max_width = 120 text = "[Localize( Concatenate( 'kehillah_lib_year_text_', Scope.GetFlagName ) )]" }
+										text_single = { parentanchor = left|vcenter position = { 420 0 } max_width = 130 text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" }
+										button_standard_list = {
+											parentanchor = left|vcenter
+											position = { 560 0 }
+											size = { 130 30 }
+											text = "KEHILLAH_SEFARIM_SEEK"
+											tooltip = "[Select_CString( GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End ), Localize( 'KEHILLAH_SEFARIM_SEEK_TT' ), Concatenate( Localize( 'KEHILLAH_SEFARIM_SEEK_BLOCKED' ), GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).IsValidTooltip( GuiScope.SetRoot( GetPlayer.MakeScope ).End ) ) )]"
+											using = tooltip_se
+											enabled = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).IsValid( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+											onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_acquire_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			expand = {}
+		}
+
+		##################################################################
+		### YOUR SCHOLARSHIP: mastered, written, reviewed.
+		##################################################################
+		hbox = {
+			visible = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'profile' )]"
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			spacing = 16
+
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { 260 0 }
+				maximumsize = { 260 -1 }
+				margin = { 10 10 }
+				spacing = 6
+				background = { using = Background_Area margin = { 0 0 } }
+				portrait_head_small = { datacontext = "[GetPlayer]" }
+				text_single = { text = "[GetPlayer.GetShortUIName]" default_format = "#T" max_width = 240 }
+				text_single = { text = "KEHILLAH_HUB_PROFILE_LEARNING" max_width = 240 }
+				text_multi = { autoresize = yes max_width = 240 text = "KEHILLAH_HUB_PROFILE_COUNTS" default_format = "#weak" }
+				expand = {}
+			}
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { 420 0 }
+				maximumsize = { 420 -1 }
+				margin = { 10 8 }
+				background = { using = Background_Area margin = { 0 0 } }
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					size = { 400 300 }
+					blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 12 }
+					blockoverride "scrollbox_content" {
+					vbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 4
+					ignoreinvisible = yes
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_MASTERED" default_format = "#high" }
+						expand = {}
+					}
+					hbox = {
+						visible = "[Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_mastered_works' ) ) )]"
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_NONE_MASTERED" default_format = "#weak;italic" max_width = 380 }
+						expand = {}
+					}
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 2
+						datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_mastered_works' )]"
+						item = {
+							widget = {
+								size = { 390 46 }
+								kehillah_lib_spine_icon = { parentanchor = left|vcenter position = { 2 0 } }
+								button_standard_list = {
+									parentanchor = left|vcenter
+									position = { 26 0 }
+									size = { 236 30 }
+									text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+									tooltipwidget = { kehillah_library_work_tooltip = { blockoverride "rank_value" { text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" } blockoverride "owner_line" {} } }
+									onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+									onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+								}
+								text_single = { parentanchor = left|vcenter position = { 270 0 } max_width = 118 text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" }
+							}
+						}
+					}
+					}
+					}
+				}
+			}
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { 420 0 }
+				maximumsize = { 420 -1 }
+				margin = { 10 8 }
+				background = { using = Background_Area margin = { 0 0 } }
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					size = { 400 300 }
+					blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 12 }
+					blockoverride "scrollbox_content" {
+					vbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 4
+					ignoreinvisible = yes
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_GREAT" default_format = "#high" }
+						expand = {}
+					}
+					hbox = {
+						visible = "[Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_written_great_works' ) ) )]"
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_NONE_GREAT" default_format = "#weak;italic" max_width = 380 }
+						expand = {}
+					}
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 2
+						datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_written_great_works' )]"
+						item = {
+							widget = {
+								size = { 390 46 }
+								kehillah_lib_spine_icon = { parentanchor = left|vcenter position = { 2 0 } }
+								button_standard_list = {
+									parentanchor = left|vcenter
+									position = { 26 0 }
+									size = { 236 30 }
+									text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+									tooltipwidget = { kehillah_library_work_tooltip = { blockoverride "rank_value" { text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" } blockoverride "owner_line" {} } }
+									onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+									onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+								}
+								text_single = { parentanchor = left|vcenter position = { 270 0 } max_width = 118 text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" }
+							}
+						}
+					}
+					widget = { size = { 4 10 } }
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_WRITTEN" default_format = "#high" }
+						expand = {}
+					}
+					hbox = {
+						visible = "[Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_written_works' ) ) )]"
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_NONE_WRITTEN" default_format = "#weak;italic" max_width = 380 }
+						expand = {}
+					}
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 2
+						datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_written_works' )]"
+						item = {
+							widget = {
+								size = { 390 46 }
+								kehillah_lib_spine_icon = { parentanchor = left|vcenter position = { 2 0 } }
+								button_standard_list = {
+									parentanchor = left|vcenter
+									position = { 26 0 }
+									size = { 236 30 }
+									text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+									tooltipwidget = { kehillah_library_work_tooltip = { blockoverride "rank_value" { text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" } blockoverride "owner_line" {} } }
+									onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+									onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+								}
+								text_single = { parentanchor = left|vcenter position = { 270 0 } max_width = 118 text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" }
+							}
+						}
+					}
+					}
+					}
+				}
+			}
+			vbox = {
+				layoutpolicy_vertical = expanding
+				minimumsize = { 420 0 }
+				maximumsize = { 420 -1 }
+				margin = { 10 8 }
+				background = { using = Background_Area margin = { 0 0 } }
+				scrollbox = {
+					layoutpolicy_horizontal = expanding
+					layoutpolicy_vertical = expanding
+					size = { 400 300 }
+					blockoverride "scrollbox_margins" { margin = { 0 2 } margin_right = 12 }
+					blockoverride "scrollbox_content" {
+					vbox = {
+					layoutpolicy_horizontal = expanding
+					spacing = 4
+					ignoreinvisible = yes
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_HASKAMAH" default_format = "#high" }
+						expand = {}
+					}
+					hbox = {
+						visible = "[Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_haskamah_works' ) ) )]"
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_NONE_HASKAMAH" default_format = "#weak;italic" max_width = 380 }
+						expand = {}
+					}
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 2
+						datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_haskamah_works' )]"
+						item = {
+							widget = {
+								size = { 390 46 }
+								kehillah_lib_spine_icon = { parentanchor = left|vcenter position = { 2 0 } }
+								button_standard_list = {
+									parentanchor = left|vcenter
+									position = { 26 0 }
+									size = { 236 30 }
+									text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+									tooltipwidget = { kehillah_library_work_tooltip = { blockoverride "rank_value" { text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" } blockoverride "owner_line" {} } }
+									onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+									onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+								}
+								text_single = { parentanchor = left|vcenter position = { 270 0 } max_width = 118 text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" }
+							}
+						}
+					}
+					widget = { size = { 4 10 } }
+					hbox = {
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_CHEREM" default_format = "#high" }
+						expand = {}
+					}
+					hbox = {
+						visible = "[Not( DataModelHasItems( GetPlayer.MakeScope.GetList( 'kehillah_cherem_works' ) ) )]"
+						layoutpolicy_horizontal = expanding
+						text_single = { align = left|nobaseline text = "KEHILLAH_HUB_PROFILE_NONE_CHEREM" default_format = "#weak;italic" max_width = 380 }
+						expand = {}
+					}
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 2
+						datamodel = "[GetPlayer.MakeScope.GetList( 'kehillah_cherem_works' )]"
+						item = {
+							widget = {
+								size = { 390 46 }
+								kehillah_lib_spine_icon = { parentanchor = left|vcenter position = { 2 0 } }
+								button_standard_list = {
+									parentanchor = left|vcenter
+									position = { 26 0 }
+									size = { 236 30 }
+									text = "[Localize( Concatenate( 'kehillah_lib_name_', Scope.GetFlagName ) )]"
+									tooltipwidget = { kehillah_library_work_tooltip = { blockoverride "rank_value" { text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" } blockoverride "owner_line" {} } }
+									onclick = "[GetVariableSystem.Clear( 'kehillah_hub_tab' )]"
+									onclick = "[GetVariableSystem.Set( 'kehillah_ledger_selected_work', Scope.GetFlagName )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_holders_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+									onclick = "[GetScriptedGui( Concatenate( 'kehillah_lib_readers_', Scope.GetFlagName ) ).Execute( GuiScope.SetRoot( GetPlayer.MakeScope ).End )]"
+								}
+								text_single = { parentanchor = left|vcenter position = { 270 0 } max_width = 118 text = "[Localize( Concatenate( 'KEHILLAH_STANDING_FMT_', IntToString( FixedPointToInt( GetPlayer.MakeScope.ScriptValue( Concatenate( 'kehillah_lib_standing_', Scope.GetFlagName ) ) ) ) ) )]" }
+							}
+						}
+					}
+					}
+					}
+				}
+			}
+			expand = {}
+		}
+
+		##################################################################
+		### HOW STANDING WORKS.
+		##################################################################
+		hbox = {
+			visible = "[EqualTo_string( GetVariableSystem.Get( 'kehillah_hub_tab' ), 'standing' )]"
+			layoutpolicy_horizontal = expanding
+			layoutpolicy_vertical = expanding
+			expand = {}
+			scrollbox = {
+				layoutpolicy_vertical = expanding
+				size = { 980 300 }
+				blockoverride "scrollbox_margins" { margin = { 12 10 } margin_right = 20 }
+				blockoverride "scrollbox_content" {
+					vbox = {
+						layoutpolicy_horizontal = expanding
+						spacing = 16
+						text_multi = { autoresize = yes max_width = 930 text = "KEHILLAH_HUB_STANDING_INTRO" }
+						text_multi = { autoresize = yes max_width = 930 text = "KEHILLAH_LIB_LADDER_TT" }
+						text_multi = { autoresize = yes max_width = 930 text = "KEHILLAH_SEFARIM_SCORE_TT" }
+						text_multi = { autoresize = yes max_width = 930 text = "KEHILLAH_SEFARIM_NEXT_TT" }
+						text_multi = { autoresize = yes max_width = 930 text = "KEHILLAH_SEFARIM_STATS_TT" }
+						text_multi = { autoresize = yes max_width = 930 text = "KEHILLAH_LEDGER_COMPARE_TT" }
+					}
+				}
+			}
+			expand = {}
+		}
+	}
+}

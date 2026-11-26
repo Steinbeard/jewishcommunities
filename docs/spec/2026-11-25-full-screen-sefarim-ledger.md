@@ -1,7 +1,32 @@
 # Sefarim and Scholarship: a full-screen hub for the scholarship system
 
-**Status:** Built 2026-11-25 at Daniel's request; xTiger-clean on every file touched; **not
-live-tested.** It supersedes the window layout in
+**Status: PARKED 2026-11-25. Built, then switched off the same day; not live-tested.**
+Daniel: "Let's disable this for now behind a console command, and remove the buttons to access it.
+It's going to need a lot of work to make it look good ... We'll come back to it later! Let's
+restore the functional UIs to what we had previously."
+
+What that means in the build now:
+- The Ledger of Sefarim (`gui/kehillah_sefarim_ledger.gui`), the Beit Midrash work page, the
+  Learning window and the character window are back to their state before this build (commit
+  `eee6d5ed`).
+- The hub lives on in its own window, `gui/kehillah_scholarship_hub.gui`
+  (`kehillah_scholarship_hub_window`). It is shown while the player has
+  `var:kehillah_hub_debug_open`, and no button opens it. From the console,
+  `event kehillah_hub_debug.0001` opens it and `event kehillah_hub_debug.0002` (or its close
+  button) closes it. The prep effect is `kehillah_hub_open_effect`.
+- Kept because they are harmless and the hub will need them: the new lists
+  `kehillah_written_great_works`, `kehillah_written_works`, `kehillah_haskamah_works` and
+  `kehillah_cherem_works` keep filling as books are written and reviewed.
+- Unused until the hub returns: the chip tooltip `KEHILLAH_HUB_CHIP_TT` and
+  `KEHILLAH_LIB_OPEN_LEDGER[_TT]`.
+
+When work resumes, the open problem is the look, not the wiring. Everything below describes the
+hub as built; ignore its "Ways in" section until the buttons come back.
+
+---
+
+Originally: built 2026-11-25 at Daniel's request; xTiger-clean on every file touched; not
+live-tested. It supersedes the window layout in
 [the ledger assessment record](../implementation/2026-11-15-sefarim-ledger-assessment.md), and the
 selected-work card and Work details hand-off in
 [the shelf and ledger record](../implementation/2026-11-08-library-shelf-and-ledger.md). The
