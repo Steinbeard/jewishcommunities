@@ -2786,6 +2786,7 @@ def write_acquisition_custom_loc(order):
 
 MISSING_FOUND_EFFECTS = ROOT / "common/scripted_effects/kehillah_library_missing_foundation_effects.txt"
 MISSING_FOUND_CUSTOM_LOC = ROOT / "common/customizable_localization/kehillah_library_missing_foundation_custom_loc.txt"
+MISSING_FOUND_DECISION = ROOT / "common/decisions/kehillah_library_foundation_decisions.txt"
 MISSING_FOUND_SLOTS = 5
 
 
@@ -2817,7 +2818,72 @@ def write_missing_foundation_files(order):
                        f"set_variable = {{ name = kehillah_lib_missing_found_{n} value = flag:{f} }} }}")
         out.append("\t}")
     out.append("}")
+    # 2026-11-25 (Daniel: "a decision to acquire missing foundational works
+    # that the notification opens ... a list of the ones you're missing that
+    # you can select from, and then go through the existing acquisition
+    # flow"). The decision's option list sets scope:<work> = yes; this starts
+    # the same confirmation the Library's Seek button does
+    # (kehillah_lib_acquire_<work> scripted guis, kehillah_library.0002).
+    out += ["", "# Scope: the character taking kehillah_acquire_foundational_work_decision.",
+            "kehillah_lib_acquire_picked_foundation_effect = {",
+            "\tkehillah_library_refresh_acquisition_candidates_effect = yes"]
+    for i, f in enumerate(order):
+        kw = "if" if i == 0 else "else_if"
+        out += [f"\t{kw} = {{",
+                f"\t\tlimit = {{ exists = scope:{f} }}",
+                f"\t\tset_variable = {{ name = kehillah_commission_work_loc value = flag:{f} }}",
+                f"\t\tsave_scope_value_as = {{ name = kehillah_commission_work value = flag:{f} }}",
+                "\t}"]
+    out += ["\tif = {", "\t\tlimit = { exists = scope:kehillah_commission_work }",
+            "\t\ttrigger_event = kehillah_library.0002", "\t}", "}"]
     write(MISSING_FOUND_EFFECTS, out)
+
+    dec = list(HEADER) + [
+        "# Acquire a Foundational Work (2026-11-25, Daniel). A human Kehillah leader picks",
+        "# one of the works kehillah_lib_foundational_missing_count_value counts as missing",
+        "# and goes on to the usual acquisition confirmation (kehillah_library.0002).",
+        "# Opened by the Missing Foundational Works notice (common/important_actions/",
+        "# kehillah_library_foundation_actions.txt). Players only: the AI acquires through",
+        "# kehillah_acquire_torah_work_decision.",
+        "kehillah_acquire_foundational_work_decision = {",
+        "\tpicture = { reference = \"gfx/interface/illustrations/decisions/decision_spend_money.dds\" }",
+        "\tdecision_group_type = kehillah",
+        "\tsort_order = 93",
+        "\tis_shown = {",
+        "\t\tis_ai = no",
+        "\t\tgovernment_has_flag = government_is_kehillah",
+        "\t\tprimary_title ?= { kehillah_lib_foundational_missing_count_value > 0 }",
+        "\t}",
+        "\tis_valid = {",
+        "\t\tis_adult = yes",
+        "\t\tis_imprisoned = no",
+        "\t\tcustom_tooltip = {",
+        "\t\t\ttext = kehillah_lib_seek_busy_tt",
+        "\t\t\tprimary_title = { NOT = { has_variable_list = kehillah_library_commission_work } }",
+        "\t\t}",
+        "\t}",
+        "\teffect = {",
+        "\t\tcustom_tooltip = kehillah_acquire_foundational_work_decision_effect_tt",
+        "\t\tkehillah_lib_acquire_picked_foundation_effect = yes",
+        "\t}",
+        "\twidget = {",
+        "\t\tgui = \"decision_view_widget_option_list_generic\"",
+        "\t\tcontroller = decision_option_list_controller",
+        "\t\tdecision_to_second_step_button = kehillah_acquire_foundational_work_decision_next",
+        "\t\tshow_from_start = yes",
+    ]
+    for f in order:
+        dec += ["\t\titem = {",
+                f"\t\t\tvalue = {f}",
+                f"\t\t\tlocalization = kehillah_lib_name_{f}",
+                f"\t\t\tcurrent_description = kehillah_acquire_foundational_work_item_desc",
+                "\t\t\ticon = \"gfx/interface/icons/artifact/artifact_chronicle.dds\"",
+                "\t\t\tis_shown = { primary_title ?= {"] + cond(f) + ["\t\t\t} }",
+                "\t\t\tis_valid = { always = yes }",
+                "\t\t\tai_chance = { value = 1 }",
+                "\t\t}"]
+    dec += ["\t}", "\tai_potential = { always = no }", "\tai_will_do = { base = 0 }", "}"]
+    write(MISSING_FOUND_DECISION, dec)
 
     loc = list(HEADER) + [
         "# One line per filled slot of kehillah_lib_note_missing_foundations_effect;",
@@ -2834,6 +2900,12 @@ def write_missing_foundation_files(order):
             f"\t\ttrigger = {{ primary_title ?= {{ kehillah_lib_foundational_missing_count_value > {MISSING_FOUND_SLOTS} }} }}",
             "\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_MORE", "\t}",
             "\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_NONE", "\t}", "}"]
+    # The notice's label: the work's name when one is missing, else the count.
+    loc += ["KehillahLibMissingFoundLabel = {", "\ttype = character",
+            "\ttext = {",
+            "\t\ttrigger = { primary_title ?= { kehillah_lib_foundational_missing_count_value = 1 } has_variable = kehillah_lib_missing_found_1 }",
+            "\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_LABEL_ONE", "\t}",
+            "\ttext = {", "\t\tfallback = yes", "\t\tlocalization_key = KEHILLAH_LIB_MISSING_FOUND_LABEL_MANY", "\t}", "}"]
     write(MISSING_FOUND_CUSTOM_LOC, loc)
 
 
