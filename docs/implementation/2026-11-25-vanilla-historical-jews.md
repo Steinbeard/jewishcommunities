@@ -1,4 +1,4 @@
-**Status:** 2026-11-25, Daniel's request ("rabbi trait for historical Jewish characters, more likely to appear in their community; any vanilla characters to remove?"). **Source built, xTiger shows no findings in the touched files; live check pending.**
+﻿**Status:** 2026-11-25, Daniel's request ("rabbi trait for historical Jewish characters, more likely to appear in their community; any vanilla characters to remove?"). **Source built, xTiger shows no findings in the touched files; live check pending.**
 
 # Vanilla's historical Jews, rabbi traits and placement
 
@@ -32,8 +32,32 @@ Start 1066 and 1178 once, then read `debug.log` for `kehillah_vanilla_historical
 ## Reconciliation, later the same day (Daniel's follow-up)
 
 - **Qalonimus:** our Kalonymus family now uses vanilla's `ashkenazi_qalonimus` dynasty and its spelling (Rome's poets, Speyer's 1066 leader, Lucca 867, Yehuda he-Hasid 1178). Our dynasty 9000002 is gone; its harp arms now key the vanilla dynasty, since vanilla defines none. Speyer's leader is now the son of vanilla's Hananeel I, so Moses III's nephew. The Speyer leader stays a non-historical representative.
-- **Bundar:** the four Aden Bundars use vanilla's `yemeni_bundar`; our dynasty 9000076 and its arms and motto are removed. Our Yefet (b. 1042) and vanilla's (b. 1075) are still two people; vanilla's is born during play with no parents.
+- **Bundar:** the four Aden Bundars use vanilla's `yemeni_bundar`; our dynasty 9000076 and its arms and motto are removed. Our Yefet (b. 1042) and vanilla's (b. 1075) are still two people; vanilla's is born after 1066, so a 1066 game never creates them.
 - **Nahray:** 9002047 and the ben Nissim dynasty are removed (tracker row marked `removed`). Arus (9002048) holds Fustat's steward seat.
 - **Placement list trimmed:** Hillel Awkalid, Karima al-Dallala and Moshe al-Lebdi hold merchant companies, so they are rulers and never in the pool.
 - **Merchant count:** 17 named Jewish merchant holders (about 11 at 1066: Nahray, Qalonimus, Rabban, Barhun, Berekhya, Hillel Awkalid, Karima, and four Maghrebi houses) against 264 generic ones, about 88 per start.
-- **Vanilla's spawn list:** `spawn_historical_characters_effect` (yearly) creates a 20-year-old of 13 Jewish figures in a six-year window unless the global `hchar_<name>` exists. Rashi was already guarded. `kehillah_vanilla_spawn_guard` now registers our Saadia, Hasdai ibn Shaprut, Gabirol, Halevi and vanilla's `maimonides_1` so none are spawned twice. Unguarded: Aaron of Lincoln, ibn Awkal, Benjamin of Tudela, Abraham ibn Ezra, Nachmanides, Crescas, Gersonides. Our Halevi (9000410) is a bare Library record with no parents; vanilla's spawn is richer, so this guard may be reversed later.
+
+## Spawned historical figures (Daniel's third message)
+
+**Correction:** the earlier spawn guard (`kehillah_vanilla_spawn_guard`) is removed. A history character born after the start date is never created, so vanilla's spawn is the only way Saadia, Shaprut, Gabirol, Halevi or Maimonides appear in an earlier start; the guard could only have suppressed them. Rashi's existing guard stays, because our Rashi is alive at the 1066 start.
+
+- By default `spawn_historical_characters_boilerplate_effect` offers each figure to the county holder, a player liege, the duchy holder or the top liege, so they gravitate to landed courts. A Kehillah leader holds no county and is not offered one.
+- `historical_character_finalization_effect` is now overridden (vanilla body plus one block; recheck after patches). A day later `kehillah_historical.1` gives the Rabbi trait to Rashi, Saadia, Maimonides, ibn Ezra, Nachmanides, Gersonides and Crescas. Nine days after that `kehillah_historical.2` moves the figure to the first held community in a two-entry list, unless they are a ruler (adventurer), already in a Kehillah court, or in a player's court.
+- Aaron of Lincoln's listed communities (London, York) exist only in the 1178 start, so in an earlier game he stays where vanilla put him unless one is held.
+
+### Kin of the spawned figures in our starts
+
+| Figure | Kin authored (vanilla or mod) |
+|---|---|
+| Rashi | Parents and grandparents; three daughters alive at 1066 |
+| Saadia | Son Dosa (938-1018), history only |
+| Hasdai ibn Shaprut | Parents Isaac and Esther, history only |
+| Yusuf ibn Awkal (vanilla `egyptian_awkalid_1`, 976-1039) | Father; children Hillel, Binyamin, Manasseh, Khalaf, Yehudit, in range for 1066 |
+| Aaron of Lincoln (vanilla `house_of_aaron_1`) | 1178: Aaron, father's other sons, and Aaron's sons Elijah, Abraham, Yitzhak, Hayyim |
+| Maimonides, Gabirol, Halevi, ibn Ezra, Benjamin, Nachmanides, Crescas, Gersonides | None found |
+
+The spawned figures use their own vanilla houses (`house_ezra`, `house_awkal`, `house_of_lincoln` ...), so a spawned one is not linked to authored relatives. No authored link ties Abraham ibn Ezra to our Granada Ibn Ezras.
+
+### Live check
+
+Run a game past a spawn window (1095 for Halevi from 1066), then check `debug.log` for `kehillah_historical`.

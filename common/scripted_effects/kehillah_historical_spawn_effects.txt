@@ -1,0 +1,69 @@
+﻿# Vanilla's yearly pulse creates famous figures at age twenty
+# (spawn_historical_characters_effect) and offers each to the landed holder of
+# their birthplace, so a Jewish one would end up at a Christian or Muslim
+# court. See docs/implementation/2026-11-25-vanilla-historical-jews.md.
+#
+# OVERRIDE of vanilla's historical_character_finalization_effect
+# (common/scripted_effects/00_historical_characters_scripted_effects.txt).
+# Everything above the added block is vanilla's; recheck it after game patches.
+historical_character_finalization_effect = {
+	add_trait = historical_character
+	house ?= {
+		generate_coa = yes
+	}
+	dynasty ?= {
+		set_coa = scope:historical_character.house
+	}
+	set_variable = {
+		name = show_historical_gui
+		value = 1
+	}
+	# Added by Jewish Communities. Delayed because vanilla names the figure
+	# (set_variable = rashi and so on) only after this effect returns.
+	if = {
+		limit = { is_jewish_character_trigger = yes }
+		trigger_event = { id = kehillah_historical.1 days = 1 }
+	}
+}
+
+# Scope: a spawned historical figure. $FIRST$ and $SECOND$ are title keys in
+# order of historical association. Moves the figure to the first one with a
+# Kehillah leader. Leaves alone a ruler (an adventurer), someone already in a
+# Kehillah court, and anyone a player ruler has taken into their court.
+kehillah_historical_settle_effect = {
+	save_scope_as = kehillah_historical_arrival
+	clear_saved_scope = kehillah_historical_host
+	title:$FIRST$ ?= {
+		holder ?= { save_scope_as = kehillah_historical_host }
+	}
+	if = {
+		limit = { NOT = { exists = scope:kehillah_historical_host } }
+		title:$SECOND$ ?= {
+			holder ?= { save_scope_as = kehillah_historical_host }
+		}
+	}
+	if = {
+		limit = {
+			exists = scope:kehillah_historical_host
+			scope:kehillah_historical_host = { has_government = kehillah_government }
+			is_alive = yes
+			is_ruler = no
+			NOT = { court_owner ?= { is_ai = no } }
+			NOT = { court_owner ?= { has_government = kehillah_government } }
+		}
+		set_employer = scope:kehillah_historical_host
+		scope:kehillah_historical_host = {
+			if = {
+				limit = { is_ai = no }
+				send_interface_message = {
+					type = msg_kehillah_community_news
+					title = kehillah_historical_arrival_t
+					desc = kehillah_historical_arrival_desc
+					left_icon = scope:kehillah_historical_arrival
+				}
+			}
+		}
+		debug_log = "kehillah_historical: a historical figure joined a community"
+		debug_log_scopes = yes
+	}
+}
