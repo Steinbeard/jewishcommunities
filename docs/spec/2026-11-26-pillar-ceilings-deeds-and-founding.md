@@ -204,5 +204,10 @@ soak. Known risks:
    appear.
 6. **Trade, with the DLC:** at Healthy Affluence, `event kehillah_quarter_debug.9` shows max routes 1; at
    Flourishing, 2. Without the DLC, the ventures modifier shows and a toast with gold appears now and then.
-7. **Error log:** check `error.log` after hovering the breakdowns. The tooltip values are new and
-   recompute baselines.
+7. **Domain bars** (My Realm > Domain, added 2026-11-26): each pillar bar has a pale tick where the
+   pillar settles (baseline under the limit, matching the "Settles at" line) and a red mark at its limit.
+   Hovering the red mark shows its own tooltip naming the gate building, not the card's breakdown; the
+   mark is gone once a track is complete (Synagogue V, Beit Midrash V, Kahal House III). Greatness with
+   no Beit Midrash shows the mark at 250.
+8. **Error log:** check `error.log` after hovering the breakdowns and the limit marks. The tooltip values
+   are new and recompute baselines.
