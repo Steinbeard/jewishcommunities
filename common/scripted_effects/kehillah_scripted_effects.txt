@@ -2252,9 +2252,11 @@ kehillah_init_pillars_effect = {
 # is required because buildings, offices, skills, and charter values resolve
 # in character scope; the values are then stored on the enduring title.
 #
-# This must never be called from the ordinary founding path: a founder begins
-# at their initial event state and moves toward their baseline over time.
-# See v20-starting-pillars-equal-baseline.md.
+# Founding has its own entry, kehillah_found_pillars_at_baseline_effect
+# (kehillah_pillar_model_effects.txt). 2026-11-26: the old rule here ("a
+# founder begins at their initial event state and moves toward their
+# baseline over time", v20) is retired; a founded community now starts at
+# its baseline too.
 # ---------------------------------------------------------------------
 
 kehillah_initialize_historical_pillars_from_baseline_effect = {
@@ -2304,24 +2306,18 @@ kehillah_reconcile_provisional_start_pillars_effect = {
 # the (marker-guarded) initial snapshot and the day-three reconcile.
 kehillah_write_start_baseline_pillars_effect = {
 	holder = {
-		save_scope_value_as = {
-			name = kehillah_start_prosperity_baseline
-			value = kehillah_prosperity_baseline_value
-		}
-		save_scope_value_as = {
-			name = kehillah_start_stability_baseline
-			value = kehillah_stability_baseline_value
-		}
-		save_scope_value_as = {
-			name = kehillah_start_greatness_baseline
-			value = kehillah_greatness_baseline_value
-		}
-
+		# 2026-11-26 (pillar model, kehillah_pillar_model_effects.txt): the
+		# snapshot is the model's own settle with empty pools, i.e. the
+		# baseline under the soft ceiling of the community's gate buildings.
+		# Before, it wrote the raw baseline; a historical community whose
+		# baseline outruns its buildings now opens a little lower.
 		primary_title = {
 			kehillah_init_pillars_effect = yes
-			set_variable = { name = kehillah_var_prosperity value = scope:kehillah_start_prosperity_baseline }
-			set_variable = { name = kehillah_var_stability value = scope:kehillah_start_stability_baseline }
-			set_variable = { name = kehillah_var_greatness value = scope:kehillah_start_greatness_baseline }
+			kehillah_pillar_model_reset_pools_effect = yes
+		}
+		kehillah_pillar_model_settle_effect = yes
+
+		primary_title = {
 			set_variable = { name = kehillah_start_pillars_initialized_from_baseline value = 1 }
 			kehillah_update_standing_effect = yes
 		}
@@ -2528,82 +2524,17 @@ kehillah_quarterly_pillars_effect = {
 	# one that strictly needs it.
 	# ---------------------------------------------------------------
 
-	save_scope_value_as = {
-		name = kehillah_prosperity_convergence_delta
-		value = {
-			value = kehillah_prosperity_baseline_value
-			if = {
-				limit = { primary_title = { exists = var:kehillah_var_prosperity } }
-				subtract = primary_title.var:kehillah_var_prosperity
-			}
-			# V33 (2026-10-12): falls fast toward a lower target, recovers
-			# slowly toward a higher one.
-			if = {
-				limit = {
-					primary_title = { exists = var:kehillah_var_prosperity }
-					kehillah_prosperity_baseline_value < primary_title.var:kehillah_var_prosperity
-				}
-				multiply = kehillah_convergence_rate_down_value
-			}
-			else = {
-				multiply = kehillah_convergence_rate_value
-			}
-		}
-	}
-	save_scope_value_as = {
-		name = kehillah_stability_convergence_delta
-		value = {
-			value = kehillah_stability_baseline_value
-			if = {
-				limit = { primary_title = { exists = var:kehillah_var_stability } }
-				subtract = primary_title.var:kehillah_var_stability
-			}
-			# V33 (2026-10-12): falls fast toward a lower target, recovers
-			# slowly toward a higher one.
-			if = {
-				limit = {
-					primary_title = { exists = var:kehillah_var_stability }
-					kehillah_stability_baseline_value < primary_title.var:kehillah_var_stability
-				}
-				multiply = kehillah_convergence_rate_down_value
-			}
-			else = {
-				multiply = kehillah_convergence_rate_value
-			}
-		}
-	}
-	save_scope_value_as = {
-		name = kehillah_greatness_convergence_delta
-		value = {
-			value = kehillah_greatness_baseline_value
-			if = {
-				limit = { primary_title = { exists = var:kehillah_var_greatness } }
-				subtract = primary_title.var:kehillah_var_greatness
-			}
-			multiply = kehillah_convergence_rate_value
-		}
-	}
-
-	primary_title = {
-		change_variable = {
-			name = kehillah_var_prosperity
-			add = scope:kehillah_prosperity_convergence_delta
-		}
-		change_variable = {
-			name = kehillah_var_stability
-			add = scope:kehillah_stability_convergence_delta
-		}
-		change_variable = {
-			name = kehillah_var_greatness
-			add = scope:kehillah_greatness_convergence_delta
-		}
-		# Never below zero (2026-10-13, V33 soak saw -25). The max is required:
-		# a min-only clamp_variable sets the variable to 0 (live 2026-10-13 --
-		# it zeroed every community's pillars each quarter).
-		clamp_variable = { name = kehillah_var_prosperity min = 0 max = 100000 }
-		clamp_variable = { name = kehillah_var_stability min = 0 max = 100000 }
-		clamp_variable = { name = kehillah_var_greatness min = 0 max = 100000 }
-	}
+	# 2026-11-26: REPLACED by the baseline + deeds + ceiling model
+	# (kehillah_pillar_model_tick_effect, common/scripted_effects/
+	# kehillah_pillar_model_effects.txt; spec docs/spec/2026-11-26-pillar-
+	# ceilings-deeds-and-founding.md). The old block moved each pillar 5%
+	# of the way to its baseline a quarter (15% when falling), so a new
+	# community crawled up for a decade and every deed was dragged back to
+	# the baseline at the same rate. Now structure counts at once, deeds
+	# fade on their own, a baseline fall is cushioned, and each pillar has a
+	# soft ceiling from its gate building track. The model never writes a
+	# negative pillar (its raw sum has min = 0), so the old clamp went too.
+	kehillah_pillar_model_tick_effect = yes
 
 	# ---------------------------------------------------------------
 	# POPULATION PRESSURE (Wave 3 item 3, v2 spec section 2's "soft

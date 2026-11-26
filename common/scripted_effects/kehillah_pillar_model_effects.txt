@@ -1,0 +1,215 @@
+# =====================================================================
+# THE PILLAR MODEL: BASELINE + DEEDS, UNDER A CEILING (2026-11-26)
+# Spec: docs/spec/2026-11-26-pillar-ceilings-deeds-and-founding.md
+# Values: common/script_values/kehillah_pillar_model_values.txt (read its
+# header first: it explains the model).
+#
+# Scope of every effect here: the Kehillah LEADER (character). Pools are
+# stored on the leader's primary_title:
+#   kehillah_deeds_<P>          the deed pool (fades)
+#   kehillah_cushion_<P>        the cushioned part of a baseline fall
+#   kehillah_last_shown_<P>     the value this model last wrote, so the
+#                               next tick can tell what events added since
+#   kehillah_last_baseline_<P>  the baseline at the last tick, so a fall
+#                               can be cushioned
+#
+# EVERY EXISTING WRITE KEEPS WORKING. Events, decisions and council tasks
+# still change kehillah_var_<P> directly (kehillah_change_pillar_effect and
+# ~100 direct change_variable sites). The tick reads the difference since
+# its last write and moves it into the deed pool, so no call site had to
+# change. The cost is the old one: between ticks the shown value already
+# includes a fresh deed, but the soft ceiling only applies at the tick.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# kehillah_pillar_model_tick_effect
+# Called once a quarter from kehillah_quarterly_pillars_effect, in place
+# of the old BASELINE CONVERGENCE block.
+# ---------------------------------------------------------------------
+kehillah_pillar_model_tick_effect = {
+	kehillah_pillar_model_tick_one_effect = { P = prosperity }
+	kehillah_pillar_model_tick_one_effect = { P = stability }
+	kehillah_pillar_model_tick_one_effect = { P = greatness }
+}
+
+# One pillar. $P$ = prosperity / stability / greatness.
+kehillah_pillar_model_tick_one_effect = {
+	save_temporary_scope_value_as = { name = kpm_baseline value = kehillah_$P$_baseline_value }
+	save_temporary_scope_value_as = { name = kpm_ceiling value = kehillah_$P$_ceiling_value }
+
+	primary_title = {
+		# MIGRATION (first tick under this model: a save from before
+		# 2026-11-26, or a community whose pillars were seeded by an old
+		# path). Whatever the community had ABOVE its baseline becomes its
+		# deed pool; whatever it had BELOW is forgiven. Under the old model
+		# a newly founded community sat hundreds of points under its
+		# baseline for a decade; that debt is exactly what this rework
+		# removes, so it is not carried over.
+		if = {
+			limit = { NOT = { has_variable = kehillah_deeds_$P$ } }
+			set_variable = { name = kehillah_deeds_$P$ value = 0 }
+			if = {
+				limit = {
+					has_variable = kehillah_var_$P$
+					var:kehillah_var_$P$ > scope:kpm_baseline
+				}
+				set_variable = {
+					name = kehillah_deeds_$P$
+					value = {
+						value = var:kehillah_var_$P$
+						subtract = scope:kpm_baseline
+					}
+				}
+			}
+			# No last-shown yet, so nothing below is double-counted.
+			set_variable = { name = kehillah_last_shown_$P$ value = var:kehillah_var_$P$ }
+		}
+		if = {
+			limit = { NOT = { has_variable = kehillah_cushion_$P$ } }
+			set_variable = { name = kehillah_cushion_$P$ value = 0 }
+		}
+
+		# 1. What events added since the last tick goes into the deeds.
+		if = {
+			limit = { has_variable = kehillah_last_shown_$P$ }
+			change_variable = { name = kehillah_deeds_$P$ add = var:kehillah_var_$P$ }
+			change_variable = { name = kehillah_deeds_$P$ subtract = var:kehillah_last_shown_$P$ }
+		}
+
+		# 2. A fall in the baseline is cushioned; a rise is not.
+		if = {
+			limit = {
+				has_variable = kehillah_last_baseline_$P$
+				var:kehillah_last_baseline_$P$ > scope:kpm_baseline
+			}
+			change_variable = { name = kehillah_cushion_$P$ add = var:kehillah_last_baseline_$P$ }
+			change_variable = { name = kehillah_cushion_$P$ subtract = scope:kpm_baseline }
+		}
+
+		# 3. Fade both pools.
+		change_variable = {
+			name = kehillah_deeds_$P$
+			multiply = kehillah_deed_retain_value
+		}
+		change_variable = {
+			name = kehillah_cushion_$P$
+			multiply = kehillah_cushion_retain_value
+		}
+		# Drop dust, so a long-forgotten deed reads as nothing.
+		if = {
+			limit = { var:kehillah_deeds_$P$ > -0.5 var:kehillah_deeds_$P$ < 0.5 }
+			set_variable = { name = kehillah_deeds_$P$ value = 0 }
+		}
+		if = {
+			limit = { var:kehillah_cushion_$P$ < 0.5 }
+			set_variable = { name = kehillah_cushion_$P$ value = 0 }
+		}
+	}
+
+	kehillah_pillar_model_settle_one_effect = { P = $P$ }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_pillar_model_settle_effect
+# Writes the shown value of all three pillars from baseline + pools, under
+# the soft ceilings, and records last-shown / last-baseline. No fading.
+# Used by the tick (above), the historical-start snapshot and founding.
+# ---------------------------------------------------------------------
+kehillah_pillar_model_settle_effect = {
+	kehillah_pillar_model_settle_one_effect = { P = prosperity }
+	kehillah_pillar_model_settle_one_effect = { P = stability }
+	kehillah_pillar_model_settle_one_effect = { P = greatness }
+}
+
+kehillah_pillar_model_settle_one_effect = {
+	save_temporary_scope_value_as = { name = kpm_settle_baseline value = kehillah_$P$_baseline_value }
+	save_temporary_scope_value_as = { name = kpm_settle_ceiling value = kehillah_$P$_ceiling_value }
+	primary_title = {
+		if = {
+			limit = { NOT = { has_variable = kehillah_deeds_$P$ } }
+			set_variable = { name = kehillah_deeds_$P$ value = 0 }
+		}
+		if = {
+			limit = { NOT = { has_variable = kehillah_cushion_$P$ } }
+			set_variable = { name = kehillah_cushion_$P$ value = 0 }
+		}
+		# raw = baseline + deeds + cushion, never below 0.
+		save_temporary_scope_value_as = {
+			name = kpm_raw
+			value = {
+				value = scope:kpm_settle_baseline
+				add = var:kehillah_deeds_$P$
+				add = var:kehillah_cushion_$P$
+				min = 0
+			}
+		}
+		# The soft ceiling: above it, a quarter counts.
+		if = {
+			limit = { scope:kpm_raw > scope:kpm_settle_ceiling }
+			set_variable = {
+				name = kehillah_var_$P$
+				value = {
+					value = scope:kpm_raw
+					subtract = scope:kpm_settle_ceiling
+					multiply = kehillah_ceiling_overflow_rate
+					add = scope:kpm_settle_ceiling
+				}
+			}
+		}
+		else = {
+			set_variable = { name = kehillah_var_$P$ value = scope:kpm_raw }
+		}
+		set_variable = { name = kehillah_last_shown_$P$ value = var:kehillah_var_$P$ }
+		set_variable = { name = kehillah_last_baseline_$P$ value = scope:kpm_settle_baseline }
+	}
+}
+
+# ---------------------------------------------------------------------
+# kehillah_pillar_model_reset_pools_effect
+# Scope: a Kehillah title. Empties the pools, for a community whose
+# pillars are being written from scratch (game start, founding).
+# ---------------------------------------------------------------------
+kehillah_pillar_model_reset_pools_effect = {
+	set_variable = { name = kehillah_deeds_prosperity value = 0 }
+	set_variable = { name = kehillah_deeds_stability value = 0 }
+	set_variable = { name = kehillah_deeds_greatness value = 0 }
+	set_variable = { name = kehillah_cushion_prosperity value = 0 }
+	set_variable = { name = kehillah_cushion_stability value = 0 }
+	set_variable = { name = kehillah_cushion_greatness value = 0 }
+	if = { limit = { has_variable = kehillah_last_shown_prosperity } remove_variable = kehillah_last_shown_prosperity }
+	if = { limit = { has_variable = kehillah_last_shown_stability } remove_variable = kehillah_last_shown_stability }
+	if = { limit = { has_variable = kehillah_last_shown_greatness } remove_variable = kehillah_last_shown_greatness }
+	if = { limit = { has_variable = kehillah_last_baseline_prosperity } remove_variable = kehillah_last_baseline_prosperity }
+	if = { limit = { has_variable = kehillah_last_baseline_stability } remove_variable = kehillah_last_baseline_stability }
+	if = { limit = { has_variable = kehillah_last_baseline_greatness } remove_variable = kehillah_last_baseline_greatness }
+}
+
+# ---------------------------------------------------------------------
+# kehillah_found_pillars_at_baseline_effect
+# Scope: the new community's LEADER (character), right after founding,
+# once the domicile, charter and settlement network exist.
+#
+# A newly founded community starts AT its baseline (Daniel, 2026-11-26:
+# "you start with all the pillars basically 0 instead of at their
+# baselines and they slowly slowly crawl up"), plus one founding deed: the
+# settlers' fresh hope, a moderate Stability bonus that fades over years
+# like any other deed. It keeps the +50 the old founding gave, with the
+# meaning it always had ("a new leader takes office with the community's
+# confidence"), now on top of the baseline instead of in place of it.
+#
+# Supersedes the "never call from the founding path" rule of
+# v20-starting-pillars-equal-baseline.md.
+# ---------------------------------------------------------------------
+kehillah_found_pillars_at_baseline_effect = {
+	primary_title = {
+		kehillah_init_pillars_effect = yes
+		kehillah_pillar_model_reset_pools_effect = yes
+		set_variable = { name = kehillah_deeds_stability value = kehillah_founding_hope_stability }
+	}
+	kehillah_pillar_model_settle_effect = yes
+	primary_title = {
+		set_variable = { name = kehillah_start_pillars_initialized_from_baseline value = 1 }
+		kehillah_update_standing_effect = yes
+	}
+	kehillah_update_all_pillar_bands_effect = yes
+}

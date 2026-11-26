@@ -1,0 +1,369 @@
+# =====================================================================
+# THE PILLAR MODEL: BASELINE + DEEDS, UNDER A CEILING (2026-11-26)
+# Spec: docs/spec/2026-11-26-pillar-ceilings-deeds-and-founding.md
+#
+# REPLACES the v2 section 1.2 "baseline convergence" (current += (baseline
+# - current) * 5% a quarter). Daniel's Kligsberg founding (2026-11-26)
+# showed what that model felt like for a new community: it began at
+# Stability 50 / Greatness 0 against baselines near 400 and 100, and
+# crawled up for about a decade. Worse, every deed (a sermon, a ruling, a
+# gift) was pulled back toward the baseline by the same 5%, so actions had
+# almost no lasting leverage; only buildings, offices and charter terms
+# moved standing.
+#
+# The new shown value of each pillar is
+#
+#     shown = soft_ceiling( baseline + deeds + cushion )
+#
+#   - BASELINE: unchanged; kehillah_<pillar>_baseline_value. A building,
+#     an office or a charter term now counts IN FULL AT ONCE.
+#   - DEEDS (title var kehillah_deeds_<pillar>): every change that events,
+#     decisions and council tasks make to kehillah_var_<pillar> between
+#     two quarters is gathered into this pool, which fades by
+#     kehillah_deed_fade_rate_value a quarter. A deed is remembered for
+#     years, then forgotten; standing kept by deeds needs upkeep.
+#   - CUSHION (title var kehillah_cushion_<pillar>): when the baseline
+#     FALLS (an office empties, the host turns cold, war comes), the loss
+#     is not felt at once: the fall goes into the cushion, which fades at
+#     kehillah_cushion_fade_rate_value. That is the player's time to react
+#     (Daniel: "maybe it's good to give a player time to react to losing
+#     status"). A RISE in the baseline is never cushioned: being below
+#     your own baseline was the part that "feels bad".
+#   - SOFT CEILING: each pillar has a ceiling set by its gate building
+#     track (Synagogue: Stability, Beit Midrash: Greatness, Kahal House:
+#     Prosperity). Points above it count at kehillah_ceiling_overflow_rate
+#     (a quarter). A great rabbi in a modest community can still shine,
+#     slowly (Rashi's Troyes), but the next band asks for the building.
+#
+# Scope of every value in this file: the Kehillah LEADER (character), the
+# same scope as the baselines. Pools live on the leader's primary_title,
+# so they survive succession with the community.
+# =====================================================================
+
+# --- Tunables --------------------------------------------------------
+
+# A deed fades by this share each quarter. 0.05 = half gone in about 3.4
+# years, nearly gone in 15. A yearly deed of size A held up for good sits
+# at about A / (1 - 0.95^4) = 5.4 A. The old convergence rate, kept as the
+# deed rate so existing event sizes keep their old felt weight.
+kehillah_deed_fade_rate_value = 0.05
+
+# A baseline loss arrives at this share a quarter: about 15%, so most of
+# it is felt within two years (the old V33 "falls fast" rate).
+kehillah_cushion_fade_rate_value = 0.15
+
+# The same two rates as the share KEPT each quarter (1 - rate), for
+# change_variable's multiply. Keep each pair in step.
+kehillah_deed_retain_value = 0.95
+kehillah_cushion_retain_value = 0.85
+
+# The founding deed: a newly founded community's fresh hope, a moderate
+# Stability bonus that fades like any deed (kehillah_found_pillars_at_
+# baseline_effect). The old founding's +50, kept.
+kehillah_founding_hope_stability = 50
+
+# Points above the ceiling count at this share.
+kehillah_ceiling_overflow_rate = 0.25
+
+# A ceiling high enough to be no ceiling (the top tier of a track).
+kehillah_ceiling_open = 100000
+
+# The ceiling ladder, on the bands' 0-1000 scale (Strained 150, Healthy
+# 400, Flourishing 700, Legendary 950). Every track starts at the Healthy
+# line, so an untended community can be Healthy but no better.
+kehillah_ceiling_level_0 = 250
+kehillah_ceiling_level_1 = 400
+kehillah_ceiling_level_2 = 550
+kehillah_ceiling_level_3 = 700
+kehillah_ceiling_level_4 = 950
+
+# --- Ceilings from the gate tracks ------------------------------------
+
+# STABILITY: the Synagogue (main slot, five tiers). The community that
+# gathers holds together. Tier 1 is every Quarter's free starting
+# building, so the Healthy line is where every community begins.
+kehillah_stability_ceiling_value = {
+	value = kehillah_ceiling_level_1
+	if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_synagogue_05 } }
+		value = kehillah_ceiling_open
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_synagogue_04 } }
+		value = kehillah_ceiling_level_4
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_synagogue_03 } }
+		value = kehillah_ceiling_level_3
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_synagogue_02 } }
+		value = kehillah_ceiling_level_2
+	}
+}
+
+# GREATNESS: the Beit Midrash (school, house of study, yeshiva; five
+# tiers). With none at all, a community is held below the Healthy line.
+kehillah_greatness_ceiling_value = {
+	value = kehillah_ceiling_level_0
+	if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_05 } }
+		value = kehillah_ceiling_open
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_04 } }
+		value = kehillah_ceiling_level_4
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_03 } }
+		value = kehillah_ceiling_level_3
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_02 } }
+		value = kehillah_ceiling_level_2
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_beit_midrash_01 } }
+		value = kehillah_ceiling_level_1
+	}
+}
+
+# PROSPERITY (shown as Affluence): the Kahal House (kehillah_countinghouse_*,
+# three tiers): the communal treasury and its books. Only three tiers, so
+# each one lifts the ceiling a full step.
+kehillah_prosperity_ceiling_value = {
+	value = kehillah_ceiling_level_1
+	if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_countinghouse_03 } }
+		value = kehillah_ceiling_open
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_countinghouse_02 } }
+		value = kehillah_ceiling_level_4
+	}
+	else_if = {
+		limit = { domicile ?= { has_domicile_building_or_higher = kehillah_countinghouse_01 } }
+		value = kehillah_ceiling_level_3
+	}
+}
+
+# --- Pools, as they will stand after this quarter's tick ----------------
+# Each reads the stored pool plus whatever events have added to the shown
+# value since the last tick (var - kehillah_last_shown_<pillar>), then
+# fades it. These mirror, step for step, what kehillah_pillar_model_tick_
+# one_effect does (common/scripted_effects/kehillah_pillar_model_effects.txt);
+# the tick computes them itself with saved scopes so each baseline is
+# evaluated once a quarter, and these exist for the breakdown tooltip's
+# "this season" line. Change one, change the other.
+
+kehillah_prosperity_deeds_next_value = {
+	value = 0
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_deeds_prosperity }
+			add = var:kehillah_deeds_prosperity
+		}
+		if = {
+			limit = { has_variable = kehillah_last_shown_prosperity has_variable = kehillah_var_prosperity }
+			add = var:kehillah_var_prosperity
+			subtract = var:kehillah_last_shown_prosperity
+		}
+	}
+	multiply = kehillah_deed_retain_value
+}
+kehillah_stability_deeds_next_value = {
+	value = 0
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_deeds_stability }
+			add = var:kehillah_deeds_stability
+		}
+		if = {
+			limit = { has_variable = kehillah_last_shown_stability has_variable = kehillah_var_stability }
+			add = var:kehillah_var_stability
+			subtract = var:kehillah_last_shown_stability
+		}
+	}
+	multiply = kehillah_deed_retain_value
+}
+kehillah_greatness_deeds_next_value = {
+	value = 0
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_deeds_greatness }
+			add = var:kehillah_deeds_greatness
+		}
+		if = {
+			limit = { has_variable = kehillah_last_shown_greatness has_variable = kehillah_var_greatness }
+			add = var:kehillah_var_greatness
+			subtract = var:kehillah_last_shown_greatness
+		}
+	}
+	multiply = kehillah_deed_retain_value
+}
+
+# The cushion: the stored cushion plus any fall of the baseline since the
+# last tick, faded at the cushion rate.
+kehillah_prosperity_cushion_next_value = {
+	value = 0
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_cushion_prosperity }
+			add = var:kehillah_cushion_prosperity
+		}
+	}
+	# Any fall of the baseline since the last tick (never a rise).
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_last_baseline_prosperity } }
+		add = {
+			value = primary_title.var:kehillah_last_baseline_prosperity
+			subtract = kehillah_prosperity_baseline_value
+			min = 0
+		}
+	}
+	multiply = kehillah_cushion_retain_value
+}
+kehillah_stability_cushion_next_value = {
+	value = 0
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_cushion_stability }
+			add = var:kehillah_cushion_stability
+		}
+	}
+	# Any fall of the baseline since the last tick (never a rise).
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_last_baseline_stability } }
+		add = {
+			value = primary_title.var:kehillah_last_baseline_stability
+			subtract = kehillah_stability_baseline_value
+			min = 0
+		}
+	}
+	multiply = kehillah_cushion_retain_value
+}
+kehillah_greatness_cushion_next_value = {
+	value = 0
+	primary_title ?= {
+		if = {
+			limit = { has_variable = kehillah_cushion_greatness }
+			add = var:kehillah_cushion_greatness
+		}
+	}
+	# Any fall of the baseline since the last tick (never a rise).
+	if = {
+		limit = { primary_title ?= { has_variable = kehillah_last_baseline_greatness } }
+		add = {
+			value = primary_title.var:kehillah_last_baseline_greatness
+			subtract = kehillah_greatness_baseline_value
+			min = 0
+		}
+	}
+	multiply = kehillah_cushion_retain_value
+}
+
+# --- The shown value after this quarter's tick -------------------------
+# raw = baseline + deeds + cushion, never below 0; then the soft ceiling.
+
+kehillah_prosperity_raw_next_value = {
+	value = kehillah_prosperity_baseline_value
+	add = kehillah_prosperity_deeds_next_value
+	add = kehillah_prosperity_cushion_next_value
+	min = 0
+}
+kehillah_stability_raw_next_value = {
+	value = kehillah_stability_baseline_value
+	add = kehillah_stability_deeds_next_value
+	add = kehillah_stability_cushion_next_value
+	min = 0
+}
+kehillah_greatness_raw_next_value = {
+	value = kehillah_greatness_baseline_value
+	add = kehillah_greatness_deeds_next_value
+	add = kehillah_greatness_cushion_next_value
+	min = 0
+}
+
+kehillah_prosperity_target_value = {
+	# min(raw, ceiling) + max(0, raw - ceiling) * overflow rate
+	value = kehillah_prosperity_raw_next_value
+	max = kehillah_prosperity_ceiling_value
+	add = {
+		value = kehillah_prosperity_raw_next_value
+		subtract = kehillah_prosperity_ceiling_value
+		min = 0
+		multiply = kehillah_ceiling_overflow_rate
+	}
+}
+kehillah_stability_target_value = {
+	# min(raw, ceiling) + max(0, raw - ceiling) * overflow rate
+	value = kehillah_stability_raw_next_value
+	max = kehillah_stability_ceiling_value
+	add = {
+		value = kehillah_stability_raw_next_value
+		subtract = kehillah_stability_ceiling_value
+		min = 0
+		multiply = kehillah_ceiling_overflow_rate
+	}
+}
+kehillah_greatness_target_value = {
+	# min(raw, ceiling) + max(0, raw - ceiling) * overflow rate
+	value = kehillah_greatness_raw_next_value
+	max = kehillah_greatness_ceiling_value
+	add = {
+		value = kehillah_greatness_raw_next_value
+		subtract = kehillah_greatness_ceiling_value
+		min = 0
+		multiply = kehillah_ceiling_overflow_rate
+	}
+}
+
+# --- For the breakdown tooltip ----------------------------------------
+
+# Deeds and cushion together, as the player reads them: "recent deeds"
+# (signed). Read from the stored pools, not the next tick.
+kehillah_prosperity_deeds_shown_value = {
+	value = 0
+	primary_title ?= {
+		if = { limit = { has_variable = kehillah_deeds_prosperity } add = var:kehillah_deeds_prosperity }
+		if = {
+			limit = { has_variable = kehillah_last_shown_prosperity has_variable = kehillah_var_prosperity }
+			add = var:kehillah_var_prosperity
+			subtract = var:kehillah_last_shown_prosperity
+		}
+	}
+}
+kehillah_stability_deeds_shown_value = {
+	value = 0
+	primary_title ?= {
+		if = { limit = { has_variable = kehillah_deeds_stability } add = var:kehillah_deeds_stability }
+		if = {
+			limit = { has_variable = kehillah_last_shown_stability has_variable = kehillah_var_stability }
+			add = var:kehillah_var_stability
+			subtract = var:kehillah_last_shown_stability
+		}
+	}
+}
+kehillah_greatness_deeds_shown_value = {
+	value = 0
+	primary_title ?= {
+		if = { limit = { has_variable = kehillah_deeds_greatness } add = var:kehillah_deeds_greatness }
+		if = {
+			limit = { has_variable = kehillah_last_shown_greatness has_variable = kehillah_var_greatness }
+			add = var:kehillah_var_greatness
+			subtract = var:kehillah_last_shown_greatness
+		}
+	}
+}
+kehillah_prosperity_cushion_shown_value = {
+	value = 0
+	primary_title ?= { if = { limit = { has_variable = kehillah_cushion_prosperity } add = var:kehillah_cushion_prosperity } }
+}
+kehillah_stability_cushion_shown_value = {
+	value = 0
+	primary_title ?= { if = { limit = { has_variable = kehillah_cushion_stability } add = var:kehillah_cushion_stability } }
+}
+kehillah_greatness_cushion_shown_value = {
+	value = 0
+	primary_title ?= { if = { limit = { has_variable = kehillah_cushion_greatness } add = var:kehillah_cushion_greatness } }
+}

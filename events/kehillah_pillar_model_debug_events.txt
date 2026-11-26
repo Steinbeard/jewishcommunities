@@ -1,0 +1,68 @@
+﻿# =====================================================================
+# CONSOLE-ONLY PROBES for the 2026-11-26 pillar model
+# (docs/spec/2026-11-26-pillar-ceilings-deeds-and-founding.md).
+# Fire on the player (a Kehillah leader):
+#   event kehillah_pillar_debug.1   log baseline / deeds / cushion /
+#                                   ceiling / shown / next for each pillar
+#   event kehillah_pillar_debug.2   run one quarterly tick now, then log
+#   event kehillah_pillar_debug.3   add a +100 Greatness deed, then log
+#   event kehillah_pillar_debug.4   re-found at baseline (the founding
+#                                   path), then log
+# Results go to debug.log, prefix "PILLARMODEL".
+# =====================================================================
+namespace = kehillah_pillar_debug
+
+scripted_effect kehillah_pillar_debug_log_one_effect = {
+	save_scope_value_as = { name = kpd_base value = kehillah_$P$_baseline_value }
+	save_scope_value_as = { name = kpd_ceiling value = kehillah_$P$_ceiling_value }
+	save_scope_value_as = { name = kpd_deeds value = kehillah_$P$_deeds_shown_value }
+	save_scope_value_as = { name = kpd_cushion value = kehillah_$P$_cushion_shown_value }
+	save_scope_value_as = { name = kpd_next value = kehillah_$P$_target_value }
+	primary_title = {
+		save_scope_value_as = { name = kpd_shown value = var:kehillah_var_$P$ }
+	}
+	debug_log = "PILLARMODEL $P$"
+	debug_log_scopes = yes
+}
+
+kehillah_pillar_debug.1 = {
+	type = character_event
+	hidden = yes
+	trigger = { exists = primary_title }
+	immediate = {
+		kehillah_pillar_debug_log_one_effect = { P = prosperity }
+		kehillah_pillar_debug_log_one_effect = { P = stability }
+		kehillah_pillar_debug_log_one_effect = { P = greatness }
+	}
+}
+
+kehillah_pillar_debug.2 = {
+	type = character_event
+	hidden = yes
+	trigger = { exists = primary_title }
+	immediate = {
+		kehillah_pillar_model_tick_effect = yes
+		kehillah_update_all_pillar_bands_effect = yes
+		trigger_event = kehillah_pillar_debug.1
+	}
+}
+
+kehillah_pillar_debug.3 = {
+	type = character_event
+	hidden = yes
+	trigger = { exists = primary_title }
+	immediate = {
+		primary_title = { change_variable = { name = kehillah_var_greatness add = 100 } }
+		trigger_event = kehillah_pillar_debug.1
+	}
+}
+
+kehillah_pillar_debug.4 = {
+	type = character_event
+	hidden = yes
+	trigger = { exists = primary_title }
+	immediate = {
+		kehillah_found_pillars_at_baseline_effect = yes
+		trigger_event = kehillah_pillar_debug.1
+	}
+}
