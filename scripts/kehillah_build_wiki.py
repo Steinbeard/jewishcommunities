@@ -18,7 +18,7 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/wiki"
 REPO = "https://github.com/Steinbeard/jewishcommunities"
-REVIEWED = "2026-11-25"
+REVIEWED = "2026-11-26"
 
 
 def escape(value):
@@ -229,7 +229,11 @@ def main():
     (output / "images").mkdir(exist_ok=True)
     for name in ("wiki.css", "wiki.js"):
         shutil.copyfile(SOURCE / name, output / "assets" / name)
-    for name in ("jewish-quarter.jpg", "quarter-map.jpg", "library.jpg", "bet-din-sitting.jpg"):
+    # Publish exactly the screenshots the articles use, not the whole docs/images folder.
+    images = sorted({m for a in articles for m in re.findall(r'src="images/([A-Za-z0-9._-]+)"', a["body"])})
+    for name in images:
+        if not (ROOT / "docs/images" / name).is_file():
+            raise ValueError(f"Missing wiki image: docs/images/{name}")
         shutil.copyfile(ROOT / "docs/images" / name, output / "images" / name)
     search = [{"title": a["title"], "url": a["slug"] + ".html", "summary": a["summary"], "text": plain(a["body"])} for a in articles] + book_entries
     # Inline index keeps search usable from a local file as well as Pages.

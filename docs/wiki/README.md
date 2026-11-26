@@ -21,7 +21,7 @@ The book page excludes empty procedural slots. Bookmark columns compare configur
 3. In repository Settings → Pages, select **GitHub Actions** as the build source if it is not already selected. This is an owner/admin setting, not an operation performed by the builder.
 4. Run or inspect **Build and publish the player wiki**. PRs build an artifact; only `master` deploys. Verify the deploy job and the existing public URL.
 
-The workflow publishes only generated wiki pages, four existing public-facing screenshots, and the wiki's assets. It does not publish the whole development documentation tree. Source/test records remain linked on GitHub. Once publication succeeds, add a prominent wiki link to the repository README.
+The workflow publishes only generated wiki pages, the screenshots in `docs/images/` that the articles reference (the builder fails on a missing one), and the wiki's assets. It does not publish the whole development documentation tree. Source/test records remain linked on GitHub. Once publication succeeds, add a prominent wiki link to the repository README.
 
 ## Maintain with feature changes
 
