@@ -1,0 +1,120 @@
+﻿# =====================================================================
+# The scholarship hub (2026-11-25, Daniel): the full-screen window that holds
+# the library, acquisition, the scholar's profile, the Ledger of Sefarim and
+# the explanation of standing (gui/kehillah_sefarim_ledger.gui). Spec:
+# docs/spec/2026-11-25-full-screen-sefarim-ledger.md. root = the player in
+# every one of these.
+# =====================================================================
+
+# Open the hub (or refresh it on a tab change): the ledger's own preparation
+# (as kehillah_lib_ledger_open), the player's home library as the Library
+# tab's view, and the list of every library for the tab's selector.
+kehillah_hub_open = {
+	scope = character
+	is_shown = { always = yes }
+	is_valid = { always = yes }
+	effect = {
+		kehillah_ledger_refresh_rites_effect = yes
+		remove_variable = kehillah_ledger_by_name
+		remove_variable = kehillah_ledger_by_rank
+		kehillah_ledger_rebuild_effect = yes
+		kehillah_lib_cache_authors_effect = yes
+		if = {
+			limit = { kehillah_lib_can_commission_trigger = yes }
+			kehillah_library_refresh_acquisition_candidates_effect = yes
+		}
+		kehillah_lib_refresh_own_library_effect = yes
+		if = {
+			limit = { exists = var:kehillah_own_library }
+			set_variable = { name = kehillah_lib_view_owner value = this }
+			set_variable = { name = kehillah_lib_view_title value = var:kehillah_own_library }
+		}
+		else_if = {
+			limit = {
+				exists = var:kehillah_lib_view_title
+				NOT = { var:kehillah_lib_view_title = { kehillah_lib_is_library_title_trigger = yes } }
+			}
+			remove_variable = kehillah_lib_view_title
+		}
+		clear_variable_list = kehillah_hub_libraries
+		every_in_global_list = {
+			variable = kehillah_libraries
+			limit = { exists = holder }
+			root = { add_to_variable_list = { name = kehillah_hub_libraries target = prev } }
+		}
+		# The profile reads the player's own lists, through the Learning
+		# window's view variable.
+		set_variable = { name = kehillah_learning_view value = this }
+	}
+}
+
+# Show scope:library in the Library tab. As kehillah_lib_window_open_title.
+kehillah_hub_view_library = {
+	scope = character
+	saved_scopes = { library }
+	is_shown = { scope:library = { kehillah_lib_is_library_title_trigger = yes } }
+	is_valid = { scope:library = { kehillah_lib_is_library_title_trigger = yes } }
+	effect = {
+		scope:library.holder = { kehillah_lib_refresh_own_library_effect = yes }
+		set_variable = { name = kehillah_lib_view_owner value = scope:library.holder }
+		set_variable = { name = kehillah_lib_view_title value = scope:library }
+	}
+}
+
+# Plan a Yeshiva Visit to scope:library: the planner opens with it as the
+# destination and, as the work to take up there, one it holds that the
+# player has not mastered (V49's plan, kehillah_journey_set_plan_effect).
+kehillah_hub_visit_library = {
+	scope = character
+	saved_scopes = { library }
+	is_shown = { always = yes }
+	is_valid = {
+		kehillah_journey_can_plan_trigger = yes
+		scope:library = {
+			NOT = { this = root.primary_title }
+			exists = holder
+			custom_description = {
+				text = KEHILLAH_HUB_VISIT_REQ_UNREAD
+				any_in_list = {
+					variable = kehillah_library_works
+					NOT = { root = { is_target_in_variable_list = { name = kehillah_mastered_works target = prev } } }
+				}
+			}
+		}
+	}
+	effect = {
+		scope:library = {
+			random_in_list = {
+				variable = kehillah_library_works
+				limit = { NOT = { root = { is_target_in_variable_list = { name = kehillah_mastered_works target = prev } } } }
+				save_scope_as = kehillah_hub_visit_work
+			}
+		}
+		kehillah_journey_set_plan_effect = { TITLE = scope:library WORK = scope:kehillah_hub_visit_work }
+	}
+}
+
+# Does the player hold a temple holding, where a Beit Midrash can be built?
+kehillah_hub_holds_temple = {
+	scope = character
+	is_shown = { always = yes }
+	is_valid = {
+		any_held_title = {
+			tier = tier_barony
+			title_province ?= { has_holding_type = church_holding }
+		}
+	}
+}
+
+# Is the player a landed Jewish ruler (who reads at a temple-holding library)?
+kehillah_hub_is_landed_jew = {
+	scope = character
+	is_shown = { always = yes }
+	is_valid = { kehillah_is_jewish_landed_ruler_trigger = yes }
+}
+
+# The character-window chip that opens the hub: on a Jewish character.
+kehillah_hub_chip = {
+	scope = character
+	is_shown = { faith.religion = religion:judaism_religion }
+}
