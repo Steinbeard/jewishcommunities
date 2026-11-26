@@ -8,3 +8,7 @@ The first matching domicile asset wins. For a domicile at `b_jerusalem`, the fir
 Both paintings and the generated DDS need an actual Luna live UI check after a restart: start at Jerusalem with the Dome, upgrade it to the Temple and reopen the panel, check the landmark swaps and matches the existing slots/foreground, check a non-Jerusalem community and an absent-landmark fallback, and compare error logs to baseline. Building asset refresh without reopening the window is not established. No Luna tester was available for this pass.
 
 Static checks: both DDS decode at 2412×1112; xTiger reports match the pre-change baseline aside from shifted line numbers (0 fatal, 447 errors, 809 warnings, 37 untidy, 152 tips).
+
+## Old City redraw — 2026-11-25
+
+Daniel requested a more recognizable Jerusalem, with the Kotel and Har HaBayit at the side. The two `kehillah_quarter_jerusalem_*_old_city_v2.png` source paintings replace the original game textures through the same packer. Built-in imagegen first edited the Dome scene to add tightly packed limestone Old City buildings and a Western Wall plaza below the elevated Temple Mount on the right. It then edited that new painting to replace the Dome with an imagined rebuilt Temple, retaining the wall and shared surroundings. The original sources remain. The landmark selection and pins are unchanged. The new wall and gate occupy more of the right skyline, so verify the existing entrance sprite and any building overlap in a live UI check; the static paintings do not prove their in-game alignment.

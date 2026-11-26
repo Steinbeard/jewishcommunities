@@ -9,7 +9,7 @@ OUTPUT = ROOT / 'gfx/interface/window_domiciles'
 
 def main():
     for landmark in ('dome', 'temple'):
-        image = Image.open(SOURCE / f'kehillah_quarter_jerusalem_{landmark}_imagegen.png').convert('RGB')
+        image = Image.open(SOURCE / f'kehillah_quarter_jerusalem_{landmark}_old_city_v2.png').convert('RGB')
         if abs(image.width / image.height - 2412 / 1112) > 0.01:
             raise ValueError(f'Unexpected {landmark} image proportions')
         image.resize((2412, 1112), Image.Resampling.LANCZOS).save(
