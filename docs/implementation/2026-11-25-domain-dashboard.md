@@ -87,3 +87,30 @@ baseline term is added, add it to a group too.**
 - The baseline tick sits where "Heading for N" says, and the card heights match.
 - The danger chip opens Community Safety, not Your Armies.
 - Hover every card and the chip, then check `error.log`.
+
+## Third request (2026-11-25): chip wording, what the pillars open, Monthly Income
+
+- **Chip tooltips all read "strongly lifting it".** The size-word custom locs compared the
+  `_frame_value` with `= 5` etc. They now compare the group's sum with the same cut-offs the
+  frame uses (`>= 150`, `> 25`, `< -25`, `<= -150`), the comparison form the breakdown's own
+  custom locs use.
+- **What each pillar opens.** A one-line strip at the foot of each card (cards now 236 px), with
+  the whole ladder as its tooltip. Only gates the script really reads are named:
+  - **Affluence** (`kehillah_mutual_aid_triggers.txt`, `kehillah_household_values.txt`):
+    Strained or lower may ask other communities for help; Healthy is expected to answer
+    neighbours' appeals and draws more families; Flourishing hears appeals from twice as far;
+    Legendary from anywhere. Wealth also raises danger.
+  - **Stability** (`kehillah_danger_stability_value`, `kehillah_household_departure_chance_value`,
+    the yeshiva trigger): lowers danger throughout; at Crisis, families leave; Healthy is needed
+    to found a yeshiva.
+  - **Greatness** (`kehillah_sheelah_posek_trigger`, the yeshiva trigger): Healthy lets other
+    leaders send your rabbi she'elot; Strained is needed to found a yeshiva. Renown also raises
+    danger.
+  **When one of these gates moves, update `KehillahDomPerk*` and the `_PERK_TT` keys too.**
+- **Monthly Income** is three cards in the pillar cards' form (`kehillah_income_card`): a colour
+  strip, the icon and the month's total (hover: vanilla's balance breakdown), then a short
+  ledger of label/value rows (Quarter, the pillar band, and Tribute on gold), each row with its
+  own tooltip. Same 104 px height as before. `kehillah_income_tile` is no longer used here.
+
+Live-test: the tab still fits; each chip's words match its arrow; the perk line fits in one line
+at every band (the longest is "Too little known for she'elot").

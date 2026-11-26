@@ -64,3 +64,31 @@ changes any mechanic.
 - The style card's picture follows the selected tile, and the dimmed picture shows when no style
   is chosen.
 - Hover each term and the favour line, then check `error.log`.
+
+## Second pass (2026-11-25, after Daniel's first look)
+
+Daniel: the tab runs past the bottom once the vanilla law rows show; dark squares sit beside the
+terms; the Talmudic Study icon is missing; were Muslim charters considered; the leadership
+choices are too text-heavy and their tooltips confusing.
+
+- **Pips removed.** The three-pip meter drew as two dark notches with no bar behind it. The strip
+  already gives the favour, so the meter is gone (`kehillah_laws_pips3` deleted).
+- **Talmudic Study / Market Access icon.** The card picked its texture with a `Select_CString`,
+  which drew nothing live. It now has two icons, shown by visibility: the learning book when the
+  charter holds `kehillah_charter_cache_text_study`, gold otherwise (the Muslim charter's Market
+  Access).
+- **Muslim charters.** The construction, security and jurisdiction labels already read the same
+  for both packages, and each value comes from the package's own keys. Two labels now follow the
+  package: under a Muslim host the section header is **The Dhimma Covenant** and the tribute term
+  is **Jizya** (`KehillahCharterHeader`, `KehillahCharterLabelTribute`), as the settlement and
+  mob events already call them. Display only.
+- **Height.** Term cards are 50 px (were 56); the grid is 162 px (was 186).
+- **Leadership style.** Tiles are 120 px (were 160) with one-word captions (Scholars, Parnasim,
+  Merchants). The style card shows one summary line and the mandate line; the full list moved to
+  the card's tooltip, which is the active style's own tile tooltip. The tile tooltips were
+  rewritten in the vanilla layout: a title, one flavour line, one bulleted effect per line, the
+  succession weighting in words, and the ten-year mandate at the foot. The old effects block
+  (`KehillahLeadershipStyleEffects`, `kehillah_leadership_*_effects`) is now unused.
+
+Live-test: the Laws tab fits without a scrollbar with the Succession and Gender law boxes shown;
+a Muslim-hosted community shows The Dhimma Covenant, Jizya and the gold Market Access icon.
