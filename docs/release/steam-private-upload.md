@@ -17,6 +17,9 @@ The staging script now takes `supported_version` from the dev `descriptor.mod`.
   **Reload** (leave "clear out cached information" unticked). The list then shows the new version.
 
 
+**2026-11-26: 0.2.0-prealpha** staged from `master@449a091a` (360 MB) for Daniel to boot-test and upload.
+Change note: `docs/release/steam-change-note-0.2.0.bbcode.txt`.
+
 ## Why not upload the dev folder
 
 The launcher uploads **the whole mod folder**. `mod/jewishcommunities` is about 270 MB, and half
@@ -98,7 +101,7 @@ lists the newer screens that still need capturing.
 
 ## 6. Shipping an update
 
-1. Commit in the dev repo, then rerun `python scripts/kehillah_build_release.py --version 0.1.N-prealpha`.
+1. Commit in the dev repo, then rerun `python scripts/kehillah_build_release.py --version 0.N.N-prealpha`.
 2. Smoke-test (step 2).
 3. Close and reopen the launcher, choose **Upload mod**, then the same mod, and add a change note.
    It updates the existing item.
