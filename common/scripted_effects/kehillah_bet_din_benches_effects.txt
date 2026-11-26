@@ -1,0 +1,677 @@
+﻿# The bench and the benches (2026-11-25, Daniel). The design is in the header
+# of common/scripted_triggers/kehillah_bet_din_benches_triggers.txt.
+
+# =====================================================================
+# SEATING
+# =====================================================================
+
+# Scope: the convener, from kehillah_bet_din_open_docket_effect (first
+# phase's on_phase_active: scope:activity and scope:host). Seats the court:
+# the convener presides; two co-judges are found by
+# kehillah_bet_din_fill_seat_effect. Leaves judge3 unset if no court can sit.
+kehillah_bet_din_seat_panel_effect = {
+	scope:activity = {
+		set_variable = { name = kehillah_bet_din_av_beit_din value = scope:host }
+		if = { limit = { has_variable = kehillah_bet_din_judge2 } remove_variable = kehillah_bet_din_judge2 }
+		if = { limit = { has_variable = kehillah_bet_din_judge3 } remove_variable = kehillah_bet_din_judge3 }
+	}
+	scope:host = {
+		if = { limit = { has_variable = kehillah_bet_din_lay_seat } remove_variable = kehillah_bet_din_lay_seat }
+		# A Parnas without semicha presides by his kavod and learning, at a
+		# penalty (kehillah_bet_din_benches.0001 tells him so).
+		if = {
+			limit = { NOT = { kehillah_bet_din_qualified_judge_trigger = yes } }
+			set_variable = { name = kehillah_bet_din_lay_seat value = yes days = 120 }
+		}
+	}
+	kehillah_bet_din_fill_seat_effect = { SEAT = judge2 }
+	kehillah_bet_din_fill_seat_effect = { SEAT = judge3 }
+}
+
+# SEAT: judge2 or judge3. Four passes, each only if the seat is still empty:
+#   1. a qualified attendee, best score first (kehillah_bet_din_judge_score_value:
+#      the community's own rabbi, then fellow leaders, then a player, then
+#      judicial Learning);
+#   2. a qualified member of the host's household at the Quarter, summoned;
+#   3. a learned layman among the attendees, at the lay penalty;
+#   4. a learned layman of the household, summoned, at the lay penalty.
+kehillah_bet_din_fill_seat_effect = {
+	if = {
+		limit = { NOT = { exists = scope:activity.var:kehillah_bet_din_$SEAT$ } }
+
+		scope:activity = {
+			ordered_attending_character = {
+				order_by = kehillah_bet_din_judge_score_value
+				limit = {
+					kehillah_bet_din_unseated_trigger = yes
+					kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+				}
+				save_temporary_scope_as = kbd_seat_$SEAT$
+			}
+		}
+
+		if = {
+			limit = { NOT = { exists = scope:kbd_seat_$SEAT$ } }
+			scope:host = {
+				ordered_courtier = {
+					order_by = kehillah_bet_din_judge_score_value
+					limit = {
+						kehillah_bet_din_household_available_trigger = yes
+						kehillah_bet_din_unseated_trigger = yes
+						kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+					}
+					save_temporary_scope_as = kbd_seat_$SEAT$
+					add_to_activity_without_travel = scope:activity
+				}
+			}
+		}
+
+		if = {
+			limit = { NOT = { exists = scope:kbd_seat_$SEAT$ } }
+			scope:activity = {
+				ordered_attending_character = {
+					order_by = kehillah_judicial_learning_value
+					limit = {
+						kehillah_bet_din_unseated_trigger = yes
+						kehillah_bet_din_may_attend_trigger = { HOST = scope:host }
+						kehillah_bet_din_lay_judge_capable_trigger = yes
+					}
+					save_temporary_scope_as = kbd_seat_$SEAT$
+					set_variable = { name = kehillah_bet_din_lay_seat value = yes days = 120 }
+				}
+			}
+		}
+
+		if = {
+			limit = { NOT = { exists = scope:kbd_seat_$SEAT$ } }
+			scope:host = {
+				ordered_courtier = {
+					order_by = kehillah_judicial_learning_value
+					limit = {
+						kehillah_bet_din_household_available_trigger = yes
+						kehillah_bet_din_unseated_trigger = yes
+						kehillah_bet_din_may_attend_trigger = { HOST = scope:host }
+						kehillah_bet_din_lay_judge_capable_trigger = yes
+					}
+					save_temporary_scope_as = kbd_seat_$SEAT$
+					set_variable = { name = kehillah_bet_din_lay_seat value = yes days = 120 }
+					add_to_activity_without_travel = scope:activity
+				}
+			}
+		}
+
+		if = {
+			limit = { exists = scope:kbd_seat_$SEAT$ }
+			scope:activity = { set_variable = { name = kehillah_bet_din_$SEAT$ value = scope:kbd_seat_$SEAT$ } }
+		}
+	}
+}
+
+# Scope: the convener. No court of three could be seated. The caller
+# invalidates the activity; the event refunds the Piety it cost. There is no
+# effect that lifts an activity cooldown, so that stays.
+kehillah_bet_din_cannot_sit_effect = {
+	scope:host = {
+		if = { limit = { has_variable = kehillah_bet_din_lay_seat } remove_variable = kehillah_bet_din_lay_seat }
+		trigger_event = kehillah_bet_din_benches.0002
+	}
+	scope:activity = {
+		every_attending_character = {
+			limit = { has_variable = kehillah_bet_din_lay_seat }
+			remove_variable = kehillah_bet_din_lay_seat
+		}
+	}
+}
+
+# Scope: the convener, once the court is seated. Tells everyone where they
+# sit and starts the intents that act at the opening (study, complaint).
+kehillah_bet_din_open_benches_effect = {
+	if = {
+		limit = { scope:host = { has_variable = kehillah_bet_din_lay_seat } }
+		scope:host = { trigger_event = kehillah_bet_din_benches.0001 }
+	}
+	scope:activity = {
+		every_attending_character = {
+			limit = { NOT = { this = scope:host } }
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_bet_din_benches.0003
+			}
+			if = {
+				limit = { has_activity_intent = kehillah_bet_din_study_intent }
+				trigger_event = kehillah_bet_din_benches.0020
+			}
+			if = {
+				limit = { has_activity_intent = kehillah_bet_din_complaint_intent }
+				kehillah_bet_din_complaint_open_effect = yes
+			}
+		}
+	}
+}
+
+# =====================================================================
+# THE BENCHES LEAN (follow the docket)
+#
+# When a case is drawn, everyone on the benches who follows the docket
+# favours one of its positions. A player chooses (kehillah_bet_din_benches.
+# 0010); the AI picks at random. Each voice that carries (a Learning roll)
+# adds kehillah_bet_din_rows_success_weight to that position, capped at
+# kehillah_bet_din_rows_max_weight per position, below one judge's
+# successful argument (20): the bench decides, the benches can tip a close
+# court. The ruling screen names the benches' leaning in one line.
+# The window closes when the court counts (kehillah_bet_din_rows_count_
+# effect); a player who answers later is told he was too late.
+# =====================================================================
+
+# Scope: the convener, after a case is drawn (scope:activity).
+kehillah_bet_din_rows_open_case_effect = {
+	scope:activity = {
+		if = {
+			limit = {
+				var:kehillah_bet_din_case_drawn ?= 1
+				exists = var:kehillah_din_case
+			}
+			set_variable = { name = kehillah_din_rows_open value = var:kehillah_din_case }
+			set_variable = { name = kehillah_din_rows_1 value = 0 }
+			set_variable = { name = kehillah_din_rows_2 value = 0 }
+			set_variable = { name = kehillah_din_rows_3 value = 0 }
+			every_attending_character = {
+				limit = {
+					has_activity_intent = kehillah_bet_din_follow_docket_intent
+					kehillah_bet_din_unseated_trigger = yes
+				}
+				if = {
+					limit = { is_ai = no }
+					set_variable = { name = kehillah_bet_din_rows_case value = scope:activity.var:kehillah_din_case days = 60 }
+					trigger_event = kehillah_bet_din_benches.0010
+				}
+				else = {
+					random_list = {
+						1 = { random = { chance = kehillah_bet_din_rows_chance_value kehillah_bet_din_rows_add_effect = { POSITION = 1 } } }
+						1 = { random = { chance = kehillah_bet_din_rows_chance_value kehillah_bet_din_rows_add_effect = { POSITION = 2 } } }
+						1 = {
+							trigger = { scope:activity.var:kehillah_din_case > 3 }
+							random = { chance = kehillah_bet_din_rows_chance_value kehillah_bet_din_rows_add_effect = { POSITION = 3 } }
+						}
+					}
+					kehillah_bet_din_rows_xp_effect = yes
+				}
+			}
+		}
+	}
+}
+
+# Scope: a player follower, from kehillah_bet_din_benches.0010. The roll is
+# the option's own, so the game shows its odds; a toast reports it.
+kehillah_bet_din_rows_player_lean_effect = {
+	random_list = {
+		0 = {
+			modifier = { add = kehillah_bet_din_rows_chance_value }
+			desc = kehillah_bet_din_rows_heard
+			send_interface_toast = {
+				type = event_toast_text_and_effect_good
+				title = kehillah_toast_success
+				desc = kehillah_bet_din_rows_heard_desc
+				left_icon = root
+				kehillah_bet_din_rows_add_effect = { POSITION = $POSITION$ }
+				custom_tooltip = kehillah_bet_din_rows_heard_tt
+			}
+		}
+		0 = {
+			modifier = { add = { value = 100 subtract = kehillah_bet_din_rows_chance_value } }
+			desc = kehillah_bet_din_rows_unheard
+			send_interface_toast = {
+				type = event_toast_text_neutral
+				title = kehillah_toast_failure
+				desc = kehillah_bet_din_rows_unheard_desc
+				left_icon = root
+			}
+		}
+	}
+	kehillah_bet_din_rows_xp_effect = yes
+}
+
+# Scope: a follower. His voice carried: add weight to POSITION.
+kehillah_bet_din_rows_add_effect = {
+	involved_activity = {
+		change_variable = { name = kehillah_din_rows_$POSITION$ add = kehillah_bet_din_rows_success_weight }
+		clamp_variable = { name = kehillah_din_rows_$POSITION$ min = 0 max = kehillah_bet_din_rows_max_weight }
+	}
+}
+
+# Scope: a follower. Following a case closely: track experience for a rabbi
+# or a Karaite scholar, Learning lifestyle experience for anyone else.
+kehillah_bet_din_rows_xp_effect = {
+	if = {
+		limit = { has_trait = kehillah_rabbi_trait }
+		add_trait_xp = { trait = kehillah_rabbi_trait track = talmudics value = kehillah_bet_din_rows_xp }
+	}
+	else_if = {
+		limit = { kehillah_is_karaite_character_trigger = yes has_trait = lifestyle_scholar }
+		kehillah_karaite_scholar_xp_effect = { XP = kehillah_bet_din_rows_xp }
+	}
+	else = {
+		add_learning_lifestyle_xp = kehillah_bet_din_rows_lifestyle_xp
+	}
+}
+
+# Scope: the activity, from kehillah_din_count_argument_panel_effect. Adds
+# the benches' weight to the panel and records their leaning for display.
+kehillah_bet_din_rows_count_effect = {
+	if = {
+		limit = { has_variable = kehillah_din_rows_open }
+		change_variable = { name = kehillah_din_panel_1_weight add = var:kehillah_din_rows_1 }
+		change_variable = { name = kehillah_din_panel_2_weight add = var:kehillah_din_rows_2 }
+		change_variable = { name = kehillah_din_panel_3_weight add = var:kehillah_din_rows_3 }
+		set_variable = { name = kehillah_din_rows_winner value = 0 }
+		set_variable = { name = kehillah_din_rows_best value = 0 }
+		kehillah_bet_din_rows_compare_effect = { POSITION = 1 }
+		kehillah_bet_din_rows_compare_effect = { POSITION = 2 }
+		kehillah_bet_din_rows_compare_effect = { POSITION = 3 }
+		remove_variable = kehillah_din_rows_open
+	}
+}
+
+kehillah_bet_din_rows_compare_effect = {
+	if = {
+		limit = { var:kehillah_din_rows_$POSITION$ > var:kehillah_din_rows_best }
+		set_variable = { name = kehillah_din_rows_winner value = $POSITION$ }
+		set_variable = { name = kehillah_din_rows_best value = var:kehillah_din_rows_$POSITION$ }
+	}
+}
+
+# Scope: the activity, from kehillah_din_clear_argument_case_effect.
+kehillah_bet_din_rows_clear_effect = {
+	if = { limit = { has_variable = kehillah_din_rows_open } remove_variable = kehillah_din_rows_open }
+	if = { limit = { has_variable = kehillah_din_rows_1 } remove_variable = kehillah_din_rows_1 }
+	if = { limit = { has_variable = kehillah_din_rows_2 } remove_variable = kehillah_din_rows_2 }
+	if = { limit = { has_variable = kehillah_din_rows_3 } remove_variable = kehillah_din_rows_3 }
+	if = { limit = { has_variable = kehillah_din_rows_winner } remove_variable = kehillah_din_rows_winner }
+	if = { limit = { has_variable = kehillah_din_rows_best } remove_variable = kehillah_din_rows_best }
+}
+
+# =====================================================================
+# THE CLOSE OF THE SITTING, for a guest (on_complete runs per attendee).
+# =====================================================================
+
+# Scope: an attending guest; scope:activity, scope:host.
+kehillah_bet_din_bench_complete_effect = {
+	if = {
+		limit = { has_activity_intent = kehillah_bet_din_seek_semicha_intent }
+		kehillah_bet_din_semicha_exam_effect = yes
+	}
+	if = {
+		limit = { has_activity_intent = kehillah_bet_din_make_friends_intent }
+		kehillah_bet_din_make_friends_effect = yes
+	}
+	if = {
+		limit = { has_variable = kehillah_bet_din_complaint_target }
+		kehillah_bet_din_complaint_resolve_effect = yes
+	}
+	if = { limit = { has_variable = kehillah_bet_din_lay_seat } remove_variable = kehillah_bet_din_lay_seat }
+	if = { limit = { has_variable = kehillah_bet_din_rows_case } remove_variable = kehillah_bet_din_rows_case }
+}
+
+# =====================================================================
+# SEEK SEMICHA. The ordained judges examine the candidate at the close.
+# Replaces "become a rabbi by judging" (2026-09-09), retired with ordained
+# co-judges: semicha is given by rabbis, not earned by sitting among them.
+# =====================================================================
+
+# Scope: the candidate.
+kehillah_bet_din_semicha_exam_effect = {
+	if = {
+		limit = { kehillah_bet_din_can_seek_semicha_trigger = yes }
+		# The examiner: the first ordained judge on the bench.
+		if = {
+			limit = { scope:activity.var:kehillah_bet_din_av_beit_din ?= { kehillah_is_ordained_rabbi_trigger = yes } }
+			scope:activity.var:kehillah_bet_din_av_beit_din = { save_scope_as = kbd_semicha_examiner }
+		}
+		else_if = {
+			limit = { scope:activity.var:kehillah_bet_din_judge2 ?= { kehillah_is_ordained_rabbi_trigger = yes } }
+			scope:activity.var:kehillah_bet_din_judge2 = { save_scope_as = kbd_semicha_examiner }
+		}
+		else_if = {
+			limit = { scope:activity.var:kehillah_bet_din_judge3 ?= { kehillah_is_ordained_rabbi_trigger = yes } }
+			scope:activity.var:kehillah_bet_din_judge3 = { save_scope_as = kbd_semicha_examiner }
+		}
+
+		if = {
+			limit = { NOT = { exists = scope:kbd_semicha_examiner } }
+			if = {
+				limit = { is_ai = no }
+				send_interface_toast = {
+					type = event_toast_text_neutral
+					title = kehillah_bet_din_semicha_no_examiner_t
+					desc = kehillah_bet_din_semicha_no_examiner_desc
+					left_icon = root
+				}
+			}
+		}
+		else = {
+			random_list = {
+				0 = {
+					modifier = { add = kehillah_bet_din_semicha_exam_chance_value }
+					desc = kehillah_bet_din_semicha_granted
+					if = {
+						limit = { is_ai = no }
+						send_interface_toast = {
+							type = event_toast_text_and_effect_good
+							title = kehillah_toast_success
+							desc = kehillah_bet_din_semicha_granted_desc
+							left_icon = root
+							right_icon = scope:kbd_semicha_examiner
+							kehillah_grant_rabbi_trait_effect = yes
+						}
+					}
+					else = { kehillah_grant_rabbi_trait_effect = yes }
+					reverse_add_opinion = { target = scope:kbd_semicha_examiner modifier = kehillah_bet_din_pulse_favor_opinion }
+				}
+				0 = {
+					modifier = { add = { value = 100 subtract = kehillah_bet_din_semicha_exam_chance_value } }
+					desc = kehillah_bet_din_semicha_refused
+					if = {
+						limit = { is_ai = no }
+						send_interface_toast = {
+							type = event_toast_text_and_effect_bad
+							title = kehillah_toast_failure
+							desc = kehillah_bet_din_semicha_refused_desc
+							left_icon = root
+							right_icon = scope:kbd_semicha_examiner
+							add_learning_lifestyle_xp = kehillah_bet_din_semicha_fail_lifestyle_xp
+						}
+					}
+					else = { add_learning_lifestyle_xp = kehillah_bet_din_semicha_fail_lifestyle_xp }
+				}
+			}
+		}
+	}
+}
+
+# =====================================================================
+# MAKE FRIENDS. At the close: one acquaintance, perhaps a friend.
+# =====================================================================
+
+# Scope: the guest.
+kehillah_bet_din_make_friends_effect = {
+	scope:activity = {
+		random_attending_character = {
+			limit = {
+				NOT = { this = root }
+				is_adult = yes
+				NOR = {
+					has_relation_friend = root
+					has_relation_rival = root
+				}
+			}
+			weight = {
+				base = 1
+				modifier = { add = 2 faith = root.faith }
+				modifier = { add = 2 government_has_flag = government_is_kehillah }
+			}
+			save_scope_as = kbd_new_acquaintance
+		}
+	}
+	if = {
+		limit = { exists = scope:kbd_new_acquaintance }
+		random_list = {
+			0 = {
+				trigger = { can_set_relation_friend_trigger = { CHARACTER = scope:kbd_new_acquaintance } }
+				modifier = { add = kehillah_bet_din_friend_chance_value }
+				desc = kehillah_bet_din_friend_made
+				if = {
+					limit = { is_ai = no }
+					send_interface_toast = {
+						type = event_toast_text_and_effect_good
+						title = kehillah_toast_success
+						desc = kehillah_bet_din_friend_made_desc
+						left_icon = root
+						right_icon = scope:kbd_new_acquaintance
+						set_relation_friend = { reason = kehillah_friend_bet_din_benches target = scope:kbd_new_acquaintance }
+					}
+				}
+				else = { set_relation_friend = { reason = kehillah_friend_bet_din_benches target = scope:kbd_new_acquaintance } }
+			}
+			0 = {
+				modifier = { add = { value = 100 subtract = kehillah_bet_din_friend_chance_value } }
+				desc = kehillah_bet_din_friend_acquaintance
+				if = {
+					limit = { is_ai = no }
+					send_interface_toast = {
+						type = event_toast_text_and_effect_neutral
+						title = kehillah_bet_din_friend_acquaintance
+						desc = kehillah_bet_din_friend_acquaintance_desc
+						left_icon = root
+						right_icon = scope:kbd_new_acquaintance
+						add_opinion = { target = scope:kbd_new_acquaintance modifier = kehillah_bet_din_pulse_favor_opinion }
+						reverse_add_opinion = { target = scope:kbd_new_acquaintance modifier = kehillah_bet_din_pulse_favor_opinion }
+					}
+				}
+				else = {
+					add_opinion = { target = scope:kbd_new_acquaintance modifier = kehillah_bet_din_pulse_favor_opinion }
+					reverse_add_opinion = { target = scope:kbd_new_acquaintance modifier = kehillah_bet_din_pulse_favor_opinion }
+				}
+			}
+		}
+	}
+}
+
+# =====================================================================
+# BRING A COMPLAINT. Off the docket: the court hears it out of session and
+# rules at the close. Daniel: anyone of the guest's faith within his reach;
+# the defendant need not attend, and learns of it by letter.
+#   cherem       ask the court to deepen a ban on someone already under one
+#   restitution  a rival or a bitter enemy owes damages (his purse, capped)
+#   boshet       damages for an insult to honour (Prestige)
+# A false accuser is himself censured (cherem experience) or shamed.
+# =====================================================================
+
+# Scope: the complainant (an attending guest). Gathers up to three
+# defendants into scope:kbd_complaint_cand_1..3: rivals first, then those
+# with grounds for a ban, then bitter enemies.
+kehillah_bet_din_complaint_candidates_effect = {
+	every_relation = {
+		type = rival
+		limit = {
+			kehillah_bet_din_complaint_defendant_trigger = { COMPLAINANT = root }
+			in_diplomatic_range = root
+		}
+		add_to_temporary_list = kbd_complaint_candidates
+	}
+	involved_activity ?= {
+		every_attending_character = {
+			limit = {
+				NOT = { is_in_list = kbd_complaint_candidates }
+				kehillah_bet_din_complaint_defendant_trigger = { COMPLAINANT = root }
+			}
+			add_to_temporary_list = kbd_complaint_candidates
+		}
+		activity_host = {
+			every_courtier = {
+				limit = {
+					NOT = { is_in_list = kbd_complaint_candidates }
+					kehillah_bet_din_complaint_defendant_trigger = { COMPLAINANT = root }
+				}
+				add_to_temporary_list = kbd_complaint_candidates
+			}
+		}
+	}
+	every_independent_ruler = {
+		limit = {
+			faith = root.faith
+			NOT = { is_in_list = kbd_complaint_candidates }
+			in_diplomatic_range = root
+			kehillah_bet_din_complaint_defendant_trigger = { COMPLAINANT = root }
+		}
+		add_to_temporary_list = kbd_complaint_candidates
+	}
+	ordered_in_list = {
+		list = kbd_complaint_candidates
+		order_by = kehillah_bet_din_complaint_priority_value
+		position = 0
+		save_scope_as = kbd_complaint_cand_1
+	}
+	ordered_in_list = {
+		list = kbd_complaint_candidates
+		order_by = kehillah_bet_din_complaint_priority_value
+		position = 1
+		save_scope_as = kbd_complaint_cand_2
+	}
+	ordered_in_list = {
+		list = kbd_complaint_candidates
+		order_by = kehillah_bet_din_complaint_priority_value
+		position = 2
+		save_scope_as = kbd_complaint_cand_3
+	}
+}
+
+# Scope: the complainant, at the opening.
+kehillah_bet_din_complaint_open_effect = {
+	if = {
+		limit = { is_ai = no }
+		trigger_event = kehillah_bet_din_benches.0030
+	}
+	else = {
+		kehillah_bet_din_complaint_candidates_effect = yes
+		if = {
+			limit = { exists = scope:kbd_complaint_cand_1 }
+			scope:kbd_complaint_cand_1 = { save_scope_as = kbd_complaint_target }
+			if = {
+				limit = { scope:kbd_complaint_target = { kehillah_bet_din_complaint_cherem_grounds_trigger = yes } }
+				kehillah_bet_din_complaint_file_effect = { KIND = cherem }
+			}
+			else = {
+				random_list = {
+					1 = { kehillah_bet_din_complaint_file_effect = { KIND = restitution } }
+					1 = { kehillah_bet_din_complaint_file_effect = { KIND = boshet } }
+				}
+			}
+		}
+	}
+}
+
+# Scope: the complainant; scope:kbd_complaint_target saved.
+kehillah_bet_din_complaint_file_effect = {
+	custom_tooltip = kehillah_bet_din_complaint_filed_tt
+	set_variable = { name = kehillah_bet_din_complaint_target value = scope:kbd_complaint_target days = 120 }
+	set_variable = { name = kehillah_bet_din_complaint_kind value = flag:$KIND$ days = 120 }
+}
+
+# Scope: the complainant, at the close.
+kehillah_bet_din_complaint_resolve_effect = {
+	var:kehillah_bet_din_complaint_target = { save_scope_as = kbd_complaint_target }
+	save_scope_as = kbd_complainant
+	scope:host = { save_scope_as = kbd_complaint_court }
+	if = {
+		limit = { scope:kbd_complaint_target = { is_alive = yes } }
+		if = {
+			limit = { var:kehillah_bet_din_complaint_kind = flag:cherem }
+			random_list = {
+				0 = { modifier = { add = kehillah_bet_din_complaint_cherem_chance_value } kehillah_bet_din_complaint_outcome_effect = { KIND = cherem RESULT = win TOAST = good } }
+				0 = { modifier = { add = { value = 100 subtract = kehillah_bet_din_complaint_cherem_chance_value } } kehillah_bet_din_complaint_outcome_effect = { KIND = cherem RESULT = lose TOAST = bad } }
+			}
+		}
+		else_if = {
+			limit = { var:kehillah_bet_din_complaint_kind = flag:restitution }
+			random_list = {
+				0 = { modifier = { add = kehillah_bet_din_complaint_chance_value } kehillah_bet_din_complaint_outcome_effect = { KIND = restitution RESULT = win TOAST = good } }
+				0 = { modifier = { add = { value = 100 subtract = kehillah_bet_din_complaint_chance_value } } kehillah_bet_din_complaint_outcome_effect = { KIND = restitution RESULT = lose TOAST = bad } }
+			}
+		}
+		else = {
+			random_list = {
+				0 = { modifier = { add = kehillah_bet_din_complaint_chance_value } kehillah_bet_din_complaint_outcome_effect = { KIND = boshet RESULT = win TOAST = good } }
+				0 = { modifier = { add = { value = 100 subtract = kehillah_bet_din_complaint_chance_value } } kehillah_bet_din_complaint_outcome_effect = { KIND = boshet RESULT = lose TOAST = bad } }
+			}
+		}
+		# Whatever the ruling, the defendant resents being summoned.
+		scope:kbd_complaint_target = {
+			add_opinion = { target = root modifier = kehillah_bet_din_complaint_opinion }
+		}
+	}
+	remove_variable = kehillah_bet_din_complaint_target
+	remove_variable = kehillah_bet_din_complaint_kind
+}
+
+# Scope: the complainant. Applies the ruling, toasts a player complainant and
+# writes to a player defendant.
+kehillah_bet_din_complaint_outcome_effect = {
+	if = {
+		limit = { is_ai = no }
+		send_interface_toast = {
+			type = event_toast_text_and_effect_$TOAST$
+			title = kehillah_bet_din_complaint_$RESULT$_t
+			desc = kehillah_bet_din_complaint_$KIND$_$RESULT$_desc
+			left_icon = root
+			right_icon = scope:kbd_complaint_target
+			kehillah_bet_din_complaint_$KIND$_$RESULT$_effect = yes
+		}
+	}
+	else = {
+		kehillah_bet_din_complaint_$KIND$_$RESULT$_effect = yes
+	}
+	scope:kbd_complaint_target = {
+		if = {
+			limit = { is_ai = no }
+			save_scope_value_as = { name = kbd_complaint_ruling value = flag:$KIND$_$RESULT$ }
+			trigger_event = kehillah_bet_din_benches.0035
+		}
+	}
+}
+
+kehillah_bet_din_complaint_cherem_win_effect = {
+	add_prestige = minor_prestige_gain
+	scope:kbd_complaint_target = {
+		if = {
+			limit = { kehillah_cherem_protected_leader_trigger = yes }
+			# A court cannot put a community leader under the full ban.
+			if = {
+				limit = { has_trait_xp = { trait = kehillah_cherem_trait value < kehillah_bet_din_complaint_leader_cherem_cap } }
+				save_temporary_scope_value_as = {
+					name = kbd_cherem_amount
+					value = {
+						value = kehillah_bet_din_complaint_leader_cherem_cap
+						subtract = "has_trait_xp(kehillah_cherem_trait)"
+						max = kehillah_bet_din_complaint_cherem_amount
+						min = 0
+					}
+				}
+				kehillah_cherem_add_effect = { AMOUNT = scope:kbd_cherem_amount }
+			}
+		}
+		else = {
+			kehillah_cherem_add_effect = { AMOUNT = kehillah_bet_din_complaint_cherem_amount }
+		}
+	}
+	custom_tooltip = kehillah_bet_din_complaint_cherem_win_tt
+}
+
+kehillah_bet_din_complaint_cherem_lose_effect = {
+	add_prestige = minor_prestige_loss
+	kehillah_cherem_add_effect = { AMOUNT = kehillah_bet_din_complaint_false_accuser_cherem }
+	custom_tooltip = kehillah_bet_din_complaint_cherem_lose_tt
+}
+
+kehillah_bet_din_complaint_restitution_win_effect = {
+	add_prestige = minor_prestige_gain
+	scope:kbd_complaint_target = {
+		save_temporary_scope_value_as = { name = kbd_restitution value = kehillah_bet_din_complaint_restitution_value }
+		pay_short_term_gold = {
+			target = root
+			gold = scope:kbd_restitution
+		}
+	}
+}
+
+kehillah_bet_din_complaint_restitution_lose_effect = {
+	add_prestige = minor_prestige_loss
+}
+
+kehillah_bet_din_complaint_boshet_win_effect = {
+	add_prestige = medium_prestige_gain
+	scope:kbd_complaint_target = { add_prestige = minor_prestige_loss }
+}
+
+kehillah_bet_din_complaint_boshet_lose_effect = {
+	add_prestige = minor_prestige_loss
+}

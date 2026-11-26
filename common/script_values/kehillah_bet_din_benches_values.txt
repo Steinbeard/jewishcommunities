@@ -1,0 +1,131 @@
+﻿# The bench and the benches (2026-11-25). Design: the header of
+# common/scripted_triggers/kehillah_bet_din_benches_triggers.txt.
+
+# --- Who may judge -------------------------------------------------------
+# A Karaite, and (as groundwork) any rite without its own rule, qualifies by
+# Learning alone. 12 is the bar the scholar invite rule already uses.
+kehillah_bet_din_karaite_judge_learning = 12
+kehillah_bet_din_other_rite_judge_learning = 12
+
+# Argument chance lost by a judge sitting without qualification: a presiding
+# Parnas, or a layman seated for want of judges. Daniel: -10.
+kehillah_bet_din_lay_judge_penalty = 10
+
+# Scope: a judge. Subtracted in kehillah_din_argument_a/b/c_chance_value.
+kehillah_bet_din_lay_judge_penalty_value = {
+	value = 0
+	if = {
+		limit = { has_variable = kehillah_bet_din_lay_seat }
+		subtract = kehillah_bet_din_lay_judge_penalty
+	}
+}
+
+# --- The benches lean ----------------------------------------------------
+# Each follower of the docket who makes his voice heard adds this to the
+# position he favours. A successful judge's argument is worth 20
+# (kehillah_din_argument_success_weight); all the benches together are
+# capped below one judge, so the bench always decides.
+kehillah_bet_din_rows_success_weight = 4
+kehillah_bet_din_rows_max_weight = 10
+
+# Scope: a follower on the benches. Chance his opinion carries, from Learning.
+kehillah_bet_din_rows_chance_value = {
+	value = 30
+	add = { value = learning subtract = 10 multiply = 3 }
+	if = { limit = { has_trait = gregarious } add = 5 }
+	if = { limit = { has_trait = shy } add = -5 }
+	min = 10
+	max = 80
+}
+
+# Experience for following a case closely.
+kehillah_bet_din_rows_xp = 1
+kehillah_bet_din_rows_lifestyle_xp = 10
+
+# --- Seek semicha --------------------------------------------------------
+# Scope: the candidate. The examining judges' chance of ordaining him.
+kehillah_bet_din_semicha_exam_chance_value = {
+	value = 5
+	add = { value = learning subtract = 8 multiply = 5 min = 0 }
+	if = { limit = { has_trait = diligent } add = 5 }
+	if = { limit = { has_trait = lazy } add = -5 }
+	if = { limit = { has_trait = theologian } add = 10 }
+	min = 5
+	max = 85
+}
+kehillah_bet_din_semicha_fail_lifestyle_xp = 20
+
+# --- Make friends --------------------------------------------------------
+# Scope: the guest. Chance a new acquaintance becomes a friend.
+kehillah_bet_din_friend_chance_value = {
+	value = 20
+	add = { value = diplomacy subtract = 8 multiply = 3 min = -10 max = 30 }
+	if = { limit = { has_trait = gregarious } add = 15 }
+	if = { limit = { has_trait = shy } add = -10 }
+	min = 5
+	max = 75
+}
+
+# --- Complaints ----------------------------------------------------------
+# A grudge strong enough to bring before the court without a rivalry.
+kehillah_bet_din_complaint_grudge_opinion = -30
+
+# Scope: the complainant; scope:kbd_complaint_target the defendant. The
+# chance the court finds for him on a personal claim (restitution, honour).
+kehillah_bet_din_complaint_chance_value = {
+	value = 40
+	add = { value = diplomacy subtract = 10 multiply = 2 min = -15 max = 15 }
+	if = {
+		limit = { kehillah_bet_din_qualified_judge_trigger = yes }
+		add = 5
+	}
+	if = {
+		limit = { scope:kbd_complaint_target = { has_relation_rival = root } }
+		add = 10
+	}
+	if = {
+		limit = { scope:kbd_complaint_target = { prestige_level >= 3 } }
+		add = -10
+	}
+	if = {
+		limit = { scope:kbd_complaint_target = { government_has_flag = government_is_kehillah } }
+		add = -10
+	}
+	min = 10
+	max = 85
+}
+
+# The same for asking the court to deepen a ban: a man already in Niddui is
+# easier to condemn.
+kehillah_bet_din_complaint_cherem_chance_value = {
+	value = kehillah_bet_din_complaint_chance_value
+	if = {
+		limit = { scope:kbd_complaint_target = { has_trait_xp = { trait = kehillah_cherem_trait value >= kehillah_cherem_niddui } } }
+		add = 10
+	}
+	min = 10
+	max = 85
+}
+
+# Cherem raised by a successful complaint: one level. A false accusation
+# earns the accuser a smaller share.
+kehillah_bet_din_complaint_cherem_amount = 25
+kehillah_bet_din_complaint_false_accuser_cherem = 10
+# A Kehillah leader can only be fully banned by a synod or the head of his
+# faith (kehillah_cherem_protected_leader_trigger): a complaint stops short.
+kehillah_bet_din_complaint_leader_cherem_cap = 95
+
+# Scope: the defendant. Restitution, capped at his purse.
+kehillah_bet_din_complaint_restitution_value = {
+	value = gold
+	min = 0
+	max = medium_gold_value
+}
+
+# Scope: a prospective defendant; root the complainant. Who is offered first:
+# rivals, then those with grounds for a ban, then bitter enemies.
+kehillah_bet_din_complaint_priority_value = {
+	value = 0
+	if = { limit = { has_relation_rival = root } add = 100 }
+	if = { limit = { kehillah_bet_din_complaint_cherem_grounds_trigger = yes } add = 50 }
+}

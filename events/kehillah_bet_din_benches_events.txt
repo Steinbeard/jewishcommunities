@@ -1,0 +1,359 @@
+﻿# The bench and the benches (2026-11-25, Daniel). Design: the header of
+# common/scripted_triggers/kehillah_bet_din_benches_triggers.txt.
+#   0001  a Parnas presides by his kavod and learning
+#   0002  no court of three could be seated
+#   0003  where you sit (players on the bench or the benches)
+#   0010  the benches lean (follow the docket)
+#   0020  study in the host's library (hidden) / 0021 what you read
+#   0030  bring a complaint: against whom / 0031 for what
+#   0035  a defendant hears the court's ruling (letter)
+namespace = kehillah_bet_din_benches
+
+kehillah_bet_din_benches.0001 = {
+	type = character_event
+	title = kehillah_bet_din_benches.0001.t
+	desc = kehillah_bet_din_benches.0001.desc
+	theme = faith
+	left_portrait = { character = root animation = personality_honorable }
+	right_portrait = {
+		character = scope:kbd_bench_j2
+		animation = thinking
+		trigger = { exists = scope:kbd_bench_j2 }
+	}
+	immediate = {
+		involved_activity ?= {
+			var:kehillah_bet_din_judge2 ?= { save_scope_as = kbd_bench_j2 }
+		}
+	}
+	option = {
+		name = kehillah_bet_din_benches.0001.a
+		custom_tooltip = kehillah_din_factor_lay_judge_tt
+	}
+}
+
+kehillah_bet_din_benches.0002 = {
+	type = character_event
+	title = kehillah_bet_din_benches.0002.t
+	desc = kehillah_bet_din_benches.0002.desc
+	theme = faith
+	left_portrait = { character = root animation = sadness }
+	option = {
+		name = kehillah_bet_din_benches.0002.a
+		if = {
+			limit = { government_has_flag = government_is_kehillah }
+			add_piety = kehillah_bet_din_host_piety_cost
+		}
+		custom_tooltip = kehillah_bet_din_benches.0002.cooldown_tt
+	}
+}
+
+kehillah_bet_din_benches.0003 = {
+	type = character_event
+	title = kehillah_bet_din_benches.0003.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { kehillah_bet_din_on_the_benches_trigger = yes }
+					has_variable = kehillah_bet_din_lay_seat
+				}
+				desc = kehillah_bet_din_benches.0003.desc.seated_lay
+			}
+			triggered_desc = {
+				trigger = { NOT = { kehillah_bet_din_on_the_benches_trigger = yes } }
+				desc = kehillah_bet_din_benches.0003.desc.seated
+			}
+			triggered_desc = {
+				trigger = { kehillah_bet_din_qualified_judge_trigger = yes }
+				desc = kehillah_bet_din_benches.0003.desc.alternate
+			}
+			desc = kehillah_bet_din_benches.0003.desc.benches
+		}
+		desc = kehillah_bet_din_benches.0003.desc.court
+	}
+	theme = faith
+	left_portrait = { character = scope:kbd_bench_av animation = personality_honorable }
+	right_portrait = { character = scope:kbd_bench_j2 animation = thinking }
+	lower_left_portrait = scope:kbd_bench_j3
+	trigger = {
+		exists = involved_activity
+		exists = involved_activity.var:kehillah_bet_din_judge3
+	}
+	immediate = {
+		involved_activity = {
+			activity_host = { save_scope_as = kbd_bench_av }
+			var:kehillah_bet_din_judge2 = { save_scope_as = kbd_bench_j2 }
+			var:kehillah_bet_din_judge3 = { save_scope_as = kbd_bench_j3 }
+		}
+	}
+	option = {
+		name = kehillah_bet_din_benches.0003.a
+	}
+}
+
+# ---------------------------------------------------------------------
+# The benches lean. Fired to a player following the docket when a case is
+# drawn. Position names come from the generated panel loc.
+# ---------------------------------------------------------------------
+kehillah_bet_din_benches.0010 = {
+	type = character_event
+	title = kehillah_bet_din_benches.0010.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_bet_din_rows_window_open_trigger = yes }
+				desc = kehillah_bet_din_benches.0010.desc
+			}
+			desc = kehillah_bet_din_benches.0010.desc.late
+		}
+	}
+	theme = learning
+	left_portrait = { character = root animation = thinking }
+	right_portrait = {
+		character = scope:kbd_bench_av
+		animation = personality_honorable
+		trigger = { exists = scope:kbd_bench_av }
+	}
+	immediate = {
+		involved_activity ?= { activity_host = { save_scope_as = kbd_bench_av } }
+	}
+
+	option = {
+		name = kehillah_bet_din_benches.0010.a
+		trigger = { kehillah_bet_din_rows_window_open_trigger = yes }
+		kehillah_bet_din_rows_player_lean_effect = { POSITION = 1 }
+	}
+	option = {
+		name = kehillah_bet_din_benches.0010.b
+		trigger = { kehillah_bet_din_rows_window_open_trigger = yes }
+		kehillah_bet_din_rows_player_lean_effect = { POSITION = 2 }
+	}
+	option = {
+		name = kehillah_bet_din_benches.0010.c
+		trigger = {
+			kehillah_bet_din_rows_window_open_trigger = yes
+			involved_activity.var:kehillah_din_case > 3
+		}
+		kehillah_bet_din_rows_player_lean_effect = { POSITION = 3 }
+	}
+	option = {
+		name = kehillah_bet_din_benches.0010.d
+		trigger = { kehillah_bet_din_rows_window_open_trigger = yes }
+		kehillah_bet_din_rows_xp_effect = yes
+	}
+	option = {
+		name = kehillah_bet_din_benches.0010.e
+		trigger = { NOT = { kehillah_bet_din_rows_window_open_trigger = yes } }
+	}
+	after = {
+		if = { limit = { has_variable = kehillah_bet_din_rows_case } remove_variable = kehillah_bet_din_rows_case }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Study in the host community's library. Hidden, so the study effect is
+# never built into a tooltip (kehillah_journey_study_work_effect's header
+# has the 2026-10-21 lesson). Reuses the Learn Torah journey's per-work
+# study dispatch, so mastery, sparks, languages and the place of learning
+# are recorded exactly as on a journey.
+# ---------------------------------------------------------------------
+kehillah_bet_din_benches.0020 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		involved_activity ?= {
+			activity_host ?= {
+				primary_title ?= { save_scope_as = kehillah_journey_destination_title }
+			}
+		}
+		if = {
+			limit = {
+				exists = scope:kehillah_journey_destination_title
+				scope:kehillah_journey_destination_title = { has_variable_list = kehillah_library_works }
+			}
+			scope:kehillah_journey_destination_title = {
+				random_in_list = {
+					variable = kehillah_library_works
+					limit = { NOT = { root = { is_target_in_variable_list = { name = kehillah_mastered_works target = prev } } } }
+					save_scope_as = kbd_study_work
+				}
+				if = {
+					limit = { NOT = { exists = scope:kbd_study_work } }
+					random_in_list = {
+						variable = kehillah_library_works
+						save_scope_as = kbd_study_work
+					}
+				}
+			}
+			set_variable = { name = kehillah_journey_studied_work value = scope:kbd_study_work }
+			set_variable = { name = kehillah_journey_work_loc value = scope:kbd_study_work }
+			kehillah_journey_resolve_study_effect = yes
+			remove_variable = kehillah_journey_studied_work
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_bet_din_benches.0021
+			}
+			else = { remove_variable = kehillah_journey_work_loc }
+		}
+		else = {
+			add_learning_lifestyle_xp = kehillah_bet_din_rows_lifestyle_xp
+			if = {
+				limit = { is_ai = no }
+				trigger_event = kehillah_bet_din_benches.0021
+			}
+		}
+	}
+}
+
+kehillah_bet_din_benches.0021 = {
+	type = character_event
+	title = kehillah_bet_din_benches.0021.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { NOT = { has_variable = kehillah_journey_work_loc } }
+				desc = kehillah_bet_din_benches.0021.desc.bare
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_torah_last_result ?= 1 }
+				desc = kehillah_bet_din_benches.0021.desc.mastered
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_torah_last_result ?= 2 }
+				desc = kehillah_bet_din_benches.0021.desc.reread
+			}
+			triggered_desc = {
+				trigger = { var:kehillah_study_torah_last_result ?= 3 }
+				desc = kehillah_bet_din_benches.0021.desc.reread_failed
+			}
+			desc = kehillah_bet_din_benches.0021.desc.failed
+		}
+	}
+	theme = learning
+	left_portrait = { character = root animation = writing }
+	option = {
+		name = kehillah_bet_din_benches.0021.a
+	}
+	after = {
+		if = { limit = { has_variable = kehillah_journey_work_loc } remove_variable = kehillah_journey_work_loc }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Bring a complaint: against whom.
+# ---------------------------------------------------------------------
+kehillah_bet_din_benches.0030 = {
+	type = character_event
+	title = kehillah_bet_din_benches.0030.t
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { exists = scope:kbd_complaint_cand_1 }
+				desc = kehillah_bet_din_benches.0030.desc
+			}
+			desc = kehillah_bet_din_benches.0030.desc.none
+		}
+	}
+	theme = faith
+	left_portrait = { character = root animation = anger }
+	right_portrait = {
+		character = scope:kbd_complaint_cand_1
+		animation = disapproval
+		trigger = { exists = scope:kbd_complaint_cand_1 }
+	}
+	lower_left_portrait = scope:kbd_complaint_cand_2
+	lower_right_portrait = scope:kbd_complaint_cand_3
+	immediate = {
+		kehillah_bet_din_complaint_candidates_effect = yes
+	}
+	option = {
+		name = kehillah_bet_din_benches.0030.a
+		trigger = { exists = scope:kbd_complaint_cand_1 }
+		scope:kbd_complaint_cand_1 = { save_scope_as = kbd_complaint_target }
+		trigger_event = kehillah_bet_din_benches.0031
+	}
+	option = {
+		name = kehillah_bet_din_benches.0030.b
+		trigger = { exists = scope:kbd_complaint_cand_2 }
+		scope:kbd_complaint_cand_2 = { save_scope_as = kbd_complaint_target }
+		trigger_event = kehillah_bet_din_benches.0031
+	}
+	option = {
+		name = kehillah_bet_din_benches.0030.c
+		trigger = { exists = scope:kbd_complaint_cand_3 }
+		scope:kbd_complaint_cand_3 = { save_scope_as = kbd_complaint_target }
+		trigger_event = kehillah_bet_din_benches.0031
+	}
+	option = {
+		name = kehillah_bet_din_benches.0030.d
+	}
+}
+
+# Bring a complaint: for what. scope:kbd_complaint_target carries over.
+kehillah_bet_din_benches.0031 = {
+	type = character_event
+	title = kehillah_bet_din_benches.0031.t
+	desc = kehillah_bet_din_benches.0031.desc
+	theme = faith
+	left_portrait = { character = root animation = anger }
+	right_portrait = { character = scope:kbd_complaint_target animation = disapproval }
+
+	option = {
+		name = kehillah_bet_din_benches.0031.cherem
+		trigger = { scope:kbd_complaint_target = { kehillah_bet_din_complaint_cherem_grounds_trigger = yes } }
+		kehillah_bet_din_complaint_file_effect = { KIND = cherem }
+		show_as_tooltip = {
+			random_list = {
+				0 = { modifier = { add = kehillah_bet_din_complaint_cherem_chance_value } custom_tooltip = kehillah_bet_din_complaint_cherem_win_preview }
+				0 = { modifier = { add = { value = 100 subtract = kehillah_bet_din_complaint_cherem_chance_value } } custom_tooltip = kehillah_bet_din_complaint_cherem_lose_preview }
+			}
+		}
+	}
+	option = {
+		name = kehillah_bet_din_benches.0031.restitution
+		trigger = { scope:kbd_complaint_target = { kehillah_bet_din_complaint_grievance_trigger = { COMPLAINANT = root } } }
+		kehillah_bet_din_complaint_file_effect = { KIND = restitution }
+		show_as_tooltip = {
+			random_list = {
+				0 = { modifier = { add = kehillah_bet_din_complaint_chance_value } custom_tooltip = kehillah_bet_din_complaint_restitution_win_preview }
+				0 = { modifier = { add = { value = 100 subtract = kehillah_bet_din_complaint_chance_value } } custom_tooltip = kehillah_bet_din_complaint_restitution_lose_preview }
+			}
+		}
+	}
+	option = {
+		name = kehillah_bet_din_benches.0031.boshet
+		trigger = { scope:kbd_complaint_target = { kehillah_bet_din_complaint_grievance_trigger = { COMPLAINANT = root } } }
+		kehillah_bet_din_complaint_file_effect = { KIND = boshet }
+		show_as_tooltip = {
+			random_list = {
+				0 = { modifier = { add = kehillah_bet_din_complaint_chance_value } custom_tooltip = kehillah_bet_din_complaint_boshet_win_preview }
+				0 = { modifier = { add = { value = 100 subtract = kehillah_bet_din_complaint_chance_value } } custom_tooltip = kehillah_bet_din_complaint_boshet_lose_preview }
+			}
+		}
+	}
+	option = {
+		name = kehillah_bet_din_benches.0031.withdraw
+	}
+}
+
+# A player defendant hears the ruling. scope:kbd_complainant and
+# scope:kbd_complaint_ruling (flag:<kind>_<win|lose>, from the complainant's
+# side) carry over.
+kehillah_bet_din_benches.0035 = {
+	type = letter_event
+	opening = kehillah_bet_din_benches.0035.opening
+	desc = {
+		first_valid = {
+			triggered_desc = { trigger = { scope:kbd_complaint_ruling = flag:cherem_win } desc = kehillah_bet_din_benches.0035.cherem_win }
+			triggered_desc = { trigger = { scope:kbd_complaint_ruling = flag:cherem_lose } desc = kehillah_bet_din_benches.0035.cherem_lose }
+			triggered_desc = { trigger = { scope:kbd_complaint_ruling = flag:restitution_win } desc = kehillah_bet_din_benches.0035.restitution_win }
+			triggered_desc = { trigger = { scope:kbd_complaint_ruling = flag:restitution_lose } desc = kehillah_bet_din_benches.0035.restitution_lose }
+			triggered_desc = { trigger = { scope:kbd_complaint_ruling = flag:boshet_win } desc = kehillah_bet_din_benches.0035.boshet_win }
+			desc = kehillah_bet_din_benches.0035.boshet_lose
+		}
+	}
+	sender = scope:kbd_complaint_court
+	option = {
+		name = kehillah_bet_din_benches.0035.a
+	}
+}

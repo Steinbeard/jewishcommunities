@@ -21,6 +21,25 @@ def choice_loc(name, variable):
     return "\n".join(lines)
 
 
+def fixed_loc(name, position):
+    """The name of one fixed position of whichever case is before the court.
+    2026-11-25: the benches' choice (kehillah_bet_din_benches.0010)."""
+    lines = [f"{name} = {{", "\ttype = character"]
+    for n in range(1, 115):
+        letters = "ab" if n <= 3 else "abc"
+        if position > len(letters):
+            continue
+        eid = f"{n-1:03d}" if n <= 9 else f"0{n}"
+        lines += [
+            "\ttext = {",
+            f"\t\ttrigger = {{ involved_activity ?= {{ var:kehillah_din_case = {n} }} }}",
+            f"\t\tlocalization_key = kehillah_bet_din.{eid}1.{letters[position-1]}",
+            "\t}",
+        ]
+    lines += ["\ttext = { trigger = { always = yes } localization_key = kehillah_din_argument_unrecorded }", "}"]
+    return "\n".join(lines)
+
+
 def source_loc(name, variable, original):
     return original.replace("KehillahDinCiteGrounded", name, 1).replace(
         "kehillah_din_cite_grounded", variable
@@ -47,6 +66,10 @@ def generate():
         parts.append(source_loc(f"KehillahDinVote{seat}Source", f"kehillah_din_vote_{seat}_cited", source))
         parts.append(result_loc(f"KehillahDinVote{seat}Result", f"kehillah_din_vote_{seat}_success"))
     parts.append(choice_loc("KehillahDinPanelWinner", "kehillah_din_panel_winner"))
+    # 2026-11-25: the benches' leaning and their choice of position.
+    parts.append(choice_loc("KehillahDinRowsLean", "kehillah_din_rows_winner"))
+    for position in range(1, 4):
+        parts.append(fixed_loc(f"KehillahDinBenchPosition{position}", position))
     OUTPUT.write_text("\n\n".join(parts) + "\n", encoding="utf-8-sig", newline="\r\n")
 
 

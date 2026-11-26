@@ -1282,84 +1282,18 @@ kehillah_bet_din_open_docket_effect = {
 	if = { limit = { primary_title = { has_variable = kehillah_case7_reply_author } } primary_title = { remove_variable = kehillah_case7_reply_author } }
 	scope:activity = { set_variable = { name = kehillah_bet_din_convening_title value = scope:host.primary_title } }
 
-	# WHO SITS AS AV BEIT DIN. ADDED 2026-09-27 (S4b), at user request:
-	# "chief rabbis should be the ones who preside over bet din
-	# conferences." The HOST of the activity is still the convening leader
-	# -- that is an engine fact, a courtier cannot host -- but the
-	# presiding seat on the bench is the community's acting Chief Rabbi,
-	# and when those are different people it is the rabbi's judgement the
-	# case tests. Resolved through the shared S4(2) resolver
-	# (kehillah_has_community_rabbi_trigger's header, common/
-	# scripted_triggers/kehillah_scripted_triggers.txt), which makes this
-	# that abstraction's sixth consumer site.
-	#
-	# Falls back to the host. can_start_showing_failures_only refuses a
-	# session with no rabbi at all, so the fallback should be unreachable
-	# in ordinary play -- it exists for a console-started session and for a
-	# save whose community predates the gate, where a docket with nobody on
-	# the presiding seat would read every skill check against an unset
-	# scope.
-	#
-	# RESOLVED BEFORE THE CO-JUDGE RANKING, and that ordering is a fix, not
-	# a tidy-up (S4c, 2026-09-27). An APPOINTED Chief Rabbi is a learned
-	# courtier of the host, which is precisely population 2 of
-	# kehillah_bet_din_eligible_judge_trigger -- so with the ranking run
-	# first he could be drawn into a co-judge seat as well as the presiding
-	# one, and a court of three would be staffed by two people with his
-	# Learning counted twice in the tally. He is excluded from the pool
-	# below instead. A quorum of three means three people.
-	kehillah_save_community_rabbi_effect = yes
-	if = {
-		limit = { exists = scope:kehillah_community_rabbi }
-		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:kehillah_community_rabbi } }
-	}
-	else = {
-		scope:activity = { set_variable = { name = kehillah_bet_din_av_beit_din value = scope:host } }
-	}
-
-	scope:activity = {
-		ordered_attending_character = {
-			order_by = { value = kehillah_bet_din_judge_score_value }
-			limit = {
-				kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
-				# Not the man already on the presiding seat -- see above.
-				# Written here rather than inside the shared eligibility
-				# trigger on purpose: that trigger is also read by
-				# can_be_activity_guest and kehillah_bet_din_available_co_
-				# judges_value, where there is no activity in scope to ask
-				# about, and this is the only caller that has one.
-				NAND = {
-					exists = scope:kehillah_community_rabbi
-					this = scope:kehillah_community_rabbi
-				}
-			}
-			position = 0
-			save_temporary_scope_as = kehillah_bet_din_judge2_candidate
-		}
-		ordered_attending_character = {
-			order_by = { value = kehillah_bet_din_judge_score_value }
-			limit = {
-				kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
-				NAND = {
-					exists = scope:kehillah_community_rabbi
-					this = scope:kehillah_community_rabbi
-				}
-			}
-			position = 1
-			save_temporary_scope_as = kehillah_bet_din_judge3_candidate
-		}
-	}
-	if = {
-		limit = { exists = scope:kehillah_bet_din_judge2_candidate }
-		scope:activity = { set_variable = { name = kehillah_bet_din_judge2 value = scope:kehillah_bet_din_judge2_candidate } }
-	}
-	if = {
-		limit = { exists = scope:kehillah_bet_din_judge3_candidate }
-		scope:activity = { set_variable = { name = kehillah_bet_din_judge3 value = scope:kehillah_bet_din_judge3_candidate } }
-	}
+	# WHO SITS. REPLACED 2026-11-25 (Daniel; kehillah_bet_din_benches_
+	# triggers.txt has the design). The S4b rule "the community rabbi presides"
+	# was only ever half true: the convener argued seat 1 while the Dayyan was
+	# credited with it and kept off the bench. The convener now presides and is
+	# credited; co-judges must be qualified by rite, the community's own rabbi
+	# first; laymen fill a seat at a penalty when qualified judges are wanting.
+	# The quorum rule below is unchanged: three judges, or no sitting.
+	kehillah_bet_din_seat_panel_effect = yes
 
 	if = {
 		limit = { NOT = { exists = scope:activity.var:kehillah_bet_din_judge3 } }
+		kehillah_bet_din_cannot_sit_effect = yes
 		invalidate_activity = scope:activity
 	}
 
@@ -1373,22 +1307,14 @@ kehillah_bet_din_open_docket_effect = {
 		scope:activity = { set_variable = { name = kehillah_bet_din_case_drawn value = 0 } }
 		scope:activity = { clear_variable_list = kehillah_bet_din_cases_heard }
 
-		# BECOME A RABBI BY JUDGING, ADDED 2026-09-09 at user request ("you
-		# become a rabbi when you go to a bet din as a judge"). All three
-		# panel seats -- host and both co-judges -- are OFFERED kehillah_
-		# rabbi_trait if not already held (kehillah_bet_din_semicha.0001,
-		# accept-or-decline, per a same-day follow-up request -- this is
-		# not an unprompted grant any more). No exists = guard needed on
-		# judge2/judge3 here specifically (unlike reads of these same
-		# activity variables elsewhere in this file): this whole block is
-		# already guarded on judge3 existing, and judge2 is guaranteed to
-		# exist whenever judge3 does (position = 0 always resolves before
-		# position = 1 can). See kehillah_rabbi_trait's own header (common/
-		# traits/kehillah_traits.txt) for the full three-route acquisition
-		# account this is now part of.
-		kehillah_bet_din_grant_rabbi_trait_effect = yes
-		scope:activity.var:kehillah_bet_din_judge2 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
-		scope:activity.var:kehillah_bet_din_judge3 = { kehillah_bet_din_grant_rabbi_trait_effect = yes }
+		# BECOME A RABBI BY JUDGING (2026-09-09) -- RETIRED 2026-11-25. Co-judges
+		# are now ordained already; semicha is sought from the benches instead
+		# (kehillah_bet_din_seek_semicha_intent), examined by an ordained judge.
+		# kehillah_bet_din_grant_rabbi_trait_effect stays defined for saves.
+
+		# The benches: notices, the presiding layman's seat, the guests' intents.
+		kehillah_bet_din_open_benches_effect = yes
+
 
 		# Stale per-case scratch from any earlier session. Case 3's own
 		# host event always sets case3_direction before its resolution

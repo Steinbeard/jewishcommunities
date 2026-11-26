@@ -226,7 +226,7 @@ activity_kehillah_bet_din_conference = {
 		# see kehillah_bet_din_save_presiding_effect.
 		custom_tooltip = {
 			text = kehillah_requires_rabbi_to_preside_tt
-			kehillah_has_community_rabbi_trigger = yes
+			kehillah_bet_din_has_presiding_authority_trigger = yes # 2026-11-25, benches
 		}
 		}
 	}
@@ -390,8 +390,10 @@ activity_kehillah_bet_din_conference = {
 	# single definition replaced what used to be three. The body below is
 	# otherwise unchanged from the 2026-09-11 fix: same branches, same
 	# order, just named once instead of repeated.
+	# 2026-11-25: who may ATTEND, not who may judge (kehillah_bet_din_
+	# benches_triggers.txt). Non-rabbis come and sit on the benches.
 	can_be_activity_guest = {
-		kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host }
+		kehillah_bet_din_may_attend_trigger = { HOST = scope:host }
 	}
 
 	# CAP, answering "can we cap the number of people who can accept" at
@@ -585,6 +587,7 @@ activity_kehillah_bet_din_conference = {
 					if = {
 						limit = { exists = scope:activity.var:kehillah_bet_din_judge3 }
 						kehillah_bet_din_draw_case_effect = yes
+						kehillah_bet_din_rows_open_case_effect = yes # 2026-11-25, the benches lean
 					}
 
 				}
@@ -617,6 +620,7 @@ activity_kehillah_bet_din_conference = {
 						progress_activity_phase_after = { days = kehillah_bet_din_case_phase_days }
 					}
 					kehillah_bet_din_draw_case_effect = yes
+					kehillah_bet_din_rows_open_case_effect = yes
 				}
 			}
 		}
@@ -653,7 +657,10 @@ activity_kehillah_bet_din_conference = {
 						}
 						kehillah_synod_open_session_effect = yes
 					}
-					else = { kehillah_bet_din_draw_case_effect = yes }
+					else = {
+						kehillah_bet_din_draw_case_effect = yes
+						kehillah_bet_din_rows_open_case_effect = yes
+					}
 				}
 			}
 		}
@@ -684,6 +691,12 @@ activity_kehillah_bet_din_conference = {
 				trigger_event = kehillah_synod.0103
 			}
 			trigger_event = kehillah_bet_din.0099
+			if = { limit = { has_variable = kehillah_bet_din_lay_seat } remove_variable = kehillah_bet_din_lay_seat }
+		}
+		# 2026-11-25: each guest's own close -- semicha examined, a friend
+		# made, a complaint ruled (kehillah_bet_din_benches_effects.txt).
+		else = {
+			kehillah_bet_din_bench_complete_effect = yes
 		}
 	}
 
@@ -893,8 +906,31 @@ activity_kehillah_bet_din_conference = {
 		}
 	}
 
+	# REPLACED 2026-11-25 (Daniel): guests on the benches choose what they
+	# came for (common/activities/intents/kehillah_bet_din_benches_intents.txt).
+	# Following the docket is the default, and always valid.
 	guest_intents = {
-		default = kehillah_bet_din_justice_intent
-		intents = { kehillah_bet_din_justice_intent }
+		default = kehillah_bet_din_follow_docket_intent
+		intents = {
+			kehillah_bet_din_follow_docket_intent
+			kehillah_bet_din_study_intent
+			kehillah_bet_din_make_friends_intent
+			kehillah_bet_din_seek_semicha_intent
+			kehillah_bet_din_complaint_intent
+		}
+	}
+
+	# 2026-11-25 (Daniel: "make it clear to characters whether they're being
+	# invited to sit on the benches or if they will be a judge"). root = the
+	# character viewing. Qualification is certain in advance; a seat is not,
+	# so a qualified guest is told how seats are given.
+	guest_description = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { kehillah_bet_din_eligible_judge_trigger = { HOST = scope:host } }
+				desc = activity_kehillah_bet_din_conference_guest_desc_judge
+			}
+			desc = activity_kehillah_bet_din_conference_guest_desc_benches
+		}
 	}
 }

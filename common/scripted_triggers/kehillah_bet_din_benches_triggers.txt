@@ -1,0 +1,190 @@
+﻿# =====================================================================
+# THE BENCH AND THE BENCHES (2026-11-25, Daniel). This file and its
+# siblings are the design record for this pass; there is no separate spec.
+#   kehillah_bet_din_benches_effects.txt      seating, the benches, intents
+#   kehillah_bet_din_benches_values.txt       every tunable number
+#   kehillah_bet_din_benches_intents.txt      the guests' intents
+#   events/kehillah_bet_din_benches_events.txt
+#
+# THE BENCH (who judges):
+#   - The convener (the activity host) always argues the first seat. That
+#     was already true of the docket's events; what changes is that he is
+#     also recorded as Av Beit Din, so XP and citation credit go to the man
+#     who argued. Before this, a lay Parnas argued the seat while his Dayyan
+#     was credited with it and was kept off the bench.
+#   - A convener who is not qualified sits "by his kavod and learning"
+#     (kehillah_bet_din_benches.0001) and argues at a penalty
+#     (kehillah_bet_din_lay_judge_penalty).
+#   - Co-judges must be QUALIFIED (kehillah_bet_din_qualified_judge_trigger
+#     below), by rite. The community's own rabbi is seated first.
+#   - Too few qualified? Learned laymen are seated at the same penalty: the
+#     Talmud lets laymen hear money cases where experts are wanting. The
+#     host's own household at the Quarter may be summoned onto the bench.
+#     If even that fails, the court cannot sit (benches.0002): the Piety is
+#     refunded, but the engine has no effect that lifts the cooldown.
+#
+# THE BENCHES (everyone else) choose an intent: follow the docket (and lean
+# toward a ruling), study in the host's library, make friends, seek semicha,
+# or bring a complaint of their own. See the intents file.
+# =====================================================================
+
+# Scope: a character. Qualified to sit as a judge, by rite. Groundwork for
+# rites the mod does not yet support in depth: Samaritans (a Kohen), and a
+# Learning bar for any other rite until it is given its own rule.
+kehillah_bet_din_qualified_judge_trigger = {
+	is_jewish_character_trigger = yes
+	NOT = { kehillah_cherem_in_full_trigger = yes }
+	trigger_if = {
+		limit = { kehillah_is_karaite_character_trigger = yes }
+		# Karaites have no ordination; learning is the qualification.
+		learning >= kehillah_bet_din_karaite_judge_learning
+	}
+	trigger_else_if = {
+		limit = { rite ?= { kehillah_rite_samaritan_trigger = yes } }
+		# The Samaritan priesthood keeps the law.
+		has_trait = kohen
+	}
+	trigger_else_if = {
+		limit = { is_rabbinic_authority_jewish_trigger = yes }
+		# Semicha: a yeshiva student or a dropout holds the trait but is not
+		# ordained (kehillah_is_ordained_rabbi_trigger).
+		kehillah_is_ordained_rabbi_trigger = yes
+	}
+	trigger_else = {
+		learning >= kehillah_bet_din_other_rite_judge_learning
+	}
+}
+
+# Scope: a candidate. HOST: the convener. May attend and may be seated as a
+# qualified co-judge. Used by the seat ranking, the AI court gather and the
+# invitation text.
+kehillah_bet_din_eligible_judge_trigger = {
+	kehillah_bet_din_may_attend_trigger = { HOST = $HOST$ }
+	kehillah_bet_din_qualified_judge_trigger = yes
+}
+
+# Scope: a character. Could be seated as a lay judge when qualified judges
+# are wanting. The same Learning bar the host's own household has always had
+# to clear to be invited at all.
+kehillah_bet_din_lay_judge_capable_trigger = {
+	is_adult = yes
+	is_imprisoned = no
+	is_incapable = no
+	kehillah_leadership_gender_eligible_trigger = yes
+	NOT = { kehillah_cherem_in_full_trigger = yes }
+	learning >= kehillah_bet_din_local_dayan_learning_threshold
+}
+
+# Scope: a candidate. HOST: the convener. Could fill a seat, qualified or lay.
+# What kehillah_bet_din_available_co_judges_value counts before a sitting.
+kehillah_bet_din_seatable_trigger = {
+	kehillah_bet_din_may_attend_trigger = { HOST = $HOST$ }
+	OR = {
+		kehillah_bet_din_qualified_judge_trigger = yes
+		kehillah_bet_din_lay_judge_capable_trigger = yes
+	}
+}
+
+# Scope: a courtier of the host. Home at the Quarter and free to be summoned
+# onto the bench without travel. scope:activity: the sitting.
+kehillah_bet_din_household_available_trigger = {
+	location = scope:activity.activity_location
+	NOT = { exists = involved_activity }
+	is_imprisoned = no
+	is_incapable = no
+}
+
+# Scope: an attendee. Not already on the bench. scope:activity, scope:host.
+kehillah_bet_din_unseated_trigger = {
+	NOT = { this = scope:host }
+	NAND = {
+		exists = scope:activity.var:kehillah_bet_din_judge2
+		this = scope:activity.var:kehillah_bet_din_judge2
+	}
+	NAND = {
+		exists = scope:activity.var:kehillah_bet_din_judge3
+		this = scope:activity.var:kehillah_bet_din_judge3
+	}
+}
+
+# Scope: a character in a sitting (involved_activity). Sits on the benches,
+# not the bench.
+kehillah_bet_din_on_the_benches_trigger = {
+	exists = involved_activity
+	involved_activity = { has_activity_type = activity_kehillah_bet_din_conference }
+	NOT = { this = involved_activity.activity_host }
+	NAND = {
+		exists = involved_activity.var:kehillah_bet_din_judge2
+		this = involved_activity.var:kehillah_bet_din_judge2
+	}
+	NAND = {
+		exists = involved_activity.var:kehillah_bet_din_judge3
+		this = involved_activity.var:kehillah_bet_din_judge3
+	}
+}
+
+# Scope: the community leader. Someone in the community may preside: the
+# shared community-rabbi test (an ordained rabbi or a Karaite, leader or
+# Dayyan), or, as groundwork for other rites, a leader or Dayyan qualified
+# by kehillah_bet_din_qualified_judge_trigger (a Samaritan Kohen). Replaces
+# kehillah_has_community_rabbi_trigger in the convening gates only; that
+# trigger's other users are unchanged.
+kehillah_bet_din_has_presiding_authority_trigger = {
+	OR = {
+		kehillah_has_community_rabbi_trigger = yes
+		kehillah_bet_din_qualified_judge_trigger = yes
+		cp:councillor_court_chaplain ?= { kehillah_bet_din_qualified_judge_trigger = yes }
+	}
+}
+
+# ---------------------------------------------------------------------
+# Intents. Scope: the guest choosing.
+# ---------------------------------------------------------------------
+
+# Seek semicha: a Rabbanite who holds no rabbi trait at all. A yeshiva
+# student or dropout keeps to the yeshiva path.
+kehillah_bet_din_can_seek_semicha_trigger = {
+	is_rabbinic_authority_jewish_trigger = yes
+	is_adult = yes
+	kehillah_leadership_gender_eligible_trigger = yes
+	NOT = { has_trait = kehillah_rabbi_trait }
+}
+
+# ---------------------------------------------------------------------
+# Complaints. Scope: a prospective defendant. COMPLAINANT: the guest.
+# ---------------------------------------------------------------------
+
+kehillah_bet_din_complaint_defendant_trigger = {
+	NOT = { this = $COMPLAINANT$ }
+	is_alive = yes
+	is_adult = yes
+	faith = $COMPLAINANT$.faith
+	OR = {
+		kehillah_bet_din_complaint_grievance_trigger = { COMPLAINANT = $COMPLAINANT$ }
+		kehillah_bet_din_complaint_cherem_grounds_trigger = yes
+	}
+}
+
+# A personal grievance: a rival, or someone who openly despises you. Grounds
+# for restitution and for damages to honour.
+kehillah_bet_din_complaint_grievance_trigger = {
+	OR = {
+		has_relation_rival = $COMPLAINANT$
+		opinion = { target = $COMPLAINANT$ value <= kehillah_bet_din_complaint_grudge_opinion }
+	}
+}
+
+# Grounds for asking the court to deepen a ban: already under Nezifah or
+# worse, not yet under the full ban.
+kehillah_bet_din_complaint_cherem_grounds_trigger = {
+	kehillah_cherem_has_grounds_trigger = yes
+}
+
+# Scope: a player following the docket. The case he was asked about is still
+# before the court (the benches have not yet been counted).
+kehillah_bet_din_rows_window_open_trigger = {
+	exists = involved_activity
+	has_variable = kehillah_bet_din_rows_case
+	involved_activity = { has_variable = kehillah_din_rows_open }
+	involved_activity.var:kehillah_din_rows_open = var:kehillah_bet_din_rows_case
+}
