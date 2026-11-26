@@ -1,4 +1,4 @@
-**Status:** sections 1–5 **BUILT 2026-11-26**, xTiger-clean (no new reports apart from known 1.21 false
+**Status:** sections 1–5 **BUILT 2026-11-26** (except raising Affluence by spending, section 5, which is open), xTiger-clean (no new reports apart from known 1.21 false
 positives), **not live-tested**: the checklist is in section 8. Sections 6–7 are **proposals**, not
 built. Daniel's request, after his first new-community playtest (Isaac of Worms founding a kehillah in
 Kligsberg at a lord's invitation and leading it himself).
@@ -114,27 +114,12 @@ same settle, so it also respects the ceilings now.
 
 ## 5. Affluence by spending, and trade (built)
 
-**Affluence sinks** (`common/decisions/kehillah_invest_decisions.txt`, values in
-`kehillah_trade_band_values.txt`). Daniel's follow-up the same day: not one generic "invest" button but
-"specific sinks we flavorfully make". The first pass (a single *Invest in the Community's Livelihoods*
-decision) was replaced by five things a medieval kehillah really spent its money on. Each has its own
-cooldown and pays more when the Quarter has the building that does the work. All are open to a newly
-founded community: they are a founder's first levers.
-
-| Sink | Cost | Every | Gain (deed) | With |
-|---|---|---|---|---|
-| **Stock the Free-Loan Chest** (*gemilut chasadim*) | medium gold | 2 years | Affluence 20 (30), Stability 8 | Kuppah |
-| **Take Stalls at the Fair** | medium gold | 1 year | Affluence 15 (25) | Fair Stalls |
-| **Send Apprentices Abroad** | medium gold | 5 years | Affluence 40 (55), **3–4 years later** | Craft Row |
-| **Lay In Wheat and Wine** (sold at cost before Passover) | 2× minor gold | 1 year | Affluence 8 (15), Stability 6 | Matzah Bakery |
-| **Pave and Drain the Street** | major gold | 10 years | Affluence 30, Stability 25 | |
-
-How much each one keeps the pillar up depends on how often it can be used: a yearly deed of size A keeps
-about 5.4 A, one every 2 years about 3.0 A, every 5 about 1.6 A, every 10 about 1.1 A. With every sink in
-use and their buildings built, Affluence sits about 400 points above baseline, before the ceiling. The
-apprentices' due year is stored on the title and checked by the quarterly pulse, so they come home to
-whoever leads the community then (`kehillah_apprentices_return_check_effect`, `kehillah_invest.0010`).
-The Commercial style's boost applies through `kehillah_change_pillar_effect`.
+**Raising Affluence by spending: OPEN, nothing built.** Two passes were built and removed the same day:
+first a single generic *Invest* decision (in b8d00f83), then five bespoke spending decisions (4fa7da63:
+free-loan chest, fair stalls, apprentices, Passover provisions, paving). Daniel rejected both: bespoke
+decisions are repetitive and mechanically shallow, and five new decisions is bad design. He is also unsure
+tying Affluence to lending feels right. Still to decide: how a player raises Affluence on purpose, through
+systems that already exist rather than new buttons.
 
 **Trade from Affluence** (`kehillah_trade_band_effects.txt`, applied with the bands):
 
@@ -217,13 +202,7 @@ soak. Known risks:
    the ceiling parameter.
 5. **Succession** in Worms: the Quarter is restored in full (the seeding waiver) and no `error.log` lines
    appear.
-6. **Affluence sinks:**
-   - each of the five decisions shows its gold cost and its pillar change as a size;
-   - the cooldowns hold;
-   - the Affluence breakdown shows the deed;
-   - Send Apprentices Abroad: set the due year by console or wait, and the return event arrives in a
-     quarterly pulse.
-7. **Trade, with the DLC:** at Healthy Affluence, `event kehillah_quarter_debug.9` shows max routes 1; at
+6. **Trade, with the DLC:** at Healthy Affluence, `event kehillah_quarter_debug.9` shows max routes 1; at
    Flourishing, 2. Without the DLC, the ventures modifier shows and a toast with gold appears now and then.
-8. **Error log:** check `error.log` after hovering the breakdowns. The tooltip values are new and
+7. **Error log:** check `error.log` after hovering the breakdowns. The tooltip values are new and
    recompute baselines.
