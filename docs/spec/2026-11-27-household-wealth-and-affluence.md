@@ -221,3 +221,27 @@ assignment choices and reports them. Use a disposable save.
 Required runtime checks and actual results belong in the linked dated test log,
 including fresh/old saves, change of head, migration, DLC and non-DLC behavior,
 rendering, tooltip logs, assessment/assignment cooldowns and no double income.
+
+## 10. Follow-up audit, 2026-11-27
+
+Daniel asked specifically about workshop interaction and panel functionality after
+the initial implementation. The [live validation guide](../testing/2026-11-27-household-affluence-validation-guide.md)
+now distinguishes source wiring, actual live passes and absent features, with exact
+manual click steps and expected changes. This addendum clarifies the first pass; it
+does not introduce another approved feature or imply new live-test results.
+
+- Workshop assignment exists as a button on each eligible household card, with a
+  scripted GUI/hidden-event path. That actual click path remains UNRUN. The existing
+  income/growth probe passes do not prove that the GUI supplies its family scope.
+- No right-click character interaction or specific-building/trade picker is built.
+  Workshop capacity is pooled; existing buildings earn/produce without a household
+  appointment. Assigning a family adds the household economic opportunity described
+  above, not ownership or a staffing requirement.
+- The Quarter bookmark, two-card layout, wealth tooltip, Light policy/cooldown and
+  settlement passed live checks. Kahal House/My Realm entry points, panel switching,
+  long-list scrolling and appointment controls still need their own tests. My Realm
+  currently uses a toggle; behavior when Quarter is already open needs checking.
+- Tooltips give general eligibility requirements, not the specific blocked reason
+  or cooldown end date. Expandable rows, filtering and transaction history are absent.
+- Save/head changes/migration, real loan outcomes and both DLC venture paths remain
+  pending. Native household fortunes are still a disclosed proxy, not route accounting.

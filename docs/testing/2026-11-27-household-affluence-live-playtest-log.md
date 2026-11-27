@@ -41,7 +41,7 @@ a unique console marker was confirmed before probes.
   their interpolated diagnostic strings failed to resolve ROOT/character functions.
   This was a real probe-reporting bug, not a successful numeric report. The literal
   report now uses saved numeric scopes and `debug_log_scopes`, following the existing
-  pillar-model probes. Retest is pending in the second pass.
+  pillar-model probes. Its successful second-pass retest is recorded below.
 - `.3`: **duplicate-payment PASS**.
 - `.4`: **upper-bound PASS**, **lower-bound PASS**, **income-conservation PASS**, once
   each for the one non-leading eligible household in that campaign. No new error was
@@ -90,6 +90,11 @@ a unique console marker was confirmed before probes.
   checklist below; source checks do not turn them into runtime passes.
 
 # Required checklist
+
+**2026-11-27 follow-up:** the [step-by-step live validation guide](2026-11-27-household-affluence-validation-guide.md)
+expands this checklist, especially the unrun Workshop click path, what to expect from
+pooled assignments, navigation risks, probe side effects and evidence requirements.
+Writing the guide adds no new live-test passes.
 
 1. Fresh Worms 1066 and an old disposable save: all eligible families initialized
    once at 35; leading household explicitly excluded. Personal purses unchanged by
