@@ -245,3 +245,5 @@ does not introduce another approved feature or imply new live-test results.
   or cooldown end date. Expandable rows, filtering and transaction history are absent.
 - Save/head changes/migration, real loan outcomes and both DLC venture paths remain
   pending. Native household fortunes are still a disclosed proxy, not route accounting.
+
+**2026-11-27 business revision:** the pooled assignment UI/procedure above is superseded by [named family-operated businesses](2026-11-27-family-operated-businesses.md) and its [current live checklist](../testing/2026-11-27-family-businesses-live-playtest-log.md). Wealth/assessment tests remain relevant.

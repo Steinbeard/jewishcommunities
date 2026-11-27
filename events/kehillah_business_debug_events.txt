@@ -1,0 +1,91 @@
+﻿# Console only, disposable campaign. .1 report; .2 prepare Dyers' premises;
+# .3 hire a valid Ba'al Bayit natively; .4 revoke; .5 report a second refresh.
+namespace = kehillah_business_debug
+
+kehillah_business_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_household_refresh_effect = yes
+		save_scope_value_as = { name = business_dyes_output value = kehillah_business_dyers_output_value }
+		save_scope_value_as = { name = business_dyes_income value = kehillah_business_dyers_income_value }
+		primary_title = {
+			save_scope_value_as = { name = business_built value = kehillah_business_built_count_value }
+			save_scope_value_as = { name = business_staffed value = kehillah_business_staffed_count_value }
+			if = {
+				limit = { exists = var:kehillah_business_dyers_operator }
+				var:kehillah_business_dyers_operator = {
+					save_scope_as = business_operator
+					house = {
+						save_scope_value_as = { name = business_family_wealth value = var:kehillah_household_wealth }
+						save_scope_value_as = { name = business_family_category value = var:kehillah_household_assignment }
+						save_scope_value_as = { name = business_family_seats value = var:kehillah_household_seats }
+					}
+				}
+			}
+		}
+		domicile.domicile_location ?= {
+			save_scope_value_as = { name = business_site_dyes value = var:kehillah_business_supply_dyes }
+		}
+		debug_log = "BUSINESS report (native position, family and site totals in scopes)"
+		debug_log_scopes = yes
+	}
+}
+kehillah_business_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		domicile ?= {
+			if = { limit = { NOT = { has_domicile_building_or_higher = kehillah_workshops_01 } } add_domicile_building = kehillah_workshops_01 }
+			if = { limit = { has_domicile_building_or_higher = kehillah_workshops_01 NOT = { has_domicile_building_or_higher = kehillah_trade_dyers_01 } } add_domicile_building = kehillah_trade_dyers_01 }
+		}
+		kehillah_household_refresh_effect = yes
+		if = { limit = { kehillah_business_dyers_built_trigger = yes } debug_log = "BUSINESS premises PASS" }
+		else = { debug_log = "BUSINESS premises UNRUN no slot or eligible parent" }
+		trigger_event = kehillah_business_debug.1
+	}
+}
+kehillah_business_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_household_refresh_effect = yes
+		clear_saved_scope = business_candidate
+		random_courtier = {
+			limit = { can_be_employed_as = kehillah_business_dyers_position }
+			save_scope_as = business_candidate
+			house = { save_scope_value_as = { name = business_seats_before value = var:kehillah_household_seats } }
+		}
+		if = {
+			limit = { exists = scope:business_candidate NOT = { employs_court_position = kehillah_business_dyers_position } }
+			appoint_court_position = { recipient = scope:business_candidate court_position = kehillah_business_dyers_position }
+			kehillah_household_refresh_effect = yes
+			if = { limit = { kehillah_business_dyers_staffed_trigger = yes } debug_log = "BUSINESS hire PASS" }
+			else = { debug_log = "BUSINESS hire FAIL" }
+			if = { limit = { scope:business_candidate.house = { var:kehillah_household_seats = scope:business_seats_before } } debug_log = "BUSINESS political-seat isolation PASS" }
+			else = { debug_log = "BUSINESS political-seat isolation FAIL" }
+		}
+		else = { debug_log = "BUSINESS hire UNRUN no eligible free household or already staffed" }
+		trigger_event = kehillah_business_debug.1
+	}
+}
+kehillah_business_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		random_court_position_holder = { type = kehillah_business_dyers_position save_scope_as = business_revokee }
+		if = {
+			limit = { exists = scope:business_revokee }
+			revoke_court_position = { recipient = scope:business_revokee court_position = kehillah_business_dyers_position }
+		}
+		kehillah_household_refresh_effect = yes
+		if = { limit = { kehillah_business_dyers_output_value = 0 kehillah_business_dyers_income_value = 0 } debug_log = "BUSINESS vacancy output-and-income PASS" }
+		else = { debug_log = "BUSINESS vacancy output-and-income FAIL" }
+		trigger_event = kehillah_business_debug.1
+	}
+}
+kehillah_business_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = { kehillah_household_refresh_effect = yes kehillah_household_refresh_effect = yes trigger_event = kehillah_business_debug.1 }
+}

@@ -244,3 +244,5 @@ The first pass of live testing established panel rendering and assessment/basic
 settlement, not all those workflows. Record new results as a dated addendum to the
 existing live log; do not silently replace an UNRUN with a pass based on source wiring.
 After automated tests, recheck ownership and close only the test process launched.
+
+**2026-11-27 business revision:** the pooled assignment UI/procedure above is superseded by [named family-operated businesses](../spec/2026-11-27-family-operated-businesses.md) and its [current live checklist](2026-11-27-family-businesses-live-playtest-log.md). Wealth/assessment tests remain relevant.

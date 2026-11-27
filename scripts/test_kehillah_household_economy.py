@@ -83,16 +83,18 @@ class HouseholdEconomyTest(unittest.TestCase):
         old = read("common/scripted_effects/kehillah_trade_band_effects.txt")
         self.assertNotIn("add_gold", block(old, "kehillah_trade_venture_pulse_effect"))
 
-    def test_actions_recheck_authority_inside_hidden_event(self):
+    def test_native_positions_recheck_authority_and_legacy_actions_cannot_assign(self):
         events = read("events/kehillah_household_economy_events.txt")
-        triggers = read("common/scripted_triggers/kehillah_household_economy_triggers.txt")
+        positions = read("common/court_positions/types/kehillah_business_positions.txt")
+        triggers = read("common/scripted_triggers/kehillah_business_triggers.txt")
         for number in range(10, 14):
             action = block(events, f"kehillah_household_economy.{number}")
             self.assertIn("hidden = yes", action)
-            self.assertIn("kehillah_household_can_manage_trigger = yes", action)
-            self.assertIn("kehillah_household_assignment_cooldown", action)
-        self.assertIn("var:kehillah_household_of = root.primary_title", triggers)
-        self.assertIn("is_courtier_of", triggers)
+            self.assertNotIn("set_variable", action)
+        self.assertIn("kehillah_business_worker_trigger = yes", positions)
+        self.assertIn("house.var:kehillah_household_of = scope:liege.primary_title", positions)
+        self.assertIn("kehillah_household_assignment_cooldown", positions)
+        self.assertIn("salary = { gold = 0 }", positions)
         self.assertIn("NOT = { has_variable = kehillah_household_ruling }", triggers)
 
     def test_wealth_stays_on_house_and_assignments_reset_on_migration(self):
