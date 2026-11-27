@@ -1,5 +1,7 @@
 **Status:** PROPOSAL, 2026-11-27, Daniel's request after a gameplay review of Stability and Greatness.
-Nothing in this document is built. All numbers are first-pass targets for the calibration script in
+**Revised the same day** after Daniel's review: cases stay random but are weighted toward, and cast from,
+real character dynamics, instead of the first draft's stored dispute slots. Nothing in this document is
+built. All numbers are first-pass targets for the calibration script in
 [pillar ceilings](2026-11-26-pillar-ceilings-deeds-and-founding.md) §7, not tuned values. ROADMAP stays
 authoritative for what is built.
 
@@ -9,102 +11,174 @@ authoritative for what is built.
   cost) stay.
 - The Stability deeds paid by Bet Din cases and sessions (`kehillah_bet_din_case*_stability_*`,
   `kehillah_bet_din_session_stability_*`). Their Greatness rewards stay.
-- How the docket is drawn in [v5](v5-bet-din-conference.md) §11 and `kehillah_bet_din_draw_case_effect`:
-  cases come from the community's own open disputes first, and from the random pool only after that.
-  Who sits on the bench, the argument and citation flow
-  ([argument and vote flow](2026-11-24-bet-din-argument-and-vote-flow.md)) and the case premises stay
-  as they are.
+- The flat weight-10 draw in `kehillah_bet_din_draw_case_effect` and the generic
+  `kehillah_bet_din_pick_litigants_effect`, which stays as the fallback.
 - The Stability floor (400) and the Synagogue's Greatness points, both flagged in pillar ceilings §3 and §7.
 
 # Stability and the court
 
-## 1. Why: Stability can't be grown today
+## 0. What does not change
+
+The hearing itself is the part of the Bet Din that works, and this spec leaves it alone:
+
+- **Each judge chooses one of three positions.** The chance comes from skill and personality, shown with
+  the native preview ([argument and vote flow](2026-11-24-bet-din-argument-and-vote-flow.md)).
+- **Each judge may cite a source,** from the same citation screen with the same reliability, rarity and
+  ban rules.
+- **Per-judge rolls, the weighted panel vote, the tie-break and the case result** (poor, good or great
+  from the winning position's strength) stay as they are.
+- **The session score, its thresholds, the progress bar and the conclusion screen's existing content**
+  stay as they are.
+- **Bench selection, invitations, the cooldown and the Piety cost** stay as they are.
+
+This spec changes only three things around the hearing:
+1. **Which case is drawn and who the litigants are** (before the hearing).
+2. **What the result does to the community** (after the hearing).
+3. **What the charter lets a ruling achieve** (after the hearing).
+
+No argument chance, citation value or vote weight is touched. §9 lists one optional exception, kept out
+of the first build.
+
+## 1. Why
 
 A gameplay review of the current source, 2026-11-27:
 
 - **Stability starts at Healthy and stays there.** The floor is 400, which is also the Healthy threshold
-  and Synagogue I's ceiling. Offices, the Hekdesh and charter terms disappear into the 25% overflow above
-  the ceiling. Then a Synagogue tier releases them all at once.
-- **Deeds don't register.** Stability events give ±5 to ±40. A good Bet Din session gives +10 to +50.
-  All of it fades by 5% a quarter, and above the ceiling it counts at a quarter. With one sitting every
-  three years, the court is invisible on the Stability bar.
-- **Setbacks are weather.** Large external terms (host attitude, policy, war) switch on and off. The
-  cushion buys time, but the player has nothing in particular to do with it.
-- **The Bet Din has no link to the community's own life.** Cases are drawn at random from the 114-case
-  pool, and the litigants are random courtiers from two different dynasties. Whether the community is
-  busy or quiet, rich or poor, the docket is the same.
+  and Synagogue I's ceiling. Offices and buildings disappear into the 25% overflow above the ceiling.
+- **The court is invisible on the bar.** Case and session Stability deeds (+5 to +50) fade by 5% a
+  quarter and count at a quarter above the ceiling. With one sitting every three years, nothing shows.
+- **The docket has no link to the community.** Cases are drawn at random from the 114-case pool, and the
+  litigants are two random courtiers from different dynasties.
 
 ## 2. Keeping the three pillars apart
 
-The first fix suggested in the review was "household contentment as a Stability input". That would
-overlap Affluence, which already measures households. This spec drops that idea and uses this rule
-instead:
-
 | Pillar | Question it answers | What it's made of | Main lever |
 |---|---|---|---|
-| **Affluence** | What do the households *have*? | Household wealth, livelihoods, businesses, the Kahal House | Assessment, business appointments, charter market terms |
-| **Stability** | Does the community *govern itself*? | Its court's authority, its open disputes, its offices, its protection | The Bet Din, officers, the host relationship |
+| **Affluence** | What do the households *have*? | Household wealth, livelihoods, businesses, the Kahal House | Assessment, business appointments, market terms |
+| **Stability** | Does the community *govern itself*? | Its court's authority, its unheard quarrels, its offices, its protection | The Bet Din and its bench, officers, the charter's jurisdiction |
 | **Greatness** | What is the community *known for* abroad? | Learning, books, the yeshiva, followers, alumni | Study, writing, she'elot, synods |
 
-**Rule:** a single source may affect two pillars through different channels, but no input is counted as a
-term in two pillars. Examples:
-- A rich community has more partnerships, so more disputes (an Affluence condition creates Stability
-  *work*). Its wealth is never a Stability term.
-- A ruling between two households can move wealth from one to the other (an Affluence effect), while
-  the ruling's *quality* moves the court's authority (the Stability effect).
-- A great ruling still earns Greatness (fame abroad), as it does now.
+**Rule:** one source may affect two pillars through different channels, but no input is a term in two
+pillars. A wealth gap between two houses can *cause* a quarrel, and the quarrel costs Stability; the
+wealth itself is never a Stability term. A money ruling moves household wealth (an Affluence effect),
+while its *quality* moves the court's authority (the Stability effect).
 
-Existing overlaps to clear up in the same pass: the Kahal House's Stability points (pillar ceilings §3,
-open question) move to Affluence; Heavy assessment stays an Affluence and opinion matter and never
-becomes a Stability term.
+Clean-ups in the same pass:
+- The Kahal House's Stability points move to Affluence.
+- Heavy assessment stays an Affluence and opinion matter.
 
-## 3. The model
+## 3. Quarrels: what makes the Bet Din needed
 
-Stability gains two new, named parts. Both are lasting state, like household wealth, not fading deeds.
+A **quarrel** is a condition that is true *right now* between real people in the community. It is
+computed each quarter from existing state. Nothing new is stored except the relief marks in §5.
 
-### 3.1 Open disputes (the docket)
+| Quarrel | Parties | When it exists | Severity |
+|---|---|---|---|
+| **Rival heads** | Two household heads | They are rivals (vanilla relation); nemeses count double | 2 (nemesis 3) |
+| **Inheritance** | The new head and another adult heir, or the widow | A household head died within the last 3 years, leaving more than one adult heir or a widow | 2 |
+| **Rich and poor** | The richest Wealthy head and the poorest Struggling head | Both bands are present | 1 |
+| **Trade** | Two heads running businesses in the same trade or at the same site | Family-business positions | 1 |
+| **Debt** | The lending-table head and a Struggling head | A lending table exists and a Struggling house exists | 1 |
+| **Newcomers** | A newly arrived head and the longest-settled head | A household arrived within the last 3 years | 1 |
+| **Assessment** | The richest head and the leader's treasurer, or the parnas | Heavy assessment | 1 |
+| **Hard natures** | Any of the above where a party is greedy, arrogant, stubborn, vengeful or wrathful | (modifier) | +1 |
 
-The community title holds up to **five open disputes**, in numbered slots (`kehillah_dispute_<n>_*`):
-a case id from the existing pool, **two real households** from the register (dynasty houses, stored as
-scopes), the year filed, and a cause.
+A community shows at most **five quarrels** (the most severe). A community that is growing, trading and
+lending naturally has more of them. **A bigger, richer community needs a stronger court.**
 
-**Where disputes come from.** Disputes arise from what happens in the community, each one picking a case
-whose premise fits:
+### 3.1 Their cost: needing the Bet Din sooner
 
-| Cause | Trigger (quarterly roll, or on the event) | Example cases |
+Each quarrel is its own named Stability row ("The Kohen and Levi heads are rivals"):
+
+```
+quarrel cost = severity × 12 × neglect
+neglect = 1, rising by 0.25 for each year past 2 since the community's own last sitting, at most 2
+```
+
+The time since the last sitting comes from the existing `var:kehillah_bet_din_last_year`. One row,
+"Quarrels unheard for N years", explains the neglect factor. This replaces the overdue penalty: a quiet
+community with no quarrels pays nothing for skipping a sitting, while a busy one with quarrels pays a
+lot, and more each year.
+
+The total is capped at −200. Five quarrels averaging severity 1.5 at full neglect cost about −180, which
+is a band. Three ordinary ones (severity 1) a year after a sitting cost about −36.
+
+### 3.2 Previewed before the sitting
+
+The planner and the top-bar alert ("Quarrels await the Bet Din") list each quarrel and say what it needs:
+"needs a great ruling to settle; a good one will only ease it". This is a read-only trigger check: the
+same conditions, displayed.
+
+## 4. The docket: random cases, real people
+
+The draw stays random. Each case's weight now reads the community:
+
+- **Tag each of the 114 cases with a profile:** rival heads, inheritance, rich and poor, trade, debt,
+  newcomers, assessment, or *any two houses*. The generator scripts write the tag. Cases that fit none
+  (ritual questions, outside appeals) stay *generic*.
+- **Weight:** base 10, as now. +40 if a quarrel of its profile exists and has not been heard this session.
+  +10 per point of that quarrel's severity. The docket therefore fills mostly from live quarrels, while
+  generic cases still appear.
+- **Litigants:** the profile's picker casts the quarrel's two parties as `litigant_a` and `litigant_b`.
+  Each profile needs to know which role is which: heir and widow, lender and debtor. If the parties
+  can't be found at the ruling stage (dead, gone), the current generic picker is used.
+- **Prose:** one triggered description line per profile, so the case acknowledges why these two are here
+  ("The two have been rivals since the partnership failed"). The 114 authored scenes stay as written.
+- **Personality in the case:** a hard-natured party makes the case's compliance harder (§6), but never
+  changes the judges' argument chances.
+- **Docket size:** 3 (as now). +1 with a Dayyan in office, +1 with Beit Midrash III.
+
+## 5. The result: how much a ruling achieves
+
+A ruling's existing quality decides how much of the quarrel it removes. This is where the bench matters:
+
+| Case result | On the quarrel | Authority (§7) |
 |---|---|---|
-| Inheritance | A household head dies leaving more than one adult heir, or a widow | uncle's estate, widow's pledge |
-| Marriage | A marriage between two registered households | dowry, ketubbah, wife's property |
-| Partnership | Each household running a business (the family-business system) | broken partnership, empty caravan, olive press |
-| Debt | Lending-table household; a loan repaid or defaulted | bilingual loan, lord's debt |
-| Assessment | Heavy assessment, or a change of assessment | double tax, secret assessment, tax exemption |
-| Newcomers | A household arrives; refugees after a crisis | newcomer's shoes, refugee contracts |
-| Communal | An office changes hands; synagogue building work | inherited seat, reader's wages, synagogue roof |
+| **Great** | **Settled.** The cause ends where it can: the rivalry is removed and both gain opinion; the inheritance is closed; the newcomer is accepted. Where the condition persists (rich and poor), a 10-year settled mark keeps its row at zero. | +8 |
+| **Good** | **Eased.** A 5-year mark halves the row. The rivalry stays. | +4 |
+| **Poor** | **Worse.** A 3-year mark raises the row by one severity level. The losing party feels wronged. | −6 |
 
-- **Base rate:** about one dispute a year for a community of six to eight households, fewer for a small
-  one. The rate rises with households and businesses, so **a growing, wealthy community needs a
-  stronger court.** That is the growth curve this spec wants.
-- Each case in the pool gets a `cause` tag; the generator scripts write it. A case without a natural
-  cause (ritual questions, outside appeals) stays in the random filler pool.
+The marks are timed variables on the parties (`kehillah_quarrel_eased`, `kehillah_quarrel_settled`,
+`kehillah_quarrel_worsened`), the only new stored state.
 
-**What an open dispute costs.** Each one is its own named row in the Stability breakdown:
-"The Levi–Kohen partnership, unsettled 3 years". The cost grows with its age: −5 when filed, −3 more each
-year, at most −20. Five old disputes cost −100. That is enough to drop a community a band, and it
-builds slowly enough to plan around.
+**Why the player hunts for great rabbis:** a weak bench gets *good* rulings at best, and good rulings
+only ease quarrels for five years. The rows come back, and the neglect factor keeps climbing. To actually
+settle the community's quarrels, the player needs a bench that wins great rulings. That means inviting
+the strongest sages (the targeted invitations already rank them by Learning), keeping a strong Dayyan,
+preparing with the Dayyan, and building a library worth citing.
 
-**Escalation.** A dispute older than **four years** can escalate. A yearly event lets the leader respond
-(see §5):
-- **To the gentile court** (*arka'ot*): one house takes the quarrel to the lord's court. The court loses
-  authority, and the host gains a reason to meddle.
-- **A feud:** the two heads become rivals, and the dispute's cost doubles.
-- **Departure:** the weaker house leaves, taking its wealth (and its Affluence) with it.
+**Other effects of the result:**
+- Party opinions stay as now: one reason per party, direction and quality combined.
+- **Money cases** (trade, debt, inheritance, rich and poor) also move household wealth: winner +4,
+  loser −4, explained on the household card.
+- **The conclusion screen** keeps what it has and adds three lines:
+  - each quarrel heard and what happened to it (settled, eased, worse);
+  - authority before and after, on its bar;
+  - the Stability change as a size, never a number.
 
-A dispute closes when the Bet Din rules on it, when a house leaves the community, or when the leader
-settles it out of court at a cost (§5).
+## 6. Compliance
 
-### 3.2 The court's authority
+After a case's result is applied, the losing party complies or defies. This is a weighted roll with the
+native preview, and a toast in the vanilla format:
 
-A 0–100 score on the community title (`kehillah_court_authority`), shown as a named bar:
+| Factor | Compliance |
+|---|---|
+| Base | 70% |
+| Court authority | +0 to +20 (authority ÷ 5) |
+| Great ruling | +15; poor ruling −20 |
+| Loser's opinion of the leader | ±15 |
+| Loser is Wealthy | −10 (they have other options) |
+| Loser is greedy, arrogant, stubborn or vengeful | −10 each, at most −20 |
+| Loser is humble, just or zealous | +10 |
+| Charter jurisdiction (§8) | See §8 |
+
+Clamped to 10–95%. **Defiance** undoes the relief (the quarrel stays at full severity) and costs −5
+authority. The leader may then use the existing cherem system against the defiant head, with its
+existing costs.
+
+## 7. The court's authority
+
+A lasting 0–100 score on the community title (`kehillah_court_authority`), shown as a named bar:
 
 | Authority | Label | Stability term |
 |---|---|---|
@@ -113,207 +187,162 @@ A 0–100 score on the community title (`kehillah_court_authority`), shown as a 
 | 50–74 | Respected | +100 to +148 |
 | 75–100 | Revered | +150 to +200 |
 
-Stability term = authority × 2. At the top it is worth as much as the Shtadlan and Gabbai together.
+Stability term = authority × 2.
 
 **What moves it:**
+- **Case results:** great +8, good +4, poor −6.
+- **Defiance:** −5.
+- **Session score:** a landmark session +5 more; a failed session −10.
+- **Succession:** a new leader loses 10 authority, unless the presiding Dayyan stays in office.
+- **Neglect:** −2 a quarter while any quarrel has gone unheard for 4 years.
 
-| Event | Authority |
-|---|---|
-| Great case ruling | +8 |
-| Good case ruling | +4 |
-| Poor case ruling | −6 |
-| Losing house defies the ruling (§4) | −5 |
-| A dispute goes to the gentile court | −8 |
-| Landmark session | +5 extra |
-| Failed session | −10 |
-| No sitting for 3 years with disputes open | −2 a quarter |
-| New leader (unless the presiding Dayyan stays in office) | −10 |
-| The charter lacks Bet Din jurisdiction | can't rise above 49 (Heeded) |
+It never decays on its own. Pre-authored communities start at 50; founded communities start at 20 ("a
+court no one has tested yet").
 
-Starting values: pre-authored communities 50; founded communities 20 ("a court no one has tested yet").
+## 8. The charter: what a ruling can achieve
 
-Authority never decays on its own. It falls only through neglect, bad rulings or defiance. A community
-that sits regularly and rules well holds its court's standing for generations.
+The charter's **jurisdiction** term already exists (`var:kehillah_charter_cache_jurisdiction`: 0 the
+lord's courts, 1 royal appeal or communal arbitration, 2 full Bet Din jurisdiction) but only adds a flat
+Stability baseline. It now decides how far the court's rulings reach. **It never touches the hearing:**
+the judges argue the same way under every charter.
 
-### 3.3 Floor and Synagogue changes
+| Jurisdiction | Authority cap | Compliance | Also |
+|---|---|---|---|
+| **2: Bet Din jurisdiction** | 100 | +15 | Rulings stand as given. |
+| **1: Royal appeal** (Christian) **or communal arbitration** (Muslim) | 74 | +0 | After a good ruling the loser may **appeal** to the lord (25%, or 10% after a great ruling; a hard nature +10). An upheld appeal undoes the relief and costs −3 authority. Under a Muslim host the appeal goes to the qadi. |
+| **0: The lord's courts** | 49 | −15 | In money cases a great ruling counts as good: the court can advise, but not enforce. Ritual and marriage cases are unaffected. |
 
-So the court shows on the bar, Stability needs headroom under the ceiling:
+The current flat jurisdiction Stability terms (+22/+12/+10) are retired; the effect moves into these
+mechanics. Jurisdiction becomes a valuable term for the Shtadlan to negotiate in a charter revision,
+because it's how the court gets its teeth.
 
-- **The Stability floor drops from 400 to 250.** A community reaches Healthy through its court, offices
-  and protection, not by default.
-- **The Synagogue's points move from Greatness to Stability**, matching the Stability ceiling it already
-  sets. The Beit Midrash carries Greatness.
+**Optional, later: text study.** Under *proscribed* text study, citing a Talmudic work could carry a
+small risk of denunciation that feeds the existing Talmud trial catalyst. That is a consequence after the
+citation, not a change to its chance. It is left out of the first build.
 
-**Rough check, pre-authored (Worms-like):** 250 floor + authority 50 (+100) + offices +130 + charter about +70
-+ Synagogue III about +110 + network +20 = 680, under the Synagogue III ceiling of 700. That is high
-Healthy, which is about where Worms sits now. Greatness loses the Synagogue's points; the calibration
-pass will need to make that up (for example by raising the Beit Midrash's points).
+## 9. Setbacks
 
-**Rough check, founded:** 250 + authority 20 (+40) + Synagogue I +40 + network +20 + a modest charter
-about +30 + the +50 founding deed = 430, low Healthy. That keeps "no community starts below Healthy"
-(pillar ceilings §1). Appointing a Shtadlan and holding a good first sitting moves it clearly upward.
+| Setback | What happens | The lever |
+|---|---|---|
+| **Crisis** (hosting is blocked) | Neglect keeps rising; refugees arrive as newcomer quarrels afterwards. | The first sitting after a crisis is the recovery. |
+| **Charter loses jurisdiction** | The authority cap drops; extra authority above it is lost. Compliance falls. | Shtadlan charter revision. |
+| **Weak bench** | Good rulings only ease; poor ones make quarrels worse. | Invite better sages, prepare with the Dayyan, build the library. |
+| **Succession** | −10 authority unless the Dayyan stays. | Keep the Dayyan in office. |
+| **A hard-natured house head** | Defies more, appeals more. | Win great rulings; cherem as a last resort. |
 
-All of this is for the calibration script to confirm, not a tuning decision.
+**Optional, not in the first build:** a judge who is close kin or a rival of a litigant gets −10 when
+arguing for or against them, shown in the native preview. This is the only change this spec would make to
+argument chances, and it uses the situation slot the argument spec already allows (±15). Build it only if
+Daniel wants it after playing the rest.
 
-## 4. Hosting the Bet Din: making the effects visible
+## 10. Takkanot from landmark sessions
 
-The argument and citation flow stays exactly as built. What changes is what goes in and what comes out.
-
-**Going in: the docket is your community.**
-- On arrival, the docket fills from open disputes, **oldest first**, up to the docket size. Any empty
-  places are filled from the random pool, as now.
-- The litigants are the heads of the two households, not random courtiers. If a house has left, its
-  dispute is gone already.
-- **Docket size:** 3 (as now). +1 with a Dayyan in office, +1 with Beit Midrash III. A bigger community
-  can keep up only by building up its court.
-- The planner shows the docket in advance: "Three disputes await: the Levi–Kohen partnership (4 years,
-  escalation likely), …".
-
-**Coming out: every ruling has a visible effect.**
-1. **Compliance.** After each ruling, the losing house complies or defies. The chance comes from the
-   court's authority, the ruling's quality and the head's opinion of the leader, shown with the native
-   `random_list` preview, never in prose. Defiance keeps the dispute open as an *enforcement* dispute
-   (−5 authority). The leader can then use the existing cherem system against the house head, with its
-   existing costs.
-2. **The houses react.** The winner gains opinion of the leader, the loser loses some, both through the
-   existing one-reason-per-party modifier. Money cases move household wealth: the winner +4, the loser −4.
-   That is an Affluence effect, explained on the household card.
-3. **The conclusion screen** shows, in this order:
-   - the disputes closed and those still open;
-   - authority before and after, on its bar;
-   - the Stability change as a size (minor, moderate, major), never a number;
-   - Greatness as now.
-4. **Toasts** for compliance and defiance, one per case, in the vanilla action-tooltip format.
-
-**Takkanot from landmark sessions.** A landmark session lets the presiding leader enact one *takkanah*
-(communal ordinance) tied to one cause heard in that session. It is a lasting rule with a trade-off:
+A landmark session lets the presiding leader enact one *takkanah* for a quarrel type heard that session.
+It halves that type's severity, with a trade-off:
 
 | Takkanah | Benefit | Cost |
 |---|---|---|
-| On partnerships (written contracts before witnesses) | Partnership disputes arise half as often | Businesses' sustainable wealth −2 (paperwork, fees) |
-| On dowries (fixed ketubbah terms) | Marriage disputes arise half as often | Marriages with outside houses: opinion −5 |
-| On assessment (sworn returns) | Assessment disputes half as often; Heavy assessment no longer creates them | Wealthy heads: opinion −5 |
-| *Herem ha-yishuv* (settlement needs consent) | Newcomer disputes half as often | Fewer households arrive |
-| On inheritance (daughters' shares) | Inheritance disputes half as often | Heirs of large houses: opinion −5 |
+| On partnerships (written contracts before witnesses) | Trade quarrels halved | Business households' sustainable wealth −2 |
+| On inheritance (fixed shares) | Inheritance quarrels halved | Heirs of large houses: opinion −5 |
+| On assessment (sworn returns) | Assessment quarrels halved | Wealthy heads: opinion −5 |
+| On lending (witnessed pledges) | Debt quarrels halved | New loans' interest terms −1 point |
+| *Herem ha-yishuv* (settlement needs consent) | Newcomer quarrels halved | Fewer households arrive |
 
-- At most **three takkanot** at once. A new one past the limit replaces an old one, at the player's
-  choice.
-- They show on the Laws dashboard, and each is logged in the community history with the session that
-  enacted it.
-- This folds in the takkanot idea in pillar ceilings §6.2 and the v25 note in ROADMAP.
+At most **three at once.** A new one past the limit replaces an old one, at the player's choice. They show
+on the Laws dashboard and in the community history. This folds in the takkanot idea in pillar ceilings
+§6.2.
 
-## 5. Between sittings: settling a dispute
+## 11. Floor and Synagogue changes
 
-The cooldown stays (3 years, 1 for the Scholarly style). Between sittings the player has three ways to
-handle a dispute that can't wait. Each is an option in the escalation event, or on the docket panel for
-any dispute older than two years:
+- **The Stability floor drops from 400 to 250,** so the court and offices actually lift a community into
+  Healthy.
+- **The Synagogue's points move from Greatness to Stability,** matching the ceiling it already sets.
+  Greatness will need the difference back, probably on the Beit Midrash.
 
-| Option | Effect |
-|---|---|
-| **Arbitrate it yourself** (leader's Diplomacy check) | Closes the dispute. Success: +2 authority. Failure: −3 authority, and it goes to the docket marked "already botched". |
-| **Pay it off** (gold, scaled by the case) | Closes the dispute. No authority change; the parties' opinion of the leader drops a little. |
-| **Hold it for the court** | Nothing now. It waits for the next sitting, and its cost keeps growing. |
+**Rough check, pre-authored (Worms-like):** 250 + authority 50 (+100) + offices +130 + charter about +50
++ Synagogue III about +110 + network +20 − one or two quarrels about −30 = 630. That is high Healthy,
+about where Worms sits now.
 
-These replace the retired organic dispute events (`kehillah_dispute.0001`–), which are already unsubscribed.
-No new decisions are added. The options live on the escalation event and on the docket panel.
+**Rough check, founded:** 250 + authority 20 (+40) + Synagogue I +40 + network +20 + a modest charter
+about +20 + the +50 founding deed = 420, low Healthy. That keeps "no community starts below Healthy".
 
-## 6. Setbacks
+Both checks are for the calibration script to confirm. Each change sits behind one script value so it can
+be reverted.
 
-| Setback | What the player sees and can do |
-|---|---|
-| **Crisis** (hosting is blocked) | Disputes age at half rate during the crisis. Refugees and losses create disputes afterwards, so the first sitting after a crisis is the recovery: a large docket and a chance to win back authority. |
-| **Host strips Bet Din jurisdiction** (charter term) | Authority can't rise above Heeded, and escalation to the gentile court is twice as likely. The Shtadlan's charter work becomes a way to win the court back. |
-| **Bad session** (a weak bench, poor rulings) | −10 authority, and the disputes stay open. The player sees why: the bench and its citations. Next time, invite better sages or prepare with the Dayyan. |
-| **Succession** | A new leader loses 10 authority unless the presiding Dayyan stays in office. Gives the Dayyan seat a real succession role. |
-| **Neglect** | Aging disputes and authority decay show as named rows, with the overdue alert reworded "Disputes await the Bet Din (3)". |
+## 12. AI
 
-Unlike the external pressure terms, every one of these comes with a lever, and the damage stays in
-authority until the player repairs it. Setbacks become things you rebuild from.
+- **Convening:** AI communities convene when total quarrel severity is 3 or more, or neglect is above 1.5.
+- **Piety:** they keep the Piety-cost soak item from the 2026-11-08 spec §4.
+- **Cherem:** they use it only against a head who has defied twice.
+- **Takkanot:** they never enact *herem ha-yishuv* with fewer than four households.
 
-## 7. UI
-
-- **Domain dashboard, Stability card:** a "The Court" block with the authority bar, the number of open
-  disputes (red past four years) and the next sitting's status. Clicking it opens the docket panel.
-- **Docket panel** (a Quarter bookmark beside Households, built on the same pattern): one card per
-  dispute with:
-  - both houses' portraits and names;
-  - the case title;
-  - its age and current Stability cost (as a size);
-  - escalation risk;
-  - the settle options from §5.
-
-  A Convene button opens the planner.
-- **Breakdown tooltip:** each dispute is its own named row, and authority is one row with its label.
-- **Top-bar alert:** "Disputes await the Bet Din (N)". It replaces "Cases Await the Bet Din" and the
-  overdue alert.
-
-## 8. AI
-
-AI communities convene when two or more disputes are open, or any dispute is older than three years.
-They keep the Piety-cost soak item from the 2026-11-08 spec §4 (AI with under 100 Piety can't convene).
-They arbitrate a dispute when their leader's Diplomacy is 12 or more, and otherwise hold it for the court.
-They never enact a takkanah that cuts arrivals while the community has fewer than four households.
-
-## 9. Imaginary playthrough
+## 13. Imaginary playthrough
 
 Isaac founds a kehillah at Kligsberg with three households:
-- **Year 0:** Stability is low Healthy (about 430). The court is "Ignored" (20).
-- **Year 2:** the Kohen and Levi heads have gone into partnership on a dye works, and a dispute is filed.
-  Isaac appoints a Shtadlan and holds his first Bet Din in year 3, with a thin bench. The ruling is good,
-  the Levi house complies, and authority rises to 28 (Heeded). Stability shows a moderate rise, and the
-  conclusion screen says why.
-- **Year 8:** the community has seven households, two businesses and a lending table, with a dispute or
-  two a year. One goes four years unsettled during a war. The Levi house threatens to take it to the
-  count's court; Isaac arbitrates himself, fails, and the dispute goes to the docket marked "botched".
-- **Year 9:** a strong bench and good citations give a landmark session. Isaac enacts the partnership
-  takkanah. Partnership disputes slow, and the businesses grow a little more slowly.
-- **Year 20:** the court is Respected (60). The Dayyan stays in office through the succession, so the
-  court holds its authority.
+- **Year 0:** low Healthy. The court is Ignored (20), and the charter grants royal appeal.
+- **Year 2:** the Kohen and Levi heads both run dye works and become rivals. Two quarrels: trade (1) and
+  rival heads (2).
+- **Year 3:** Isaac's first Bet Din has a thin local bench. The trade case is *good*, so it's eased. The
+  rivalry case is *poor*, so it gets worse; Levi loses and defies. Authority ends barely changed. The
+  conclusion screen shows why: one eased, one worse.
+- **Year 6:** neglect is climbing and the rivalry row has grown, so Stability falls a band. Isaac
+  invites a renowned sage from Mainz and prepares the Dayyan. The rivalry case is *great*: the rivalry
+  ends, both heads gain opinion, and Levi complies. Authority rises to 36 (Heeded).
+- **Year 10:** the Shtadlan wins full Bet Din jurisdiction in the charter renewal. Appeals stop and
+  compliance rises.
+- **Year 12:** a landmark session. Isaac enacts the partnership takkanah, and trade quarrels slow.
 
-The Stability bar tells the story of the court, which is what the player was doing.
+The Stability bar tells the story of the court: what the player built, whom they invited, and what the
+charter allowed.
 
-## 10. Build slices
+## 14. Build slices
 
-1. **Data and terms.** Dispute slots, authority, and the two new baseline terms. Retire the case and
-   session Stability deeds and the overdue term. Floor and Synagogue changes behind one script value
-   each, so they can be reverted. Debug events: `kehillah_court_debug.1` reports disputes and authority;
-   `.2` files a dispute of a given cause; `.3` ages all disputes a year; `.4` runs escalation.
-2. **Dispute generation.** Cause tags on all 114 cases (generator scripts), and the cause triggers.
-   Soak the rate over 20 years.
-3. **Docket from disputes.** The draw change, household-head litigants, docket size, and the planner
-   preview.
-4. **Compliance, reactions, conclusion screen, toasts.**
-5. **Settle options and escalation events.**
-6. **Docket panel and dashboard block.**
-7. **Takkanot.**
-8. **Calibration** with the pillar-ceilings §7 script, then a 20-year soak: disputes per community size,
-   authority spread, band changes.
+1. **Authority and quarrel terms.**
+   - The quarrel conditions and their rows, the neglect factor, authority and its term.
+   - Retire the case and session Stability deeds and the overdue term.
+   - Floor and Synagogue changes, each behind one script value.
+   - Debug events: `kehillah_court_debug.1` reports quarrels, neglect and authority; `.2` forces each
+     quarrel type; `.3` sets the last sitting N years ago.
+2. **Profile tags and weighted draw.** Tag all 114 cases (generator scripts), add the weight modifiers,
+   and write the per-profile litigant pickers with the generic fallback. Audit each case's prose for
+   role and gender assumptions before casting its profile.
+3. **Results on quarrels.** Settled, eased and worse marks; the rivalry and inheritance effects; the money
+   wealth transfer; the conclusion-screen lines.
+4. **Compliance and the charter.** Compliance rolls and toasts, defiance and cherem, jurisdiction caps,
+   appeals and enforcement.
+5. **Preview.** The planner list and the reworded top-bar alert.
+6. **Takkanot.**
+7. **Calibration** with the pillar-ceilings §7 script, then a 20-year soak: quarrels per community size,
+   sitting frequency, authority spread, band changes.
 
-Slices 1–4 are the minimum that changes how Stability plays. 5–7 can follow.
+Slices 1–4 are the minimum that changes how Stability plays. They touch the draw (before the hearing) and
+the result (after it), never the five-stage hearing chain in between.
 
-## 11. Risks and open questions
+## 15. Risks and open questions
 
-- **Event-chain risk.** The Bet Din's five-stage chain carries state across characters
-  (v5 §8 "State-passing mechanism"). Household-head litigants must exist at the ruling stage. If a head
-  dies mid-session, the case falls back to the current random-courtier picker.
-- **Calibration of the floor change** affects every pre-authored community and the yeshiva gate (Healthy
-  Stability). Run the calibration script before merging slice 1.
-- **The pool's breadth.** Some causes (debt, assessment) may have few fitting cases. Count them per cause
-  before committing to the cause table, and reuse cases across causes where the premise allows.
-- **Landless hosts and Karaites.** Karaite communities have no rabbinic Bet Din in the same form. Check
-  how their sittings work today and make sure disputes still have a way to close.
-- **Open:** whether a player attending *someone else's* Bet Din can bring their own community's dispute
-  as an appeal. Out of scope for now.
+- **The five-stage chain carries state across characters** (v5 §8). The cast litigants must still exist at
+  the ruling stage; otherwise use the fallback picker and apply no quarrel result.
+- **Role and gender fit.** Some premises assume a widow, a son or a scribe. Profiles must respect them;
+  count fitting cases per profile before committing to the quarrel table.
+- **Live recomputation cost.** Quarrels are computed quarterly and cached on the title for the tooltip,
+  like baselines; never in a GUI loop.
+- **Calibration** of the floor change affects every pre-authored community and the yeshiva gate (Healthy
+  Stability). Run the script before merging slice 1.
+- **Karaite communities.** Check how their sittings work today and make sure quarrels have a way to be
+  heard.
 
-## 12. Live checklist (for Daniel, after slices 1–4; test save)
+## 16. Live checklist (for Daniel, after slices 1–4; test save)
 
-1. Boot `bm_1066_kehillah_worms`, play `d_kehillah_worms`. The Stability breakdown shows the court's
-   authority (Respected, 50) and no open disputes. Stability is in the same band as before the change.
-2. `event kehillah_court_debug.2` (partnership). A named dispute row appears. `.3` three times: the row's
-   cost grows each time.
-3. Convene the Bet Din. The planner lists the dispute. On arrival, the first case is that dispute, and
-   its litigants are the two households' heads.
-4. Win the case well. The conclusion screen shows the dispute closed, authority rising on its bar, and
-   a Stability size. The compliance toast names the losing house.
-5. Force a defiance (debug). An enforcement dispute appears, and the cherem option is available.
-6. Check `error.log` after hovering the breakdown, the planner and the conclusion screen.
+1. Boot `bm_1066_kehillah_worms`, play `d_kehillah_worms`. Stability shows the court's authority
+   (Respected, 50) and any live quarrels. The band is the same as before the change.
+2. `event kehillah_court_debug.2` (rival heads). A named quarrel row appears. `.3` with 5 years: the
+   "unheard for N years" row appears and the quarrel row grows.
+3. Convene. The planner lists the quarrel. On arrival the first case has that profile, and its litigants
+   are the two rival heads.
+4. **The hearing is unchanged:** three positions, the native chance preview, the citation screen, the
+   panel and the progress bar all behave as before.
+5. Win great. The rivalry is removed, the row disappears, and the conclusion screen shows "settled",
+   the authority bar and a Stability size. Win only good (a weak bench): the row halves.
+6. Set jurisdiction to royal appeal (debug) and win good. An appeal can happen and undo the relief.
+7. Force a defiance (debug). The row returns at full strength, and the cherem option appears.
+8. Check `error.log` after hovering the breakdown, the planner and the conclusion screen.
