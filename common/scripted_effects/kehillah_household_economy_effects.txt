@@ -1,0 +1,203 @@
+# Household economy. Refresh is idempotent: no growth, rolls or money in UI refreshes.
+# House scope, scope:kh_ref_title/leader are supplied by the existing register refresh.
+kehillah_household_economy_initialize_effect = {
+	if = {
+		limit = { NOT = { has_variable = kehillah_household_wealth } }
+		set_variable = { name = kehillah_household_wealth value = kehillah_household_wealth_start }
+	}
+	if = {
+		limit = { NOT = { var:kehillah_household_business_seat ?= scope:kh_ref_title } }
+		set_variable = { name = kehillah_household_assignment value = 0 }
+		set_variable = { name = kehillah_household_business_seat value = scope:kh_ref_title }
+		remove_variable = kehillah_household_assignment_cooldown
+	}
+}
+
+# Character scope. Recount capacities sequentially; if a building/slot disappears,
+# retain wealth but release unsupported assignments. This also handles ruling houses.
+kehillah_household_economy_refresh_effect = {
+	primary_title = { every_in_list = { variable = kehillah_households kehillah_household_economy_initialize_effect = yes } }
+	kehillah_business_refresh_effect = yes
+	primary_title = {
+		if = { limit = { NOT = { has_variable = kehillah_household_assessment } } set_variable = { name = kehillah_household_assessment value = 1 } }
+		remove_variable = kehillah_moment_prosperity_fair
+		remove_variable = kehillah_moment_prosperity_house
+		remove_variable = kehillah_moment_prosperity_craft
+		remove_variable = kehillah_moment_prosperity_officials
+		set_variable = { name = kehillah_households_prosperity value = 0 }
+		set_variable = { name = kehillah_household_workshops_used value = 0 }
+		set_variable = { name = kehillah_household_ventures_used value = 0 }
+		set_variable = { name = kehillah_household_credit_used value = 0 }
+		every_in_list = {
+			variable = kehillah_households
+			if = {
+				limit = { kehillah_household_economic_trigger = yes }
+				if = { limit = { var:kehillah_household_assignment = 1 } scope:kh_ref_title = { change_variable = { name = kehillah_household_workshops_used add = 1 } } }
+				else_if = { limit = { var:kehillah_household_assignment = 2 } scope:kh_ref_title = { change_variable = { name = kehillah_household_ventures_used add = 1 } } }
+				else_if = { limit = { var:kehillah_household_assignment = 3 } scope:kh_ref_title = { change_variable = { name = kehillah_household_credit_used add = 1 } } }
+				var:kehillah_household_head = {
+					if = {
+						limit = { scope:kh_ref_title = { kehillah_household_assessment_value = 2 } }
+						add_opinion = { target = scope:kh_ref_leader modifier = kehillah_household_heavy_assessment years = 1 }
+					}
+					else = { remove_opinion = { target = scope:kh_ref_leader modifier = kehillah_household_heavy_assessment } }
+				}
+				scope:kh_ref_title = {
+					change_variable = { name = kehillah_households_prosperity add = prev.kehillah_household_affluence_value }
+				}
+			}
+
+		}
+	}
+}
+
+# Appointments are derived from court positions by kehillah_business_refresh_effect.
+
+
+# House scope. Clamp ALL event gains and losses; call refresh on the leader afterwards.
+kehillah_household_change_wealth_effect = {
+	change_variable = { name = kehillah_household_wealth add = $AMOUNT$ }
+	if = { limit = { var:kehillah_household_wealth > 100 } set_variable = { name = kehillah_household_wealth value = 100 } }
+	if = { limit = { var:kehillah_household_wealth < 0 } set_variable = { name = kehillah_household_wealth value = 0 } }
+}
+
+# Character scope, only from quarterly pulse. 80-day guard prevents accidental
+# double settlement, including debug probes and the same-day succession refresh.
+kehillah_household_economy_quarter_effect = {
+	if = {
+		limit = { primary_title ?= { NOT = { has_variable = kehillah_household_paid_recently } } }
+		primary_title = {
+			set_variable = { name = kehillah_household_paid_recently value = yes days = 80 }
+			every_in_list = {
+				variable = kehillah_households
+				limit = { kehillah_household_economic_trigger = yes }
+				set_variable = { name = kehillah_household_wealth value = kehillah_household_next_wealth_value }
+				# With the DLC, native routes already pay the leader. Only a
+				# running route permits this small household fortune roll; no extra gold.
+				if = {
+					limit = {
+						var:kehillah_household_assignment = 2
+						any_house_member = {
+							is_trader = yes
+							is_courtier_of = prev.var:kehillah_household_of.holder
+						}
+						var:kehillah_household_of.holder = {
+							has_dlc_feature = silk_and_silver
+							merchant_current_trade_routes_value > 0
+						}
+					}
+					kehillah_household_native_fortune_effect = yes
+				}
+				save_scope_value_as = { name = kh_household_due value = kehillah_household_due_quarter_value }
+				save_scope_value_as = { name = kh_household_retained value = kehillah_household_retained_quarter_value }
+				var:kehillah_household_of.holder = { add_gold = scope:kh_household_due }
+				var:kehillah_household_head = { add_gold = scope:kh_household_retained }
+			}
+		}
+		kehillah_household_refresh_effect = yes
+	}
+}
+
+# Native route income is not exposed as a reliable per-family result hook.
+# Use a disclosed seasonal fortune roll, NOT a fabricated route-profit report.
+kehillah_household_native_fortune_effect = {
+	random_list = {
+		15 = { kehillah_household_change_wealth_effect = { AMOUNT = kehillah_household_venture_gain } }
+		5 = { kehillah_household_change_wealth_effect = { AMOUNT = kehillah_household_venture_loss } }
+		80 = { }
+	}
+}
+
+# No-DLC venture: one independent roll per assigned family, replacing the
+# old aggregate chance. The community gets gold only on success, once.
+kehillah_household_abstract_ventures_effect = {
+	if = {
+		limit = {
+			NOT = { has_dlc_feature = silk_and_silver }
+			primary_title ?= { NOT = { has_variable = kehillah_household_ventured_recently } }
+		}
+		primary_title = {
+			set_variable = { name = kehillah_household_ventured_recently value = yes days = 80 }
+			every_in_list = {
+				variable = kehillah_households
+				limit = { kehillah_household_economic_trigger = yes var:kehillah_household_assignment = 2 }
+				while = {
+					count = scope:kh_ref_leader.kehillah_household_venture_capacity_value
+					random_list = {
+						15 = {
+							kehillah_household_change_wealth_effect = { AMOUNT = kehillah_household_venture_gain }
+							var:kehillah_household_head = { save_scope_as = kh_venture_head }
+							var:kehillah_household_of.holder = {
+								send_interface_toast = {
+									type = event_toast_text_and_effect_good
+									title = kehillah_economy_venture_success_t
+									desc = kehillah_economy_venture_success_d
+									left_icon = scope:kh_venture_head
+									add_gold = kehillah_trade_venture_gold_value
+								}
+							}
+						}
+						5 = { kehillah_household_change_wealth_effect = { AMOUNT = kehillah_household_venture_loss } }
+						80 = { }
+					}
+				}
+			}
+		}
+		kehillah_household_refresh_effect = yes
+	}
+}
+
+# Fair success replaces the direct Affluence moment, and names its beneficiary.
+kehillah_household_fair_success_effect = {
+	kehillah_household_refresh_effect = yes
+	primary_title = {
+		random_in_list = {
+			variable = kehillah_households
+			limit = { kehillah_household_economic_trigger = yes }
+			kehillah_household_change_wealth_effect = { AMOUNT = kehillah_household_fair_gain }
+			var:kehillah_household_head = { save_scope_as = kh_fair_head }
+		}
+	}
+	if = {
+		limit = { exists = scope:kh_fair_head }
+		send_interface_toast = {
+			type = event_toast_text_and_effect_good
+			title = kehillah_economy_fair_t
+			desc = kehillah_economy_fair_d
+			left_icon = scope:kh_fair_head
+		}
+	}
+	kehillah_household_refresh_effect = yes
+}
+
+# Reward a serving lending-table household on an actual repayment. No new loan ledger.
+kehillah_household_credit_repaid_effect = {
+	kehillah_household_refresh_effect = yes
+	primary_title = {
+		every_in_list = {
+			variable = kehillah_households
+			limit = { kehillah_household_economic_trigger = yes var:kehillah_household_assignment = 3 }
+			kehillah_household_change_wealth_effect = { AMOUNT = kehillah_household_credit_gain }
+		}
+	}
+	kehillah_household_refresh_effect = yes
+}
+
+kehillah_household_credit_loss_effect = {
+	kehillah_household_refresh_effect = yes
+	primary_title = {
+		every_in_list = {
+			variable = kehillah_households
+			limit = { kehillah_household_economic_trigger = yes var:kehillah_household_assignment = 3 }
+			kehillah_household_change_wealth_effect = { AMOUNT = -10 }
+		}
+	}
+	kehillah_household_refresh_effect = yes
+}
+
+# AI uses the same capacity validation as players and stays at Ordinary
+# assessment. No special merchant government or DLC is needed.
+kehillah_household_economy_ai_effect = {
+	kehillah_business_auto_staff_effect = yes
+	kehillah_household_refresh_effect = yes
+}
