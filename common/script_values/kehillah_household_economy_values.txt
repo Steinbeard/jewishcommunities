@@ -1,0 +1,126 @@
+# Household economy, 2026-11-27. House scope unless marked otherwise.
+# Wealth is productive assets, not the head's character gold. No DLC required.
+kehillah_household_wealth_start = 35
+kehillah_household_wealth_step = 2
+kehillah_household_affluence_cap = 200
+kehillah_household_assignment_years = 2
+kehillah_household_fair_gain = 8
+kehillah_household_credit_gain = 6
+kehillah_household_venture_gain = 6
+kehillah_household_venture_loss = -10
+
+# Leader scope: capacity comes from buildings, never from the wealth it produces.
+kehillah_household_workshop_capacity_value = {
+	value = 0
+	if = { limit = { kehillah_bd_workshops_value > 0 } add = 1 }
+	if = { limit = { kehillah_bd_trades_value > 0 } add = 1 }
+	if = { limit = { kehillah_bd_workshops_value >= 120 } add = 1 }
+}
+kehillah_household_venture_capacity_value = {
+	value = kehillah_trade_band_slots_value
+	if = { limit = { has_character_modifier = kehillah_style_commercial_modifier } add = 1 }
+}
+
+# Title scope: missing assessment means Ordinary (20%).
+kehillah_household_assessment_value = {
+	value = 1
+	if = { limit = { has_variable = kehillah_household_assessment } value = var:kehillah_household_assessment }
+}
+kehillah_household_assessment_rate_value = {
+	value = kehillah_household_assessment_value
+	multiply = 0.1
+	add = 0.1
+}
+
+# House scope. All inputs are available without Silk and Silver.
+kehillah_household_target_value = {
+	value = 30
+	var:kehillah_household_head ?= {
+		add = { value = stewardship max = 20 multiply = 0.75 }
+	}
+	var:kehillah_household_of.holder ?= {
+		add = { value = kehillah_bd_charter_market_access_value multiply = 0.375 }
+		add = { value = kehillah_bd_local_economy_value multiply = 0.1 min = -10 max = 10 }
+		add = { value = kehillah_bd_war_prosperity_value multiply = 0.15 min = -20 max = 0 }
+		add = { value = kehillah_bd_restrictions_prosperity_value multiply = 0.2 min = -15 max = 0 }
+	}
+	if = {
+		limit = { var:kehillah_household_of ?= { kehillah_household_assessment_value = 0 } }
+		add = 8
+	}
+	else_if = {
+		limit = { var:kehillah_household_of ?= { kehillah_household_assessment_value = 2 } }
+		add = -8
+	}
+	if = {
+		limit = { var:kehillah_household_assignment ?= 1 }
+		add = 20
+		var:kehillah_household_of.holder ?= { add = { value = kehillah_bd_workshops_value multiply = 0.05 max = 10 } }
+	}
+	else_if = { limit = { var:kehillah_household_assignment ?= 2 } add = 15 }
+	else_if = {
+		limit = { var:kehillah_household_assignment ?= 3 }
+		add = 10
+		var:kehillah_household_of.holder ?= {
+			add = { value = kehillah_lending_table_tier_value multiply = 4 }
+			add = { value = kehillah_bd_charter_economic_privileges_value multiply = 0.1 }
+		}
+	}
+	min = 5
+	max = 100
+}
+kehillah_household_next_wealth_value = {
+	value = kehillah_household_target_value
+	subtract = var:kehillah_household_wealth
+	min = -2
+	max = kehillah_household_wealth_step
+	# Relief speeds recovery of struggling households; does not enrich the rich.
+	if = {
+		limit = {
+			var:kehillah_household_wealth < 25
+			kehillah_household_target_value > var:kehillah_household_wealth
+			var:kehillah_household_of.holder ?= { kehillah_tzedakah_task_active_value = 1 }
+		}
+		add = 1
+	}
+	add = var:kehillah_household_wealth
+	min = 0
+	max = 100
+}
+kehillah_household_gross_value = {
+	value = var:kehillah_household_wealth
+	multiply = 0.005
+	add = 0.25
+}
+kehillah_household_due_value = {
+	value = kehillah_household_gross_value
+	multiply = var:kehillah_household_of.kehillah_household_assessment_rate_value
+}
+kehillah_household_retained_value = {
+	value = kehillah_household_gross_value
+	subtract = kehillah_household_due_value
+}
+kehillah_household_due_quarter_value = { value = kehillah_household_due_value multiply = 3 }
+kehillah_household_retained_quarter_value = { value = kehillah_household_retained_value multiply = 3 }
+kehillah_household_affluence_value = { value = var:kehillah_household_wealth multiply = 0.5 }
+# Title scope, shown live; settlement runs only on the quarterly pulse.
+kehillah_household_total_due_value = {
+	value = 0
+	every_in_list = {
+		variable = kehillah_households
+		limit = { kehillah_household_economic_trigger = yes }
+		add = kehillah_household_due_value
+	}
+}
+
+# Leader scope: a serving lending-table family improves new open-interest terms.
+kehillah_household_credit_capacity_value = {
+ value = 0
+ if = { limit = { kehillah_lending_table_tier_value > 0 } value = 1 }
+}
+kehillah_household_credit_terms_rate_value = {
+ value = 0
+ if = { limit = { primary_title ?= { var:kehillah_household_credit_used ?= 1 } } value = 0.025 }
+}
+
+kehillah_household_stewardship_display_value = { value = stewardship }

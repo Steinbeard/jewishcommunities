@@ -1,0 +1,92 @@
+# Console only, disposable save. .1 report; .2 guarded settlement;
+# .3 duplicate-payment test; .4 bounds/conservation; .5 automatic assignments.
+namespace = kehillah_economy_debug
+
+kehillah_economy_debug.1 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_household_refresh_effect = yes
+		save_scope_value_as = { name = kh_report_affluence value = kehillah_bd_households_prosperity_value }
+		primary_title = { save_scope_value_as = { name = kh_report_due value = kehillah_household_total_due_value } }
+		debug_log = "HOUSEHOLD_ECONOMY community (numeric values follow in scopes)"
+		debug_log_scopes = yes
+		primary_title = {
+			every_in_list = {
+				variable = kehillah_households
+				var:kehillah_household_head ?= { save_scope_as = kh_economy_debug_head }
+				save_scope_value_as = { name = kh_report_wealth value = var:kehillah_household_wealth }
+				save_scope_value_as = { name = kh_report_target value = kehillah_household_target_value }
+				save_scope_value_as = { name = kh_report_assignment value = var:kehillah_household_assignment }
+				debug_log = "HOUSEHOLD_ECONOMY family (identity and numeric values follow in scopes)"
+				debug_log_scopes = yes
+			}
+		}
+	}
+}
+kehillah_economy_debug.2 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_household_refresh_effect = yes
+		kehillah_household_economy_quarter_effect = yes
+		trigger_event = kehillah_economy_debug.1
+	}
+}
+kehillah_economy_debug.3 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_household_refresh_effect = yes
+		kehillah_household_economy_quarter_effect = yes
+		save_scope_value_as = { name = kh_guard_gold value = gold }
+		kehillah_household_economy_quarter_effect = yes
+		if = {
+			limit = { gold = scope:kh_guard_gold }
+			debug_log = "HOUSEHOLD_ECONOMY duplicate-payment PASS"
+		}
+		else = { debug_log = "HOUSEHOLD_ECONOMY duplicate-payment FAIL" }
+	}
+}
+kehillah_economy_debug.4 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_household_refresh_effect = yes
+		primary_title = {
+			every_in_list = {
+				variable = kehillah_households
+				limit = { kehillah_household_economic_trigger = yes }
+				save_scope_value_as = { name = kh_original_wealth value = var:kehillah_household_wealth }
+				kehillah_household_change_wealth_effect = { AMOUNT = 200 }
+				if = { limit = { var:kehillah_household_wealth = 100 } debug_log = "HOUSEHOLD_ECONOMY upper-bound PASS" }
+				else = { debug_log = "HOUSEHOLD_ECONOMY upper-bound FAIL" }
+				kehillah_household_change_wealth_effect = { AMOUNT = -300 }
+				if = { limit = { var:kehillah_household_wealth = 0 } debug_log = "HOUSEHOLD_ECONOMY lower-bound PASS" }
+				else = { debug_log = "HOUSEHOLD_ECONOMY lower-bound FAIL" }
+				set_variable = { name = kehillah_household_wealth value = scope:kh_original_wealth }
+				save_scope_value_as = {
+					name = kh_split_error
+					value = {
+						value = kehillah_household_retained_value
+						add = kehillah_household_due_value
+						subtract = kehillah_household_gross_value
+					}
+				}
+				if = { limit = { scope:kh_split_error > -0.002 scope:kh_split_error < 0.002 } debug_log = "HOUSEHOLD_ECONOMY income-conservation PASS" }
+				else = { debug_log = "HOUSEHOLD_ECONOMY income-conservation FAIL" }
+			}
+		}
+		kehillah_household_refresh_effect = yes
+	}
+}
+kehillah_economy_debug.5 = {
+	type = character_event
+	hidden = yes
+	immediate = {
+		kehillah_household_refresh_effect = yes
+		kehillah_household_economy_ai_effect = yes
+		kehillah_household_refresh_effect = yes
+		trigger_event = kehillah_economy_debug.1
+	}
+}
