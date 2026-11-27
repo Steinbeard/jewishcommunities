@@ -1,4 +1,4 @@
-**Status:** SOURCE CHECKS PASS; delegated Luna live check IN PROGRESS, 2026-11-27.
+**Status:** SOURCE AND CORE LUNA LIVE CHECKS PASS, 2026-11-27. Remaining lifecycle/DLC checks below are UNRUN. [Draft PR #87](https://github.com/Steinbeard/jewishcommunities/pull/87).
 Implements [household wealth and Affluence](../spec/2026-11-27-household-wealth-and-affluence.md).
 Actual runtime results and remaining checks are distinguished below.
 
@@ -59,13 +59,35 @@ a unique console marker was confirmed before probes.
   opened the Quarter and the three-people bookmark opened Households. Header,
   introduction, Ordinary assessment, capacity line (workshops 0/2, ventures 0/1,
   lending table 0/1), both family cards and all four livelihood controls were
-  visible. The leading-family exemption was explicit. No obvious clipping or
-  overlap was observed; controls are compact.
+  visible. The leading-family exemption was explicit. Controls fit without overlap; the longer leading-family exemption note was
+  clipped at its right edge. After the test it was shortened to “Leading household
+  — exempt from communal contributions.” That text-only correction was source-checked,
+  not rebooted.
 - **Light assessment action PASS:** Ordinary changed to Light, displayed monthly
   contributions fell from 0.08 to 0.04, and the non-leading family displayed wealth
   37. Tooltip explained the rate, sustainable-wealth bonus and two-year cooldown.
-  The actual blocked second change, detailed wealth tooltip error offset and forced
-  seasonal growth comparison remain in progress.
+  **Assessment cooldown PASS:** clicking Ordinary after Light left the assessment
+  at Light, with the two-year cooldown described in the tooltip.
+- **Seasonal growth and income PASS:** before forced settlement Weil had wealth 37,
+  sustainable wealth 52.10, personal purse 1.0, and contributed 18.50 Affluence. On
+  this disposable save the tester cleared the payment guard and fired `.2`: wealth
+  became 39 (+2), purse displayed 2.2, sustainable wealth stayed 52.10 and household
+  Affluence became 19.50. Monthly-equivalent communal due remained 0.04 at displayed
+  precision. This explicitly checks progression rather than only the duplicate guard.
+- **Wealth tooltip PASS:** current wealth 37, sustainable 52, next season 39,
+  Stewardship 6, market access 0, local economy 96, war/restrictions 0, gross livelihood
+  0.43, retained 0.39, due 0.04, Affluence contribution 18.5 were readable.
+- Error comparison: pre-UI offset 1,125,969. Final query covered 2,256 later lines;
+  six matched household terms, all repeated startup/deferred “set but never used”
+  diagnostics for `kehillah_household_origin` and `kehillah_household_founder`.
+  No new tooltip or Script system error matched the final check.
+- Tester rechecked ownership and closed PID 24072. A subsequent CIM inventory showed
+  no CK3 processes. No human/other-agent process or normal profile was controlled.
+- **UNRUN:** Kahal House inspector/My Realm entry paths, appointment clicks and
+  assignment cooldown/capacity changes, actual loan transactions, no-DLC venture
+  outcomes versus native route/trader outcomes, old-save migration, head/leader
+  changes, family migration, save/reload and long-term balance. These remain the
+  checklist below; source checks do not turn them into runtime passes.
 
 # Required checklist
 
