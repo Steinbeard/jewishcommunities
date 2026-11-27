@@ -73,7 +73,7 @@ kehillah_has_business_position_trigger = { OR = {
     scripted_gui = HEADER
     loc = {"kehillah_business_vacancy_badge_tt": "Vacant business — appoint a Ba’al Bayit to enable its production and operating income.", "kehillah_businesses_header": "Businesses", "kehillah_businesses_households": "Households",
            "kehillah_businesses_summary": "Businesses operating: [Character.GetPrimaryTitle.MakeScope.ScriptValue('kehillah_business_staffed_count_value')|0]/[Character.GetPrimaryTitle.MakeScope.ScriptValue('kehillah_business_built_count_value')|0]",
-           "kehillah_businesses_intro": "Buildings provide the premises; a Ba’al Bayit operates the business. Vacant businesses produce no goods or operating income. Appointments have no salary.",
+           "kehillah_businesses_intro": "A household operates each business. Vacant premises produce no goods or operating income.",
            "kehillah_businesses_appoint": "Appoint", "kehillah_businesses_replace": "Replace",
            "domicile_building_parameter_kehillah_business_infrastructure": "Provides premises for family-operated trades; operating fees require at least one staffed productive business",
            "kehillah_businesses_dismiss": "Dismiss", "kehillah_businesses_manage": "Manage businesses",
@@ -82,6 +82,7 @@ kehillah_has_business_position_trigger = { OR = {
            "kehillah_business_family_free_tt": "A household can operate only one business. A voluntarily dismissed household must finish its two-year commitment before taking another appointment.",
            "kehillah_businesses_effect_desc": "Operates this business at its built tier: goods and operating income stop while vacant. Household wealth grows through its livelihood; no additional salary is paid. This is economic employment, not a communal office.",
            "kehillah_businesses_output": "Output: [Character.GetPrimaryTitle.MakeScope.ScriptValue(Concatenate('kehillah_business_', Concatenate(Scope.GetFlagName, '_output_cached_value')))|0] · Operating income: [Character.GetPrimaryTitle.MakeScope.ScriptValue(Concatenate('kehillah_business_', Concatenate(Scope.GetFlagName, '_income_cached_value')))|2] [gold_i]/month",
+           "kehillah_businesses_terms": "Unpaid appointments · One business per household",
            "kehillah_businesses_commitment": "An appointment commits the household for two years. It may be dismissed at any time, but voluntary dismissal does not permit immediate reassignment. Death, loss of eligibility or forced vacancy releases the commitment."}
 
     goods = sorted({g for b in BUSINESSES for row in b["track"] + b["extra"] for g in row["goods"]})
@@ -122,7 +123,12 @@ kehillah_has_business_position_trigger = { OR = {
         k = b["key"]
         pos = position(b)
         available = "OR = { " + " ".join(built(x) for x in b["track"] + b["extra"]) + " }"
-        triggers += f"""kehillah_business_{k}_built_trigger = {{ {available} }}
+        triggers += f"""kehillah_business_{k}_appointment_available_trigger = {{
+ kehillah_business_{k}_built_trigger = yes
+ NOT = {{ employs_court_position = {pos} }}
+ any_courtier = {{ can_be_employed_as = {pos} }}
+}}
+kehillah_business_{k}_built_trigger = {{ {available} }}
 kehillah_business_{k}_staffed_trigger = {{
  kehillah_business_{k}_built_trigger = yes
  any_court_position_holder = {{
@@ -248,7 +254,10 @@ kehillah_business_{k}_staffed_trigger = {{
         loc[pos] = b["title"]
         loc[pos + "_desc"] = f"A household operates the {b['label']}. Only a current Ba’al Bayit can take this appointment."
         loc[f"kehillah_business_label_{k}"] = b["label"]
-        loc[f"kehillah_business_{k}_vacant"] = "Vacant — production and operating income stopped"
+        loc[f"kehillah_business_{k}_vacant"] = "Vacant — no eligible household"
+        loc[f"kehillah_business_{k}_ready"] = "Vacant — operator available"
+        loc[f"kehillah_business_{k}_opportunity"] = f"{b['label']} has an eligible household. Appoint its Ba’al Bayit to restore this business’s output and operating income."
+        loc[f"kehillah_business_{k}_appoint_tt"] = f"#T Appoint: {b['label']}#!\\nThe native picker checks current Ba’al Bayit status, ability to work, household membership and existing business commitments. One business per household; no salary.\\n\\nA voluntarily dismissed household must finish its two-year commitment before accepting another business."
         loc[f"kehillah_business_{k}_operating"] = f"Operated by [ROOT.Char.GetPrimaryTitle.MakeScope.Var('kehillah_business_{k}_operator').Char.GetHouse.GetNameNoTooltip]"
         loc[f"domicile_building_parameter_kehillah_business_{k}"] = f"Family business: {b['label']} — appoint a Ba’al Bayit to operate it"
         product = ", ".join(sorted({g.replace('_', ' ') for row in b['track'] + b['extra'] for g in row['goods']}))
@@ -259,11 +268,13 @@ kehillah_business_{k}_staffed_trigger = {{
         custom += f"""{name(b)}Status = {{
  type = character
  text = {{ trigger = {{ primary_title ?= {{ exists = var:kehillah_business_{k}_operator }} }} localization_key = kehillah_business_{k}_operating }}
+ text = {{ trigger = {{ kehillah_business_{k}_appointment_available_trigger = yes }} localization_key = kehillah_business_{k}_ready }}
  text = {{ trigger = {{ always = yes }} localization_key = kehillah_business_{k}_vacant fallback = yes }}
 }}
 KehillahBusiness{k}Roster = {{
  type = character
  text = {{ trigger = {{ primary_title ?= {{ exists = var:kehillah_business_{k}_operator }} }} localization_key = kehillah_business_{k}_operating }}
+ text = {{ trigger = {{ kehillah_business_{k}_appointment_available_trigger = yes }} localization_key = kehillah_business_{k}_ready }}
  text = {{ trigger = {{ always = yes }} localization_key = kehillah_business_{k}_vacant fallback = yes }}
 }}
 """
@@ -357,6 +368,7 @@ def business_gui(b):
   visible = "[Not(DomicileWindow.GetCharacter.GetCharacterEmployedAs('{pos}').IsValid)]"
   enabled = "[DomicileWindow.GetCharacter.IsLocalPlayer]"
   text = "kehillah_businesses_appoint"
+  tooltip = "kehillah_business_{k}_appoint_tt"
   onclick = "[GetCourtPositionType('{pos}').OpenAppointWindow(DomicileWindow.GetCharacter.Self)]"
  }}
  hbox = {{
@@ -369,17 +381,17 @@ def business_gui(b):
 }}
 """
     return controls + f""" type kehillah_business_row_{k} = vbox {{
- size = {{ 510 160 }}
- minimumsize = {{ 510 160 }}
+ size = {{ 510 168 }}
+ minimumsize = {{ 510 168 }}
  spacing = 4
  background = {{ using = Background_Area_Dark }}
  datacontext = "[GetCourtPositionType('{pos}')]"
- text_single = {{ text = "kehillah_business_label_{k}" using = Font_Size_Medium }}
+ text_single = {{ size = {{ 500 26 }} autoresize = no text = "kehillah_business_label_{k}" using = Font_Size_Medium }}
  hbox = {{
   spacing = 6
-  portrait_head_small = {{ datacontext = "[DomicileWindow.GetCharacter.GetCharacterEmployedAs('{pos}')]" }}
+  portrait_head_small = {{ size = {{ 64 64 }} datacontext = "[DomicileWindow.GetCharacter.GetCharacterEmployedAs('{pos}')]" }}
   vbox = {{
-   text_single = {{ text = "[DomicileWindow.GetCharacter.Custom('{name(b)}Status')]" using = Font_Size_Small max_width = 370 }}
+   text_multi = {{ size = {{ 420 42 }} autoresize = no text = "[DomicileWindow.GetCharacter.Custom('{name(b)}Status')]" using = Font_Size_Small tooltip = "kehillah_business_{k}_appoint_tt" }}
    kehillah_business_controls_{k} = {{}}
   }}
  }}
@@ -390,10 +402,10 @@ type kehillah_business_inspector_{k} = vbox {{
  datacontext = "[DomicileWindow.GetCharacter]"
  datacontext = "[GetCourtPositionType('{pos}')]"
  spacing = 3
- text_single = {{ text = "[Character.Custom('{name(b)}Status')]" using = Font_Size_Small max_width = 480 }}
- text_single = {{ text = "kehillah_business_details_{k}" using = Font_Size_Small max_width = 480 }}
+ text_multi = {{ size = {{ 480 40 }} autoresize = no text = "[DomicileWindow.GetCharacter.Custom('{name(b)}Status')]" using = Font_Size_Small }}
+ text_multi = {{ size = {{ 480 38 }} autoresize = no text = "kehillah_business_details_{k}" using = Font_Size_Small }}
  hbox = {{ spacing = 8
-  portrait_head_small = {{ datacontext = "[DomicileWindow.GetCharacter.GetCharacterEmployedAs('{pos}')]" }}
+  portrait_head_small = {{ size = {{ 64 64 }} datacontext = "[DomicileWindow.GetCharacter.GetCharacterEmployedAs('{pos}')]" }}
   kehillah_business_controls_{k} = {{}}
  }}
 }}
@@ -421,12 +433,13 @@ def roster_gui(businesses):
 """
     return """ type kehillah_business_roster = vbox {
  spacing = 6
- text_multi = { size = { 540 56 } autoresize = no text = "kehillah_businesses_intro" using = Font_Size_Small }
- text_single = { text = "kehillah_businesses_summary" }
- text_multi = { size = { 540 54 } autoresize = no text = "kehillah_businesses_commitment" using = Font_Size_Small }
+ text_multi = { size = { 530 34 } autoresize = no text = "kehillah_businesses_intro" using = Font_Size_Small }
+ text_single = { text = "kehillah_businesses_summary" using = Font_Size_Medium tooltip = "kehillah_business_economy_tt" }
+ text_multi = { size = { 530 40 } autoresize = no text = "[DomicileWindow.GetCharacter.Custom('KehillahBusinessNextStep')]" using = Font_Size_Small }
+ text_multi = { size = { 530 26 } autoresize = no text = "kehillah_businesses_terms" tooltip = "kehillah_businesses_commitment" using = Font_Size_Small }
  text_multi = { visible = "[Not(DataModelHasItems(Title.MakeScope.GetList('kehillah_businesses')))]" size = { 540 50 } text = "kehillah_businesses_none" }
  scrollbox = {
-  size = { 548 390 }
+  size = { 540 390 }
   blockoverride "scrollbox_content" {
    vbox = {
     spacing = 8
