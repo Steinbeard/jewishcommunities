@@ -36,7 +36,21 @@ def built(row): return f"domicile ?= {{ has_domicile_building_or_higher = {row['
 def name(b): return "KehillahBusiness" + "".join(x.title() for x in b["key"].split("_"))
 
 
+def sync_court_position_icons():
+    """GetIcon resolves the position key's DDS; reuse existing art byte for byte."""
+    icons = {position(b): b["icon_source"] for b in BUSINESSES}
+    icons.update(CATALOG.get("other_position_icons", {}))
+    for key, source_path in icons.items():
+        source = ROOT / source_path
+        target = ROOT / "gfx/interface/icons/court_position_types" / (key + ".dds")
+        data = source.read_bytes()
+        assert data[:4] == b"DDS ", source
+        if not target.exists() or target.read_bytes() != data:
+            target.write_bytes(data)
+
+
 def main():
+    sync_court_position_icons()
     triggers = HEADER + """# Character scope. A current registered non-leading head, not a generic courtier.
 kehillah_business_worker_trigger = {
  is_alive = yes
@@ -386,7 +400,11 @@ def business_gui(b):
  spacing = 4
  background = {{ using = Background_Area_Dark }}
  datacontext = "[GetCourtPositionType('{pos}')]"
- text_single = {{ size = {{ 500 26 }} autoresize = no text = "kehillah_business_label_{k}" using = Font_Size_Medium }}
+ hbox = {{
+  spacing = 8
+  icon = {{ size = {{ 24 24 }} texture = "gfx/interface/icons/court_position_types/{pos}.dds" alwaystransparent = yes }}
+  text_single = {{ size = {{ 470 26 }} autoresize = no text = "kehillah_business_label_{k}" using = Font_Size_Medium }}
+ }}
  hbox = {{
   spacing = 6
   portrait_head_small = {{ size = {{ 64 64 }} datacontext = "[DomicileWindow.GetCharacter.GetCharacterEmployedAs('{pos}')]" }}

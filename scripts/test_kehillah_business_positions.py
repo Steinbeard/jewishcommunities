@@ -125,10 +125,35 @@ class BusinessPositionsTest(unittest.TestCase):
         self.assertIn("kehillah_businesses_summary", domicile)
         self.assertNotIn("kehillah_economy_assign_workshop", read("gui/kehillah_household_economy.gui"))
 
+    def test_every_native_role_resolves_existing_profession_art(self):
+        gui = read(GENERATED[6])
+        for business in BUSINESSES:
+            source = ROOT / business["icon_source"]
+            relative = "gfx/interface/icons/court_position_types/kehillah_business_" + business["key"] + "_position.dds"
+            target = ROOT / relative
+            self.assertTrue(target.is_file(), relative)
+            self.assertEqual(target.read_bytes()[:4], b"DDS ")
+            self.assertEqual(source.read_bytes(), target.read_bytes())
+            self.assertIn(relative, gui)
+
+    def test_all_custom_court_positions_have_role_textures(self):
+        roles = set()
+        for path in (ROOT / "common/court_positions/types").glob("*.txt"):
+            roles.update(re.findall(r"^([a-z0-9_]+)\s*=\s*\{", path.read_text(encoding="utf-8-sig"), re.M))
+        for key in roles:
+            texture = ROOT / "gfx/interface/icons/court_position_types" / (key + ".dds")
+            self.assertTrue(texture.is_file(), key)
+            self.assertEqual(texture.read_bytes()[:4], b"DDS ")
+        for key, source in CAT["other_position_icons"].items():
+            target = ROOT / "gfx/interface/icons/court_position_types" / (key + ".dds")
+            self.assertEqual(target.read_bytes(), (ROOT / source).read_bytes())
+
     def test_generator_is_idempotent(self):
-        before = {p: hashlib.sha256((ROOT / p).read_bytes()).digest() for p in GENERATED}
+        generated = GENERATED + ["gfx/interface/icons/court_position_types/kehillah_business_" + b["key"] + "_position.dds" for b in BUSINESSES]
+        generated += ["gfx/interface/icons/court_position_types/" + key + ".dds" for key in CAT["other_position_icons"]]
+        before = {p: hashlib.sha256((ROOT / p).read_bytes()).digest() for p in generated}
         subprocess.run([sys.executable, "-X", "utf8", str(ROOT / "scripts/kehillah_business_positions.py")], check=True)
-        self.assertEqual(before, {p: hashlib.sha256((ROOT / p).read_bytes()).digest() for p in GENERATED})
+        self.assertEqual(before, {p: hashlib.sha256((ROOT / p).read_bytes()).digest() for p in generated})
 
 
 if __name__ == "__main__":
